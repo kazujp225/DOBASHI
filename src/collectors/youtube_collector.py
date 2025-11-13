@@ -129,52 +129,118 @@ class YouTubeCollector:
     def get_video_comments(
         self,
         video_id: str,
-        max_results: int = 100
+        max_results: Optional[int] = None,
+        include_replies: bool = True,
+        order: str = 'time',
+        progress_callback=None
     ) -> List[Dict]:
         """
         動画のコメントを取得
 
         Args:
             video_id: YouTube動画ID
-            max_results: 取得するコメントの最大数
+            max_results: 取得するコメントの最大数（Noneの場合は全て取得）
+            include_replies: 返信コメントも含めるか（デフォルト: True）
+            order: 取得順序 ('time': 新しい順, 'relevance': 関連性順)
+            progress_callback: 進捗コールバック関数 callback(current, total_fetched)
 
         Returns:
             コメント情報のリスト
         """
         comments = []
+        max_retries = 3
+        retry_delay = 2  # 秒
 
         try:
             next_page_token = None
+            total_fetched = 0
 
-            while len(comments) < max_results:
-                request = self.youtube.commentThreads().list(
-                    part='snippet',
-                    videoId=video_id,
-                    maxResults=min(100, max_results - len(comments)),
-                    pageToken=next_page_token,
-                    textFormat='plainText',
-                    order='relevance'  # 関連性順
-                )
+            while True:
+                # max_resultsが指定されている場合は、その数まで取得
+                if max_results is not None and len(comments) >= max_results:
+                    break
 
-                response = request.execute()
+                # 1回のリクエストで取得する件数を決定
+                if max_results is None:
+                    page_size = 100  # 最大値
+                else:
+                    page_size = min(100, max_results - len(comments))
 
+                # リトライロジック
+                retry_count = 0
+                while retry_count < max_retries:
+                    try:
+                        request = self.youtube.commentThreads().list(
+                            part='snippet,replies',
+                            videoId=video_id,
+                            maxResults=page_size,
+                            pageToken=next_page_token,
+                            textFormat='plainText',
+                            order=order
+                        )
+
+                        response = request.execute()
+                        break  # 成功したらループを抜ける
+
+                    except HttpError as e:
+                        retry_count += 1
+                        if retry_count >= max_retries:
+                            raise  # 最大リトライ回数に達したら例外を投げる
+
+                        print(f"API Error (retry {retry_count}/{max_retries}): {e}")
+                        import time
+                        time.sleep(retry_delay * retry_count)  # 指数バックオフ
+
+                # コメントを処理
                 for item in response['items']:
-                    comment = item['snippet']['topLevelComment']['snippet']
+                    top_comment = item['snippet']['topLevelComment']['snippet']
+
+                    # トップレベルコメント
                     comments.append({
                         'comment_id': item['snippet']['topLevelComment']['id'],
                         'video_id': video_id,
-                        'author': comment['authorDisplayName'],
-                        'author_channel_id': comment.get('authorChannelId', {}).get('value', ''),
-                        'text': comment['textDisplay'],
-                        'like_count': comment['likeCount'],
-                        'published_at': comment['publishedAt'],
-                        'updated_at': comment['updatedAt']
+                        'author': top_comment['authorDisplayName'],
+                        'author_channel_id': top_comment.get('authorChannelId', {}).get('value', ''),
+                        'text': top_comment['textDisplay'],
+                        'like_count': top_comment['likeCount'],
+                        'published_at': top_comment['publishedAt'],
+                        'updated_at': top_comment['updatedAt'],
+                        'is_reply': False,
+                        'parent_id': None
                     })
 
+                    total_fetched += 1
+
+                    # 返信コメントを含める場合
+                    if include_replies and 'replies' in item:
+                        for reply in item['replies']['comments']:
+                            reply_snippet = reply['snippet']
+
+                            comments.append({
+                                'comment_id': reply['id'],
+                                'video_id': video_id,
+                                'author': reply_snippet['authorDisplayName'],
+                                'author_channel_id': reply_snippet.get('authorChannelId', {}).get('value', ''),
+                                'text': reply_snippet['textDisplay'],
+                                'like_count': reply_snippet['likeCount'],
+                                'published_at': reply_snippet['publishedAt'],
+                                'updated_at': reply_snippet['updatedAt'],
+                                'is_reply': True,
+                                'parent_id': reply_snippet['parentId']
+                            })
+
+                            total_fetched += 1
+
+                    # 進捗コールバック
+                    if progress_callback:
+                        progress_callback(len(comments), total_fetched)
+
+                # 次のページトークンをチェック
                 next_page_token = response.get('nextPageToken')
                 if not next_page_token:
-                    break
+                    break  # これ以上ページがない
 
+            print(f"取得完了: {len(comments)}件のコメント（返信含む）")
             return comments
 
         except HttpError as e:
