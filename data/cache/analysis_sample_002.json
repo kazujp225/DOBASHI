@@ -1,0 +1,50 @@
+{
+  "video_info": {
+    "video_id": "sample_002",
+    "title": "【サンプル動画】令和の虎 第2話 - 美容サロン経営の挑戦",
+    "description": "デモ用のサンプルデータです",
+    "published_at": "2025-11-05T12:00:00Z",
+    "view_count": 180000,
+    "like_count": 9200,
+    "comment_count": 520
+  },
+  "stats": {
+    "N_total": 520,
+    "N_entity": 380,
+    "tiger_stats": {
+      "asuka": {
+        "tiger_id": "asuka",
+        "display_name": "あすか社長",
+        "N_tiger": 210,
+        "Rate_total": 40.38,
+        "Rate_entity": 55.26,
+        "rank": 1
+      },
+      "iwai": {
+        "tiger_id": "iwai",
+        "display_name": "岩井社長",
+        "N_tiger": 115,
+        "Rate_total": 22.12,
+        "Rate_entity": 30.26,
+        "rank": 2
+      },
+      "hayashi": {
+        "tiger_id": "hayashi",
+        "display_name": "林社長",
+        "N_tiger": 85,
+        "Rate_total": 16.35,
+        "Rate_entity": 22.37,
+        "rank": 3
+      },
+      "tanaka": {
+        "tiger_id": "tanaka",
+        "display_name": "田中社長",
+        "N_tiger": 60,
+        "Rate_total": 11.54,
+        "Rate_entity": 15.79,
+        "rank": 4
+      }
+    }
+  },
+  "analyzed_at": "2025-11-13T19:15:00Z"
+}

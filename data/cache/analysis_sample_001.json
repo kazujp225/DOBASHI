@@ -1,0 +1,50 @@
+{
+  "video_info": {
+    "video_id": "sample_001",
+    "title": "【サンプル動画】令和の虎 第1話 - フランチャイズビジネスへの挑戦",
+    "description": "デモ用のサンプルデータです",
+    "published_at": "2025-11-01T12:00:00Z",
+    "view_count": 150000,
+    "like_count": 8500,
+    "comment_count": 450
+  },
+  "stats": {
+    "N_total": 450,
+    "N_entity": 320,
+    "tiger_stats": {
+      "hayashi": {
+        "tiger_id": "hayashi",
+        "display_name": "林社長",
+        "N_tiger": 180,
+        "Rate_total": 40.0,
+        "Rate_entity": 56.25,
+        "rank": 1
+      },
+      "iwai": {
+        "tiger_id": "iwai",
+        "display_name": "岩井社長",
+        "N_tiger": 95,
+        "Rate_total": 21.11,
+        "Rate_entity": 29.69,
+        "rank": 2
+      },
+      "asuka": {
+        "tiger_id": "asuka",
+        "display_name": "あすか社長",
+        "N_tiger": 70,
+        "Rate_total": 15.56,
+        "Rate_entity": 21.88,
+        "rank": 3
+      },
+      "sasaki": {
+        "tiger_id": "sasaki",
+        "display_name": "佐々木社長",
+        "N_tiger": 45,
+        "Rate_total": 10.0,
+        "Rate_entity": 14.06,
+        "rank": 4
+      }
+    }
+  },
+  "analyzed_at": "2025-11-13T19:00:00Z"
+}

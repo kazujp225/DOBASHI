@@ -1,0 +1,50 @@
+{
+  "video_info": {
+    "video_id": "sample_003",
+    "title": "【サンプル動画】令和の虎 第3話 - IT企業の新規事業提案",
+    "description": "デモ用のサンプルデータです",
+    "published_at": "2025-11-10T12:00:00Z",
+    "view_count": 220000,
+    "like_count": 11500,
+    "comment_count": 680
+  },
+  "stats": {
+    "N_total": 680,
+    "N_entity": 490,
+    "tiger_stats": {
+      "tanaka": {
+        "tiger_id": "tanaka",
+        "display_name": "田中社長",
+        "N_tiger": 245,
+        "Rate_total": 36.03,
+        "Rate_entity": 50.0,
+        "rank": 1
+      },
+      "sasaki": {
+        "tiger_id": "sasaki",
+        "display_name": "佐々木社長",
+        "N_tiger": 140,
+        "Rate_total": 20.59,
+        "Rate_entity": 28.57,
+        "rank": 2
+      },
+      "hayashi": {
+        "tiger_id": "hayashi",
+        "display_name": "林社長",
+        "N_tiger": 105,
+        "Rate_total": 15.44,
+        "Rate_entity": 21.43,
+        "rank": 3
+      },
+      "iwai": {
+        "tiger_id": "iwai",
+        "display_name": "岩井社長",
+        "N_tiger": 75,
+        "Rate_total": 11.03,
+        "Rate_entity": 15.31,
+        "rank": 4
+      }
+    }
+  },
+  "analyzed_at": "2025-11-13T19:30:00Z"
+}

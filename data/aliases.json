@@ -1,0 +1,122 @@
+{
+  "hayashi": [
+    {
+      "alias": "林社長",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "林さん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "FC林",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "FCの林",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "フランチャイズの林",
+      "type": "description",
+      "priority": 4
+    },
+    {
+      "alias": "林修一",
+      "type": "fullname",
+      "priority": 5
+    }
+  ],
+  "iwai": [
+    {
+      "alias": "岩井社長",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "岩井さん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "不動産岩井",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "岩井良明",
+      "type": "fullname",
+      "priority": 5
+    }
+  ],
+  "asuka": [
+    {
+      "alias": "あすか社長",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "あすかさん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "あすか",
+      "type": "short",
+      "priority": 3
+    },
+    {
+      "alias": "美容あすか",
+      "type": "nickname",
+      "priority": 4
+    }
+  ],
+  "sasaki": [
+    {
+      "alias": "佐々木社長",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "佐々木さん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "マーケ佐々木",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "佐々木啓治",
+      "type": "fullname",
+      "priority": 5
+    }
+  ],
+  "tanaka": [
+    {
+      "alias": "田中社長",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "田中さん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "IT田中",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "田中修",
+      "type": "fullname",
+      "priority": 5
+    }
+  ]
+}
