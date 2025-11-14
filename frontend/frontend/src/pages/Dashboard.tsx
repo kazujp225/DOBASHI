@@ -1,0 +1,174 @@
+import { useQuery } from '@tanstack/react-query'
+import { tigersApi, statsApi } from '../services/api'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { TrendingUp, Video, MessageSquare } from 'lucide-react'
+
+const Dashboard = () => {
+  const { data: tigers, isLoading: tigersLoading } = useQuery({
+    queryKey: ['tigers'],
+    queryFn: tigersApi.getAll,
+  })
+
+  const { data: ranking, isLoading: rankingLoading } = useQuery({
+    queryKey: ['ranking'],
+    queryFn: () => statsApi.getRanking('all'),
+  })
+
+  const isLoading = tigersLoading || rankingLoading
+
+  // グラフ用のカラーパレット
+  const colors = ['#f97316', '#fb923c', '#fdba74', '#fed7aa', '#ffedd5']
+
+  return (
+    <div className="space-y-8">
+      {/* ヘッダー */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">ダッシュボード</h1>
+        <p className="mt-2 text-gray-600">分析結果の概要</p>
+      </div>
+
+      {/* クイックスタッツ */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">登録社長数</p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">
+                {tigers?.length || 0}名
+              </p>
+            </div>
+            <div className="bg-orange-100 p-3 rounded-full">
+              <Video className="text-orange-600" size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">分析動画数</p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">
+                {ranking?.total_videos || 0}件
+              </p>
+            </div>
+            <div className="bg-blue-100 p-3 rounded-full">
+              <TrendingUp className="text-blue-600" size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">総コメント数</p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">
+                {ranking?.tiger_rankings
+                  ?.reduce((sum, t) => sum + t.total_mentions, 0)
+                  .toLocaleString() || 0}
+              </p>
+            </div>
+            <div className="bg-green-100 p-3 rounded-full">
+              <MessageSquare className="text-green-600" size={24} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ランキング */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900">
+            社長別ランキング（全期間）
+          </h2>
+        </div>
+
+        {isLoading ? (
+          <div className="p-12 text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+            <p className="mt-4 text-gray-600">読み込み中...</p>
+          </div>
+        ) : ranking && ranking.tiger_rankings.length > 0 ? (
+          <div className="p-6 space-y-6">
+            {/* グラフ */}
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={ranking.tiger_rankings.slice(0, 5)}>
+                <XAxis dataKey="display_name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="total_mentions" fill="#f97316">
+                  {ranking.tiger_rankings.slice(0, 5).map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+
+            {/* テーブル */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      順位
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      社長名
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      言及回数
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      出演動画数
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      平均Rate
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {ranking.tiger_rankings.map((item, index) => (
+                    <tr key={item.tiger_id} className={index < 3 ? 'bg-orange-50' : ''}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`text-lg font-bold ${
+                          index === 0 ? 'text-yellow-500' :
+                          index === 1 ? 'text-gray-400' :
+                          index === 2 ? 'text-orange-700' :
+                          'text-gray-900'
+                        }`}>
+                          {item.rank}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {item.display_name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                        {item.total_mentions.toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                        {item.total_videos}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                        {(item.avg_rate_total * 100).toFixed(1)}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className="p-12 text-center">
+            <p className="text-gray-500">データがありません</p>
+            <p className="mt-2 text-sm text-gray-400">
+              データ収集ページから動画を収集してください
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default Dashboard

@@ -1,18 +1,36 @@
 {
   "name": "reiwa-no-tora-comment-analysis",
-  "version": "1.0.0",
-  "description": "令和の虎 社長別コメント言及分析システム",
+  "version": "2.0.0",
+  "description": "令和の虎 社長別コメント言及分析システム - React + FastAPI",
   "scripts": {
-    "dev": "streamlit run app.py",
-    "start": "streamlit run app.py",
-    "install-deps": "pip install -r requirements.txt"
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:streamlit": "streamlit run backend/app_streamlit.py",
+    "install": "cd frontend && npm install && cd ../backend && pip install -r requirements.txt",
+    "build:frontend": "cd frontend && npm run build"
   },
   "keywords": [
     "youtube",
     "comment-analysis",
-    "streamlit",
+    "react",
+    "typescript",
+    "fastapi",
     "reiwa-no-tora"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@tanstack/react-query": "^5.90.8",
+    "axios": "^1.13.2",
+    "lucide-react": "^0.553.0",
+    "react-router-dom": "^7.9.6",
+    "recharts": "^3.4.1"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.22",
+    "concurrently": "^9.2.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.17"
+  }
 }

@@ -54,3 +54,20 @@ data/cache/*.json
 # Temporary files
 *.tmp
 *.bak
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Frontend build
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# Backend cache
+backend/__pycache__/
+backend/*.pyc
