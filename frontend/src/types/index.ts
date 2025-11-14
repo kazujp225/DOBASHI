@@ -1,10 +1,3 @@
-/**
- * 令和の虎 コメント分析システム
- * TypeScript型定義
- */
-
-// ========== Tiger (社長) ==========
-
 export interface Tiger {
   tiger_id: string;
   display_name: string;
@@ -12,14 +5,6 @@ export interface Tiger {
   description?: string;
   image_url?: string;
 }
-
-export interface TigerAlias {
-  alias: string;
-  alias_type: string;
-  priority: number;
-}
-
-// ========== Video (動画) ==========
 
 export interface Video {
   video_id: string;
@@ -34,8 +19,6 @@ export interface VideoWithStats extends Video {
   tiger_stats?: TigerStat[];
 }
 
-// ========== Comment (コメント) ==========
-
 export interface Comment {
   comment_id: string;
   video_id: string;
@@ -45,12 +28,6 @@ export interface Comment {
   published_at: string;
   normalized_text?: string;
 }
-
-export interface CommentWithMentions extends Comment {
-  mentioned_tigers: string[];
-}
-
-// ========== Analysis (分析) ==========
 
 export interface AnalysisRequest {
   video_id: string;
@@ -64,8 +41,6 @@ export interface AnalysisResult {
   tiger_mentions: Record<string, number>;
   processing_time: number;
 }
-
-// ========== Stats (統計) ==========
 
 export interface TigerStat {
   tiger_id: string;
@@ -99,8 +74,6 @@ export interface RankingItem {
   avg_rate_entity: number;
   rank: number;
 }
-
-// ========== Collection (データ収集) ==========
 
 export interface CollectionRequest {
   video_url: string;

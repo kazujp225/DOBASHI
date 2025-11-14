@@ -1,7 +1,3 @@
-/**
- * API Service
- * FastAPI バックエンドとの通信
- */
 import axios from 'axios';
 import type {
   Tiger,
@@ -23,8 +19,6 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
-// ========== Tigers API ==========
 
 export const tigersApi = {
   getAll: async (): Promise<Tiger[]> => {
@@ -52,8 +46,6 @@ export const tigersApi = {
   },
 };
 
-// ========== Videos API ==========
-
 export const videosApi = {
   getAll: async (): Promise<Video[]> => {
     const { data } = await api.get('/api/videos');
@@ -65,8 +57,6 @@ export const videosApi = {
     return data;
   },
 };
-
-// ========== Analysis API ==========
 
 export const analysisApi = {
   collect: async (request: CollectionRequest): Promise<CollectionProgress> => {
@@ -84,8 +74,6 @@ export const analysisApi = {
     return data;
   },
 };
-
-// ========== Stats API ==========
 
 export const statsApi = {
   getVideoStats: async (videoId: string): Promise<VideoStats> => {

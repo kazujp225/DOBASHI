@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { analysisApi } from '../services/api'
-import { Download, CheckCircle, XCircle, Loader } from 'lucide-react'
+import { Download, CheckCircle, XCircle, Loader, Link as LinkIcon } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 const Collection = () => {
   const [videoUrl, setVideoUrl] = useState('')
@@ -11,10 +12,13 @@ const Collection = () => {
     mutationFn: analysisApi.collect,
     onSuccess: (data) => {
       setProgress(data)
-      // ポーリングして進捗を確認
       if (data.status === 'collecting') {
         pollProgress(data.video_id)
       }
+      toast.success('コメント収集を開始しました')
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'コメント収集の開始に失敗しました')
     },
   })
 
@@ -36,20 +40,21 @@ const Collection = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!videoUrl) return
+    if (!videoUrl.trim()) {
+      toast.error('URLを入力してください')
+      return
+    }
 
     collectMutation.mutate({ video_url: videoUrl })
   }
 
   return (
-    <div className="space-y-8">
-      {/* ヘッダー */}
+    <div className="space-y-8 animate-fadeIn">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">データ収集</h1>
         <p className="mt-2 text-gray-600">YouTube動画のコメントを収集します</p>
       </div>
 
-      {/* 収集フォーム */}
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">動画URL入力</h2>
@@ -61,15 +66,20 @@ const Collection = () => {
               <label htmlFor="videoUrl" className="block text-sm font-medium text-gray-700 mb-2">
                 YouTube動画URL
               </label>
-              <input
-                type="text"
-                id="videoUrl"
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                placeholder="https://www.youtube.com/watch?v=..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                disabled={collectMutation.isPending}
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <LinkIcon className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  id="videoUrl"
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100"
+                  disabled={collectMutation.isPending}
+                />
+              </div>
               <p className="mt-2 text-sm text-gray-500">
                 令和の虎のYouTube動画URLを入力してください
               </p>
@@ -77,8 +87,8 @@ const Collection = () => {
 
             <button
               type="submit"
-              disabled={!videoUrl || collectMutation.isPending}
-              className="flex items-center space-x-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              disabled={!videoUrl.trim() || collectMutation.isPending}
+              className="flex items-center space-x-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-md"
             >
               <Download size={20} />
               <span>{collectMutation.isPending ? '収集中...' : 'コメントを収集'}</span>
@@ -87,7 +97,6 @@ const Collection = () => {
         </div>
       </div>
 
-      {/* 進捗表示 */}
       {progress && (
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -97,13 +106,13 @@ const Collection = () => {
           <div className="p-6">
             <div className="flex items-start space-x-4">
               {progress.status === 'collecting' && (
-                <Loader className="text-blue-500 animate-spin" size={24} />
+                <Loader className="text-blue-500 animate-spin flex-shrink-0" size={24} />
               )}
               {progress.status === 'completed' && (
-                <CheckCircle className="text-green-500" size={24} />
+                <CheckCircle className="text-green-500 flex-shrink-0" size={24} />
               )}
               {progress.status === 'error' && (
-                <XCircle className="text-red-500" size={24} />
+                <XCircle className="text-red-500 flex-shrink-0" size={24} />
               )}
 
               <div className="flex-1">
@@ -157,9 +166,8 @@ const Collection = () => {
         </div>
       )}
 
-      {/* 使い方 */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h3 className="font-medium text-blue-900 mb-2">使い方</h3>
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+        <h3 className="font-medium text-blue-900 mb-2">💡 使い方</h3>
         <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800">
           <li>令和の虎のYouTube動画URLをコピーして上のフォームに貼り付けます</li>
           <li>「コメントを収集」ボタンをクリックすると、収集が開始されます</li>

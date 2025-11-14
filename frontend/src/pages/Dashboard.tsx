@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { tigersApi, statsApi } from '../services/api'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { TrendingUp, Video, MessageSquare } from 'lucide-react'
+import { TrendingUp, Video, MessageSquare, Download } from 'lucide-react'
+import { exportToCSV, formatRankingForCSV } from '../utils/csv'
+import toast from 'react-hot-toast'
 
 const Dashboard = () => {
   const { data: tigers, isLoading: tigersLoading } = useQuery({
@@ -19,17 +21,39 @@ const Dashboard = () => {
   // グラフ用のカラーパレット
   const colors = ['#f97316', '#fb923c', '#fdba74', '#fed7aa', '#ffedd5']
 
+  const handleExportCSV = () => {
+    if (!ranking || ranking.tiger_rankings.length === 0) {
+      toast.error('エクスポートするデータがありません')
+      return
+    }
+
+    const csvData = formatRankingForCSV(ranking.tiger_rankings)
+    exportToCSV(csvData, `社長別ランキング_${new Date().toISOString().split('T')[0]}`)
+    toast.success('CSVをエクスポートしました')
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fadeIn">
       {/* ヘッダー */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">ダッシュボード</h1>
-        <p className="mt-2 text-gray-600">分析結果の概要</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">ダッシュボード</h1>
+          <p className="mt-2 text-gray-600">分析結果の概要</p>
+        </div>
+        {ranking && ranking.tiger_rankings.length > 0 && (
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all transform hover:scale-105 shadow-md"
+          >
+            <Download size={20} />
+            <span>CSVエクスポート</span>
+          </button>
+        )}
       </div>
 
       {/* クイックスタッツ */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6 transform transition-all hover:shadow-lg hover:-translate-y-1">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">登録社長数</p>
@@ -43,7 +67,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6 transform transition-all hover:shadow-lg hover:-translate-y-1">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">分析動画数</p>
@@ -57,7 +81,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6 transform transition-all hover:shadow-lg hover:-translate-y-1">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">総コメント数</p>
@@ -76,7 +100,7 @@ const Dashboard = () => {
 
       {/* ランキング */}
       <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-xl font-bold text-gray-900">
             社長別ランキング（全期間）
           </h2>
@@ -127,7 +151,7 @@ const Dashboard = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {ranking.tiger_rankings.map((item, index) => (
-                    <tr key={item.tiger_id} className={index < 3 ? 'bg-orange-50' : ''}>
+                    <tr key={item.tiger_id} className={`${index < 3 ? 'bg-orange-50' : ''} hover:bg-orange-100 transition-colors`}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`text-lg font-bold ${
                           index === 0 ? 'text-yellow-500' :

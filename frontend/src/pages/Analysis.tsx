@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { videosApi, tigersApi, analysisApi, statsApi } from '../services/api'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
-import { Search, TrendingUp } from 'lucide-react'
+import { Search, Download } from 'lucide-react'
+import toast from 'react-hot-toast'
+import { exportToCSV, formatVideoStatsForCSV } from '../utils/csv'
 
 const Analysis = () => {
   const [selectedVideoId, setSelectedVideoId] = useState('')
@@ -18,7 +20,7 @@ const Analysis = () => {
     queryFn: tigersApi.getAll,
   })
 
-  const { data: videoStats } = useQuery({
+  const { data: videoStats, refetch } = useQuery({
     queryKey: ['videoStats', selectedVideoId],
     queryFn: () => statsApi.getVideoStats(selectedVideoId),
     enabled: !!selectedVideoId,
@@ -27,15 +29,23 @@ const Analysis = () => {
   const analyzeMutation = useMutation({
     mutationFn: analysisApi.analyze,
     onSuccess: () => {
-      // 統計を再取得
-      if (selectedVideoId) {
-        statsApi.getVideoStats(selectedVideoId)
-      }
+      refetch()
+      toast.success('分析が完了しました')
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || '分析に失敗しました')
     },
   })
 
   const handleAnalyze = () => {
-    if (!selectedVideoId || selectedTigers.length === 0) return
+    if (!selectedVideoId) {
+      toast.error('動画を選択してください')
+      return
+    }
+    if (selectedTigers.length === 0) {
+      toast.error('社長を選択してください')
+      return
+    }
 
     analyzeMutation.mutate({
       video_id: selectedVideoId,
@@ -43,24 +53,43 @@ const Analysis = () => {
     })
   }
 
+  const handleExportCSV = () => {
+    if (!videoStats || !videoStats.tiger_stats || videoStats.tiger_stats.length === 0) {
+      toast.error('エクスポートするデータがありません')
+      return
+    }
+
+    const csvData = formatVideoStatsForCSV(videoStats)
+    exportToCSV(csvData, `動画分析結果_${videoStats.video_id}_${new Date().toISOString().split('T')[0]}`)
+    toast.success('CSVをエクスポートしました')
+  }
+
   const colors = ['#f97316', '#fb923c', '#fdba74', '#fed7aa', '#ffedd5']
 
   return (
-    <div className="space-y-8">
-      {/* ヘッダー */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">動画分析</h1>
-        <p className="mt-2 text-gray-600">収集済み動画のコメントを社長別に分析します</p>
+    <div className="space-y-8 animate-fadeIn">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">動画分析</h1>
+          <p className="mt-2 text-gray-600">収集済み動画のコメントを社長別に分析します</p>
+        </div>
+        {videoStats && videoStats.tiger_stats && videoStats.tiger_stats.length > 0 && (
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all transform hover:scale-105 shadow-md"
+          >
+            <Download size={20} />
+            <span>CSVエクスポート</span>
+          </button>
+        )}
       </div>
 
-      {/* 分析設定 */}
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">分析設定</h2>
         </div>
 
         <div className="p-6 space-y-6">
-          {/* 動画選択 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               分析する動画を選択
@@ -79,7 +108,6 @@ const Analysis = () => {
             </select>
           </div>
 
-          {/* 社長選択 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               出演社長を選択（複数選択可）
@@ -88,9 +116,9 @@ const Analysis = () => {
               {tigers?.map((tiger) => (
                 <label
                   key={tiger.tiger_id}
-                  className={`flex items-center space-x-2 p-3 border rounded-lg cursor-pointer transition-colors ${
+                  className={`flex items-center space-x-2 p-3 border rounded-lg cursor-pointer transition-all ${
                     selectedTigers.includes(tiger.tiger_id)
-                      ? 'bg-orange-50 border-orange-500'
+                      ? 'bg-orange-50 border-orange-500 shadow-sm'
                       : 'border-gray-300 hover:bg-gray-50'
                   }`}
                 >
@@ -115,7 +143,7 @@ const Analysis = () => {
           <button
             onClick={handleAnalyze}
             disabled={!selectedVideoId || selectedTigers.length === 0 || analyzeMutation.isPending}
-            className="flex items-center space-x-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center space-x-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-md"
           >
             <Search size={20} />
             <span>{analyzeMutation.isPending ? '分析中...' : '分析を開始'}</span>
@@ -123,7 +151,6 @@ const Analysis = () => {
         </div>
       </div>
 
-      {/* 分析結果 */}
       {videoStats && (
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -131,7 +158,6 @@ const Analysis = () => {
           </div>
 
           <div className="p-6 space-y-6">
-            {/* サマリー */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600">総コメント数</p>
@@ -153,7 +179,6 @@ const Analysis = () => {
               </div>
             </div>
 
-            {/* グラフ */}
             {videoStats.tiger_stats.length > 0 && (
               <div>
                 <h3 className="font-medium text-gray-900 mb-4">社長別言及数</h3>
@@ -179,7 +204,6 @@ const Analysis = () => {
               </div>
             )}
 
-            {/* 詳細テーブル */}
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -193,7 +217,7 @@ const Analysis = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {videoStats.tiger_stats.map((stat) => (
-                    <tr key={stat.tiger_id}>
+                    <tr key={stat.tiger_id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {stat.rank}
                       </td>
