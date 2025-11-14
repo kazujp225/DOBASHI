@@ -78,8 +78,8 @@ const Tigers = () => {
       {/* ヘッダー */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">社長マスタ</h1>
-          <p className="mt-2 text-gray-600">登録されている社長の一覧</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">社長マスタ</h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">登録されている社長の一覧</p>
         </div>
         <button
           onClick={() => setIsAddModalOpen(true)}
@@ -91,41 +91,41 @@ const Tigers = () => {
       </div>
 
       {/* 社長一覧 */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         {isLoading ? (
           <div className="p-12 text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-            <p className="mt-4 text-gray-600">読み込み中...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">読み込み中...</p>
           </div>
         ) : tigers && tigers.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     ID
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     表示名
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     本名
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     説明
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     操作
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {tigers.map((tiger) => (
                   <tr
                     key={tiger.tiger_id}
-                    className="hover:bg-gray-50 transition-colors"
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-700 transition-colors"
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                       {tiger.tiger_id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -141,15 +141,15 @@ const Tigers = () => {
                             <Users size={20} className="text-white" />
                           </div>
                         )}
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
                           {tiger.display_name}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                       {tiger.full_name}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                       <div className="max-w-xs truncate">
                         {tiger.description || '-'}
                       </div>
@@ -176,7 +176,7 @@ const Tigers = () => {
         ) : (
           <div className="p-12 text-center">
             <Users size={48} className="mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-500 font-medium">社長が登録されていません</p>
+            <p className="text-gray-500 dark:text-gray-400 font-medium">社長が登録されていません</p>
             <p className="mt-2 text-sm text-gray-400">
               「社長を追加」ボタンから新しい社長を登録してください
             </p>
@@ -235,11 +235,11 @@ const Tigers = () => {
               <p className="text-sm text-red-800">
                 以下の社長を削除してもよろしいですか？この操作は取り消せません。
               </p>
-              <div className="mt-3 p-3 bg-white rounded border border-red-200">
-                <p className="font-medium text-gray-900">
+              <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded border border-red-200">
+                <p className="font-medium text-gray-900 dark:text-white">
                   {deletingTiger.display_name}
                 </p>
-                <p className="text-sm text-gray-600">{deletingTiger.full_name}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{deletingTiger.full_name}</p>
               </div>
             </div>
 
@@ -247,7 +247,7 @@ const Tigers = () => {
               <button
                 onClick={() => setDeletingTiger(null)}
                 disabled={deleteMutation.isPending}
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 キャンセル
               </button>

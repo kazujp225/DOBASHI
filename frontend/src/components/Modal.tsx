@@ -40,15 +40,15 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className="relative w-full max-w-md transform overflow-hidden rounded-lg bg-white shadow-xl transition-all"
+          className="relative w-full max-w-md transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl transition-all"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
             <button
               onClick={onClose}
-              className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500 transition-colors"
+              className="rounded-lg p-1 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
             >
               <X size={20} />
             </button>

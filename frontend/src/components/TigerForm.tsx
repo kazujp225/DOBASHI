@@ -76,7 +76,7 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* 社長ID */}
       <div>
-        <label htmlFor="tiger_id" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="tiger_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           社長ID <span className="text-red-500">*</span>
         </label>
         <input
@@ -86,7 +86,7 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
           onChange={(e) => handleChange('tiger_id', e.target.value)}
           disabled={!!tiger || isLoading}
           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed ${
-            errors.tiger_id ? 'border-red-500' : 'border-gray-300'
+            errors.tiger_id ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
           }`}
           placeholder="hayashi_fc"
         />
@@ -102,7 +102,7 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
 
       {/* 表示名 */}
       <div>
-        <label htmlFor="display_name" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="display_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           表示名 <span className="text-red-500">*</span>
         </label>
         <input
@@ -112,7 +112,7 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
           onChange={(e) => handleChange('display_name', e.target.value)}
           disabled={isLoading}
           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
-            errors.display_name ? 'border-red-500' : 'border-gray-300'
+            errors.display_name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
           }`}
           placeholder="林社長"
         />
@@ -123,7 +123,7 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
 
       {/* 本名 */}
       <div>
-        <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           本名 <span className="text-red-500">*</span>
         </label>
         <input
@@ -133,7 +133,7 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
           onChange={(e) => handleChange('full_name', e.target.value)}
           disabled={isLoading}
           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
-            errors.full_name ? 'border-red-500' : 'border-gray-300'
+            errors.full_name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
           }`}
           placeholder="林 修三"
         />
@@ -144,7 +144,7 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
 
       {/* 説明 */}
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           説明
         </label>
         <textarea
@@ -153,14 +153,14 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
           onChange={(e) => handleChange('description', e.target.value)}
           disabled={isLoading}
           rows={3}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           placeholder="FCチェーン経営のプロフェッショナル"
         />
       </div>
 
       {/* 画像URL */}
       <div>
-        <label htmlFor="image_url" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="image_url" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           画像URL
         </label>
         <input
@@ -169,18 +169,18 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
           value={formData.image_url}
           onChange={(e) => handleChange('image_url', e.target.value)}
           disabled={isLoading}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           placeholder="https://example.com/image.jpg"
         />
       </div>
 
       {/* ボタン */}
-      <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+      <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
         <button
           type="button"
           onClick={onCancel}
           disabled={isLoading}
-          className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-2 text-gray-700 bg-white border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           キャンセル
         </button>

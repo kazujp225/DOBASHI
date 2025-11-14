@@ -70,8 +70,8 @@ const Analysis = () => {
     <div className="space-y-8 animate-fadeIn">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">動画分析</h1>
-          <p className="mt-2 text-gray-600">収集済み動画のコメントを社長別に分析します</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">動画分析</h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">収集済み動画のコメントを社長別に分析します</p>
         </div>
         {videoStats && videoStats.tiger_stats && videoStats.tiger_stats.length > 0 && (
           <button
@@ -84,20 +84,20 @@ const Analysis = () => {
         )}
       </div>
 
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">分析設定</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">分析設定</h2>
         </div>
 
         <div className="p-6 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               分析する動画を選択
             </label>
             <select
               value={selectedVideoId}
               onChange={(e) => setSelectedVideoId(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             >
               <option value="">動画を選択してください</option>
               {videos?.map((video) => (
@@ -109,7 +109,7 @@ const Analysis = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               出演社長を選択（複数選択可）
             </label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -119,7 +119,7 @@ const Analysis = () => {
                   className={`flex items-center space-x-2 p-3 border rounded-lg cursor-pointer transition-all ${
                     selectedTigers.includes(tiger.tiger_id)
                       ? 'bg-orange-50 border-orange-500 shadow-sm'
-                      : 'border-gray-300 hover:bg-gray-50'
+                      : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >
                   <input
@@ -152,27 +152,27 @@ const Analysis = () => {
       </div>
 
       {videoStats && (
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900">分析結果</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">分析結果</h2>
           </div>
 
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">総コメント数</p>
-                <p className="mt-1 text-2xl font-bold text-gray-900">
+              <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400">総コメント数</p>
+                <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
                   {videoStats.total_comments.toLocaleString()}
                 </p>
               </div>
               <div className="p-4 bg-orange-50 rounded-lg">
-                <p className="text-sm text-gray-600">社長言及コメント</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">社長言及コメント</p>
                 <p className="mt-1 text-2xl font-bold text-orange-600">
                   {videoStats.tiger_mention_comments.toLocaleString()}
                 </p>
               </div>
               <div className="p-4 bg-blue-50 rounded-lg">
-                <p className="text-sm text-gray-600">言及率</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">言及率</p>
                 <p className="mt-1 text-2xl font-bold text-blue-600">
                   {((videoStats.tiger_mention_comments / videoStats.total_comments) * 100).toFixed(1)}%
                 </p>
@@ -181,7 +181,7 @@ const Analysis = () => {
 
             {videoStats.tiger_stats.length > 0 && (
               <div>
-                <h3 className="font-medium text-gray-900 mb-4">社長別言及数</h3>
+                <h3 className="font-medium text-gray-900 dark:text-white mb-4">社長別言及数</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
@@ -205,32 +205,32 @@ const Analysis = () => {
             )}
 
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">順位</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">社長名</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">言及数</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Rate_total</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Rate_entity</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">順位</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">社長名</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">言及数</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Rate_total</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Rate_entity</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {videoStats.tiger_stats.map((stat) => (
-                    <tr key={stat.tiger_id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <tr key={stat.tiger_id} className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-700 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                         {stat.rank}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {stat.display_name}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-white">
                         {stat.mention_count}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400">
                         {(stat.rate_total * 100).toFixed(2)}%
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400">
                         {(stat.rate_entity * 100).toFixed(2)}%
                       </td>
                     </tr>

@@ -51,19 +51,19 @@ const Collection = () => {
   return (
     <div className="space-y-8 animate-fadeIn">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">データ収集</h1>
-        <p className="mt-2 text-gray-600">YouTube動画のコメントを収集します</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">データ収集</h1>
+        <p className="mt-2 text-gray-600 dark:text-gray-400">YouTube動画のコメントを収集します</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">動画URL入力</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">動画URL入力</h2>
         </div>
 
         <div className="p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="videoUrl" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="videoUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 YouTube動画URL
               </label>
               <div className="relative">
@@ -76,11 +76,11 @@ const Collection = () => {
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
                   placeholder="https://www.youtube.com/watch?v=..."
-                  className="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100"
+                  className="pl-10 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100"
                   disabled={collectMutation.isPending}
                 />
               </div>
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 令和の虎のYouTube動画URLを入力してください
               </p>
             </div>
@@ -98,9 +98,9 @@ const Collection = () => {
       </div>
 
       {progress && (
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900">収集状況</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">収集状況</h2>
           </div>
 
           <div className="p-6">
@@ -117,19 +117,19 @@ const Collection = () => {
 
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-medium text-gray-900">
+                  <h3 className="font-medium text-gray-900 dark:text-white">
                     {progress.status === 'collecting' && 'コメント収集中...'}
                     {progress.status === 'completed' && '収集完了！'}
                     {progress.status === 'error' && '収集エラー'}
                   </h3>
                   {progress.status === 'collecting' && progress.total_comments && (
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
                       {progress.collected_comments} / {progress.total_comments}
                     </span>
                   )}
                 </div>
 
-                <p className="mt-1 text-sm text-gray-600">{progress.message}</p>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{progress.message}</p>
 
                 {progress.status === 'collecting' && progress.total_comments && (
                   <div className="mt-4">
