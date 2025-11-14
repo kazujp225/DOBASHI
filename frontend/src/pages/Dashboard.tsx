@@ -120,7 +120,7 @@ const Dashboard = () => {
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="total_mentions" fill="#f97316">
-                  {ranking.tiger_rankings.slice(0, 5).map((entry, index) => (
+                  {ranking.tiger_rankings.slice(0, 5).map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                   ))}
                 </Bar>

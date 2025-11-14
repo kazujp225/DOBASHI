@@ -1,12 +1,16 @@
 import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { analysisApi } from '../services/api'
-import { Download, CheckCircle, XCircle, Loader, Link as LinkIcon } from 'lucide-react'
+import { Download, CheckCircle, XCircle, Loader, Link as LinkIcon, ArrowRight } from 'lucide-react'
 import toast from 'react-hot-toast'
+import LogViewer from '../components/LogViewer'
 
 const Collection = () => {
   const [videoUrl, setVideoUrl] = useState('')
   const [progress, setProgress] = useState<any>(null)
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
 
   const collectMutation = useMutation({
     mutationFn: analysisApi.collect,
@@ -28,7 +32,12 @@ const Collection = () => {
         const status = await analysisApi.getCollectionStatus(videoId)
         setProgress(status)
 
-        if (status.status === 'completed' || status.status === 'error') {
+        if (status.status === 'completed') {
+          clearInterval(interval)
+          // 動画一覧を再読み込み
+          queryClient.invalidateQueries({ queryKey: ['videos'] })
+          toast.success('収集が完了しました！')
+        } else if (status.status === 'error') {
           clearInterval(interval)
         }
       } catch (error) {
@@ -145,11 +154,19 @@ const Collection = () => {
                 )}
 
                 {progress.status === 'completed' && (
-                  <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                    <p className="text-sm text-green-800">
-                      {progress.collected_comments}件のコメントを収集しました。
-                      次は「動画分析」ページで社長別の言及を分析してください。
-                    </p>
+                  <div className="mt-4 space-y-3">
+                    <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                      <p className="text-sm text-green-800">
+                        {progress.collected_comments}件のコメントを収集しました。
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => navigate('/analysis')}
+                      className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-all transform hover:scale-105 shadow-md"
+                    >
+                      <span>動画分析ページへ移動</span>
+                      <ArrowRight size={20} />
+                    </button>
                   </div>
                 )}
 
@@ -164,6 +181,11 @@ const Collection = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ログビューアー */}
+      {progress && progress.logs && progress.logs.length > 0 && (
+        <LogViewer logs={progress.logs} title="コメント収集ログ" />
       )}
 
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">

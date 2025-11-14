@@ -76,9 +76,33 @@ npm run install
 
 ### 2. YouTube API キーの設定
 
+**APIキーの取得方法:**
+1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
+2. 新規プロジェクトを作成
+3. YouTube Data API v3 を有効化
+4. 「認証情報」からAPIキーを作成
+5. 取得したAPIキーをコピー
+
+**環境変数の設定:**
+
 ```bash
-# backend/.env ファイルを作成
-YOUTUBE_API_KEY=your_api_key_here
+# ルートディレクトリの .env.example をコピー
+cp .env.example .env
+
+# .env ファイルを編集して、APIキーを設定
+# YOUTUBE_API_KEY=your_api_key_here
+```
+
+または、起動時に環境変数として直接指定：
+
+```bash
+# macOS/Linux
+export YOUTUBE_API_KEY="your_api_key_here"
+npm run dev
+
+# Windows (PowerShell)
+$env:YOUTUBE_API_KEY="your_api_key_here"
+npm run dev
 ```
 
 ### 3. 起動方法

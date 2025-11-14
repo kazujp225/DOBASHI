@@ -22,7 +22,7 @@ def load_videos() -> List[dict]:
         return []
 
 
-@router.get("/", response_model=List[Video])
+@router.get("", response_model=List[Video])
 async def get_all_videos():
     """全動画を取得"""
     videos = load_videos()

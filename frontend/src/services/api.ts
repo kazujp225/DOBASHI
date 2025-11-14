@@ -9,6 +9,7 @@ import type {
   CollectionProgress,
   AnalysisRequest,
   AnalysisResult,
+  AnalyzedComment,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -19,6 +20,20 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+/**
+ * 画像URLを絶対URLに変換
+ * ローカルパス (/static/...) の場合はバックエンドのURLを追加
+ */
+export const getImageUrl = (imageUrl?: string): string | undefined => {
+  if (!imageUrl) return undefined;
+
+  if (imageUrl.startsWith('/static/')) {
+    return `${API_BASE_URL}${imageUrl}`;
+  }
+
+  return imageUrl;
+};
 
 export const tigersApi = {
   getAll: async (): Promise<Tiger[]> => {
@@ -43,6 +58,21 @@ export const tigersApi = {
 
   delete: async (tigerId: string): Promise<void> => {
     await api.delete(`/api/tigers/${tigerId}`);
+  },
+
+  getAliases: async (tigerId: string): Promise<{ tiger_id: string; display_name: string; aliases: Array<{ alias: string; type: string; priority: number }> }> => {
+    const { data } = await api.get(`/api/tigers/${tigerId}/aliases`);
+    return data;
+  },
+
+  addAlias: async (tigerId: string, alias: { alias: string; type: string; priority: number }): Promise<any> => {
+    const { data } = await api.post(`/api/tigers/${tigerId}/aliases`, alias);
+    return data;
+  },
+
+  deleteAlias: async (tigerId: string, alias: string): Promise<any> => {
+    const { data } = await api.delete(`/api/tigers/${tigerId}/aliases/${encodeURIComponent(alias)}`);
+    return data;
   },
 };
 
@@ -71,6 +101,12 @@ export const analysisApi = {
 
   analyze: async (request: AnalysisRequest): Promise<AnalysisResult> => {
     const { data } = await api.post('/api/analysis/analyze', request);
+    return data;
+  },
+
+  getComments: async (videoId: string, tigerId?: string): Promise<AnalyzedComment[]> => {
+    const params = tigerId ? { tiger_id: tigerId } : {};
+    const { data } = await api.get(`/api/analysis/comments/${videoId}`, { params });
     return data;
   },
 };

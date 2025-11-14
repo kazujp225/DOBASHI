@@ -13,6 +13,7 @@ export interface Video {
   view_count?: number;
   like_count?: number;
   comment_count?: number;
+  thumbnail_url?: string;
 }
 
 export interface VideoWithStats extends Video {
@@ -27,6 +28,16 @@ export interface Comment {
   like_count: number;
   published_at: string;
   normalized_text?: string;
+}
+
+export interface TigerMention {
+  tiger_id: string;
+  display_name: string;
+  matched_text: string;
+}
+
+export interface AnalyzedComment extends Comment {
+  tiger_mentions: TigerMention[];
 }
 
 export interface AnalysisRequest {
@@ -79,10 +90,18 @@ export interface CollectionRequest {
   video_url: string;
 }
 
+export interface LogEntry {
+  timestamp: string;
+  level: string;
+  message: string;
+  emoji?: string;
+}
+
 export interface CollectionProgress {
   status: 'collecting' | 'completed' | 'error';
   video_id: string;
   collected_comments: number;
   total_comments?: number;
   message?: string;
+  logs: LogEntry[];
 }

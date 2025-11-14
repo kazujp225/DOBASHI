@@ -11,6 +11,26 @@
       "priority": 2
     },
     {
+      "alias": "林",
+      "type": "short",
+      "priority": 2
+    },
+    {
+      "alias": "はやし",
+      "type": "hiragana",
+      "priority": 3
+    },
+    {
+      "alias": "ハヤシ",
+      "type": "katakana",
+      "priority": 3
+    },
+    {
+      "alias": "ばやし",
+      "type": "variant",
+      "priority": 4
+    },
+    {
       "alias": "FC林",
       "type": "nickname",
       "priority": 3
@@ -23,6 +43,16 @@
     {
       "alias": "フランチャイズの林",
       "type": "description",
+      "priority": 4
+    },
+    {
+      "alias": "キャバクラ",
+      "type": "business",
+      "priority": 4
+    },
+    {
+      "alias": "キャバクラ林",
+      "type": "business",
       "priority": 4
     },
     {

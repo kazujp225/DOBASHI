@@ -46,6 +46,7 @@ class VideoBase(BaseModel):
     view_count: Optional[int] = None
     like_count: Optional[int] = None
     comment_count: Optional[int] = None
+    thumbnail_url: Optional[str] = None
 
 
 class VideoCreate(VideoBase):
@@ -122,7 +123,7 @@ class TigerStats(BaseModel):
 class VideoStats(BaseModel):
     """動画統計"""
     video_id: str
-    title: str
+    title: Optional[str] = None
     total_comments: int
     tiger_mention_comments: int
     tiger_stats: List[TigerStats]
@@ -142,6 +143,14 @@ class CollectionRequest(BaseModel):
     video_url: str = Field(..., description="YouTube動画URL")
 
 
+class LogEntry(BaseModel):
+    """ログエントリ"""
+    timestamp: str
+    level: str = Field(..., description="info, success, warning, error")
+    message: str
+    emoji: Optional[str] = None
+
+
 class CollectionProgress(BaseModel):
     """収集進捗"""
     status: str = Field(..., description="collecting, completed, error")
@@ -149,3 +158,4 @@ class CollectionProgress(BaseModel):
     collected_comments: int
     total_comments: Optional[int] = None
     message: Optional[str] = None
+    logs: List[LogEntry] = []
