@@ -357,6 +357,75 @@ def show_dashboard(tigers):
 
     st.markdown("---")
 
+    # 動画別ランキング比較
+    st.markdown(f"### {icon('ranking-star', size='sm')} 動画別 社長言及ランキング", unsafe_allow_html=True)
+
+    if all_tiger_stats:
+        # 動画別のトップ社長を抽出
+        video_rankings = []
+
+        for filename in sorted(cached_files, reverse=True):
+            data = load_data(filename)
+            if data and 'stats' in data and 'tiger_stats' in data['stats']:
+                tiger_stats = data['stats']['tiger_stats']
+
+                # トップ3を抽出
+                sorted_tigers = sorted(tiger_stats.values(), key=lambda x: x['rank'])[:3]
+
+                if sorted_tigers:
+                    video_rankings.append({
+                        'video_title': data['video_info']['title'][:50] + '...' if len(data['video_info']['title']) > 50 else data['video_info']['title'],
+                        'video_id': data['video_info']['video_id'],
+                        'published_at': data['video_info'].get('published_at', '')[:10],
+                        'top1': sorted_tigers[0]['display_name'] if len(sorted_tigers) > 0 else '-',
+                        'top1_count': sorted_tigers[0]['N_tiger'] if len(sorted_tigers) > 0 else 0,
+                        'top2': sorted_tigers[1]['display_name'] if len(sorted_tigers) > 1 else '-',
+                        'top2_count': sorted_tigers[1]['N_tiger'] if len(sorted_tigers) > 1 else 0,
+                        'top3': sorted_tigers[2]['display_name'] if len(sorted_tigers) > 2 else '-',
+                        'top3_count': sorted_tigers[2]['N_tiger'] if len(sorted_tigers) > 2 else 0,
+                        'total_comments': data['stats']['N_total']
+                    })
+
+        if video_rankings:
+            df_video_rankings = pd.DataFrame(video_rankings)
+
+            st.dataframe(
+                df_video_rankings[['video_title', 'published_at', 'top1', 'top1_count', 'top2', 'top2_count', 'top3', 'top3_count', 'total_comments']],
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "video_title": st.column_config.TextColumn("動画タイトル", width="large"),
+                    "published_at": st.column_config.TextColumn("公開日", width="small"),
+                    "top1": st.column_config.TextColumn("1位", width="small"),
+                    "top1_count": st.column_config.NumberColumn("言及数", format="%d"),
+                    "top2": st.column_config.TextColumn("2位", width="small"),
+                    "top2_count": st.column_config.NumberColumn("言及数", format="%d"),
+                    "top3": st.column_config.TextColumn("3位", width="small"),
+                    "top3_count": st.column_config.NumberColumn("言及数", format="%d"),
+                    "total_comments": st.column_config.NumberColumn("総コメント数", format="%d件")
+                }
+            )
+
+            # 動画別トップ社長の分布（棒グラフ）
+            st.markdown(f"#### {icon('chart-bar', size='sm')} 動画別トップ社長", unsafe_allow_html=True)
+
+            # トップ1の社長の出現回数をカウント
+            top1_counts = df_video_rankings['top1'].value_counts()
+
+            fig_top1 = px.bar(
+                x=top1_counts.values,
+                y=top1_counts.index,
+                orientation='h',
+                labels={'x': '動画数', 'y': '社長'},
+                title='各社長が1位を獲得した動画数',
+                color=top1_counts.values,
+                color_continuous_scale='Viridis'
+            )
+            fig_top1.update_layout(yaxis={'categoryorder': 'total ascending'}, height=400)
+            st.plotly_chart(fig_top1, use_container_width=True)
+
+    st.markdown("---")
+
     # 最近の分析結果
     st.markdown(f"### {icon('folder', size='sm')} 最近の分析結果", unsafe_allow_html=True)
 
@@ -683,7 +752,25 @@ def show_data_collection():
     # 動画ID直接入力
     st.markdown(f"<h3>{icon('video', size='sm')} 動画IDを指定して収集</h3>", unsafe_allow_html=True)
     video_id = st.text_input(f"{icon('film', size='sm')} 動画ID", placeholder="例: dQw4w9WgXcQ")
-    max_comments = st.number_input(f"{icon('hashtag', size='sm')} 最大コメント数", min_value=10, max_value=1000, value=100)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        fetch_all = st.checkbox("全コメントを取得", value=True, help="チェックを外すと最大コメント数を指定できます")
+
+        if not fetch_all:
+            max_comments = st.number_input(f"{icon('hashtag', size='sm')} 最大コメント数", min_value=10, max_value=10000, value=100)
+        else:
+            max_comments = None
+
+    with col2:
+        include_replies = st.checkbox("返信コメントも含める", value=True, help="トップレベルのコメントだけでなく返信も取得します")
+        comment_order = st.selectbox(
+            f"{icon('sort', size='sm')} 取得順序",
+            ["time", "relevance"],
+            format_func=lambda x: "新しい順" if x == "time" else "関連性順",
+            help="time: 投稿が新しい順、relevance: YouTubeが判断した関連性の高い順"
+        )
 
     if st.button(f"{icon('download', size='sm')} コメント収集", type="primary"):
         if not video_id:
@@ -695,57 +782,105 @@ def show_data_collection():
             return
 
         try:
-            with st.spinner(f"{icon('spinner', size='sm')} 動画情報とコメントを収集中..."):
-                collector = YouTubeCollector(api_key)
+            collector = YouTubeCollector(api_key)
 
-                # 動画情報取得
+            # 動画情報取得
+            with st.spinner(f"{icon('spinner', size='sm')} 動画情報を取得中..."):
                 video_info = collector.get_video_details(video_id)
                 if not video_info:
                     st.markdown(f"""
                     <div style="background: #FEE2E2; border-left: 4px solid #EF4444; padding: 1rem; border-radius: 8px;">
-                        {icon('circle-xmark', size='sm', color='#EF4444')} 動画情報を取得できませんでした。
+                        {icon('circle-xmark', size='sm', color='#EF4444')} 動画情報を取得できませんでした。動画IDを確認してください。
                     </div>
                     """, unsafe_allow_html=True)
                     return
 
-                st.markdown(f"""
-                <div style="background: #D1FAE5; border-left: 4px solid #10B981; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
-                    {icon('circle-check', size='sm', color='#10B981')} 動画情報を取得: {video_info['title']}
-                </div>
-                """, unsafe_allow_html=True)
+            st.markdown(f"""
+            <div style="background: #D1FAE5; border-left: 4px solid #10B981; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
+                {icon('circle-check', size='sm', color='#10B981')} 動画情報を取得: {video_info['title']}
+            </div>
+            """, unsafe_allow_html=True)
 
-                # コメント取得
-                comments = collector.get_video_comments(video_id, max_comments)
-                st.markdown(f"""
-                <div style="background: #D1FAE5; border-left: 4px solid #10B981; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
-                    {icon('circle-check', size='sm', color='#10B981')} {len(comments)}件のコメントを取得しました。
-                </div>
-                """, unsafe_allow_html=True)
+            # 動画のコメント数を表示
+            estimated_count = video_info.get('comment_count', 0)
+            if fetch_all and estimated_count > 0:
+                st.info(f"この動画には約{estimated_count:,}件のコメントがあります。全て取得します。")
 
-                # データを保存
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                data = {
-                    'video_info': video_info,
-                    'comments': comments,
-                    'collected_at': timestamp
+            # コメント取得（進捗表示付き）
+            st.markdown(f"{icon('download', size='sm')} コメントを収集中...", unsafe_allow_html=True)
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+
+            comments = []
+
+            def progress_callback(current, total):
+                """進捗表示コールバック"""
+                status_text.markdown(f"**{current:,}件**のコメントを取得中...", unsafe_allow_html=True)
+                if estimated_count > 0:
+                    progress_bar.progress(min(current / estimated_count, 1.0))
+
+            # コメント取得を実行
+            comments = collector.get_video_comments(
+                video_id,
+                max_results=max_comments,
+                include_replies=include_replies,
+                order=comment_order,
+                progress_callback=progress_callback
+            )
+
+            progress_bar.progress(1.0)
+
+            # 取得完了メッセージ
+            top_level_count = len([c for c in comments if not c.get('is_reply', False)])
+            reply_count = len([c for c in comments if c.get('is_reply', False)])
+
+            st.markdown(f"""
+            <div style="background: #D1FAE5; border-left: 4px solid #10B981; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
+                {icon('circle-check', size='sm', color='#10B981')} 合計 {len(comments):,}件のコメントを取得しました<br>
+                - トップレベル: {top_level_count:,}件<br>
+                - 返信: {reply_count:,}件
+            </div>
+            """, unsafe_allow_html=True)
+
+            # データを保存
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            data = {
+                'video_info': video_info,
+                'comments': comments,
+                'collected_at': timestamp,
+                'collection_params': {
+                    'max_results': max_comments,
+                    'include_replies': include_replies,
+                    'order': comment_order
                 }
-                filename = f"collected_{video_id}_{timestamp}.json"
-                save_data(data, filename)
+            }
+            filename = f"collected_{video_id}_{timestamp}.json"
+            save_data(data, filename)
 
-                st.markdown(f"""
-                <div style="background: #DBEAFE; border-left: 4px solid #3B82F6; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
-                    {icon('floppy-disk', size='sm', color='#3B82F6')} データを保存しました: {filename}
-                </div>
-                """, unsafe_allow_html=True)
+            st.markdown(f"""
+            <div style="background: #DBEAFE; border-left: 4px solid #3B82F6; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
+                {icon('floppy-disk', size='sm', color='#3B82F6')} データを保存しました: {filename}
+            </div>
+            """, unsafe_allow_html=True)
 
-                # プレビュー表示
-                with st.expander(f"{icon('chart-simple', size='sm')} データプレビュー"):
-                    st.write(f"### {icon('video', size='sm')} 動画情報")
-                    st.json(video_info)
+            # プレビュー表示
+            with st.expander(f"{icon('chart-simple', size='sm')} データプレビュー"):
+                st.write(f"### {icon('video', size='sm')} 動画情報")
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("再生数", f"{video_info.get('view_count', 0):,}")
+                with col2:
+                    st.metric("いいね数", f"{video_info.get('like_count', 0):,}")
+                with col3:
+                    st.metric("コメント数", f"{video_info.get('comment_count', 0):,}")
 
-                    st.write(f"### {icon('comments', size='sm')} コメントサンプル（最初の5件）")
-                    for comment in comments[:5]:
-                        st.write(f"{icon('comment', size='sm')} {comment['text']}")
+                st.write(f"**タイトル:** {video_info['title']}")
+                st.write(f"**公開日:** {video_info['published_at'][:10]}")
+
+                st.write(f"### {icon('comments', size='sm')} コメントサンプル（最初の5件）")
+                for comment in comments[:5]:
+                    reply_badge = " [返信]" if comment.get('is_reply', False) else ""
+                    st.write(f"{icon('comment', size='sm')} {comment['text']}{reply_badge}")
 
         except Exception as e:
             st.markdown(f"""
