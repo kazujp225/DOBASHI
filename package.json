@@ -1,0 +1,18 @@
+{
+  "name": "reiwa-no-tora-comment-analysis",
+  "version": "1.0.0",
+  "description": "令和の虎 社長別コメント言及分析システム",
+  "scripts": {
+    "dev": "streamlit run app.py",
+    "start": "streamlit run app.py",
+    "install-deps": "pip install -r requirements.txt"
+  },
+  "keywords": [
+    "youtube",
+    "comment-analysis",
+    "streamlit",
+    "reiwa-no-tora"
+  ],
+  "author": "",
+  "license": "MIT"
+}
