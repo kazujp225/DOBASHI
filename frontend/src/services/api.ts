@@ -37,90 +37,91 @@ export const getImageUrl = (imageUrl?: string): string | undefined => {
 
 export const tigersApi = {
   getAll: async (): Promise<Tiger[]> => {
-    const { data } = await api.get('/api/tigers');
+    const { data } = await api.get('/api/v1/tigers');
     return data;
   },
 
   getById: async (tigerId: string): Promise<Tiger> => {
-    const { data } = await api.get(`/api/tigers/${tigerId}`);
+    const { data } = await api.get(`/api/v1/tigers/${tigerId}`);
     return data;
   },
 
   create: async (tiger: Omit<Tiger, 'tiger_id'>): Promise<Tiger> => {
-    const { data } = await api.post('/api/tigers', tiger);
+    const { data } = await api.post('/api/v1/tigers', tiger);
     return data;
   },
 
   update: async (tigerId: string, tiger: Partial<Tiger>): Promise<Tiger> => {
-    const { data } = await api.put(`/api/tigers/${tigerId}`, tiger);
+    const { data } = await api.put(`/api/v1/tigers/${tigerId}`, tiger);
     return data;
   },
 
   delete: async (tigerId: string): Promise<void> => {
-    await api.delete(`/api/tigers/${tigerId}`);
+    await api.delete(`/api/v1/tigers/${tigerId}`);
   },
 
   getAliases: async (tigerId: string): Promise<{ tiger_id: string; display_name: string; aliases: Array<{ alias: string; type: string; priority: number }> }> => {
-    const { data } = await api.get(`/api/tigers/${tigerId}/aliases`);
+    const { data } = await api.get(`/api/v1/tigers/${tigerId}/aliases`);
     return data;
   },
 
   addAlias: async (tigerId: string, alias: { alias: string; type: string; priority: number }): Promise<any> => {
-    const { data } = await api.post(`/api/tigers/${tigerId}/aliases`, alias);
+    const { data } = await api.post(`/api/v1/tigers/${tigerId}/aliases`, alias);
     return data;
   },
 
   deleteAlias: async (tigerId: string, alias: string): Promise<any> => {
-    const { data } = await api.delete(`/api/tigers/${tigerId}/aliases/${encodeURIComponent(alias)}`);
+    const { data } = await api.delete(`/api/v1/tigers/${tigerId}/aliases/${encodeURIComponent(alias)}`);
     return data;
   },
 };
 
 export const videosApi = {
   getAll: async (): Promise<Video[]> => {
-    const { data } = await api.get('/api/videos');
+    const { data } = await api.get('/api/v1/videos');
     return data;
   },
 
   getById: async (videoId: string): Promise<VideoWithStats> => {
-    const { data } = await api.get(`/api/videos/${videoId}`);
+    const { data } = await api.get(`/api/v1/videos/${videoId}`);
     return data;
   },
 };
 
 export const analysisApi = {
   collect: async (request: CollectionRequest): Promise<CollectionProgress> => {
-    const { data } = await api.post('/api/analysis/collect', request);
+    const { data } = await api.post('/api/v1/analysis/collect', request);
     return data;
   },
 
   getCollectionStatus: async (videoId: string): Promise<CollectionProgress> => {
-    const { data } = await api.get(`/api/analysis/collect/${videoId}`);
+    const { data } = await api.get(`/api/v1/analysis/collect/${videoId}`);
     return data;
   },
 
   analyze: async (request: AnalysisRequest): Promise<AnalysisResult> => {
-    const { data } = await api.post('/api/analysis/analyze', request);
+    const { data } = await api.post('/api/v1/analysis/analyze', request);
     return data;
   },
 
   getComments: async (videoId: string, tigerId?: string): Promise<AnalyzedComment[]> => {
     const params = tigerId ? { tiger_id: tigerId } : {};
-    const { data } = await api.get(`/api/analysis/comments/${videoId}`, { params });
+    const { data } = await api.get(`/api/v1/analysis/comments/${videoId}`, { params });
     return data;
   },
 };
 
 export const statsApi = {
   getVideoStats: async (videoId: string): Promise<VideoStats> => {
-    const { data } = await api.get(`/api/stats/video/${videoId}`);
+    const { data } = await api.get(`/api/v1/stats/video/${videoId}`);
     return data;
   },
 
   getRanking: async (period: string = 'all'): Promise<RankingStats> => {
-    const { data } = await api.get(`/api/stats/ranking?period=${period}`);
+    const { data } = await api.get(`/api/v1/stats/ranking?period=${period}`);
     return data;
   },
 };
 
+export { api };
 export default api;

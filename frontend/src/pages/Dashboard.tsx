@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import { TrendingUp, Video, MessageSquare, Download } from 'lucide-react'
 import { exportToCSV, formatRankingForCSV } from '../utils/csv'
 import toast from 'react-hot-toast'
+import RealtimeDashboard from '../components/RealtimeDashboard'
 
 const Dashboard = () => {
   const { data: tigers, isLoading: tigersLoading } = useQuery({
@@ -191,6 +192,9 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      {/* リアルタイムダッシュボード */}
+      <RealtimeDashboard />
     </div>
   )
 }

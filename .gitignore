@@ -71,3 +71,15 @@ frontend/.vite/
 # Backend cache
 backend/__pycache__/
 backend/*.pyc
+backend/venv/
+
+# Database files
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+
+# Analysis results (keep sample files only)
+data/analyzed_comments_*.json
+data/comments_*.json
+data/video_stats_*.json
+!data/*_sample.json

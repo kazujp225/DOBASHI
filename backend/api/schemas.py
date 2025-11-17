@@ -1,7 +1,7 @@
 """
 Pydantic Schemas for API Request/Response
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional, Dict
 from datetime import datetime
 
@@ -159,3 +159,52 @@ class CollectionProgress(BaseModel):
     total_comments: Optional[int] = None
     message: Optional[str] = None
     logs: List[LogEntry] = []
+
+
+# ========== Authentication Schemas ==========
+
+class Token(BaseModel):
+    """認証トークン"""
+    access_token: str
+    token_type: str = "bearer"
+
+
+class TokenData(BaseModel):
+    """トークンデータ"""
+    username: Optional[str] = None
+
+
+class UserBase(BaseModel):
+    """ユーザー基本情報"""
+    username: str = Field(..., min_length=3, max_length=50)
+    email: EmailStr
+    full_name: Optional[str] = None
+    is_active: bool = True
+
+
+class UserCreate(UserBase):
+    """ユーザー作成リクエスト"""
+    password: str = Field(..., min_length=8)
+
+
+class UserUpdate(BaseModel):
+    """ユーザー更新リクエスト"""
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
+    password: Optional[str] = Field(None, min_length=8)
+
+
+class UserResponse(UserBase):
+    """ユーザーレスポンス"""
+    user_id: int
+    is_superuser: bool = False
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class UserInDB(UserResponse):
+    """データベース内のユーザー"""
+    hashed_password: str

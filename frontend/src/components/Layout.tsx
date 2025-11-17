@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Search, Download, Users, Moon, Sun } from 'lucide-react'
+import { LayoutDashboard, Search, Download, Users, Moon, Sun, Heart, Cloud, BarChart3, FileText } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 
 interface LayoutProps {
@@ -16,6 +16,10 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/analysis', icon: Search, label: '動画分析' },
     { path: '/collection', icon: Download, label: 'データ収集' },
     { path: '/tigers', icon: Users, label: '社長マスタ' },
+    { path: '/sentiment', icon: Heart, label: '感情分析' },
+    { path: '/wordcloud', icon: Cloud, label: 'ワードクラウド' },
+    { path: '/comparison', icon: BarChart3, label: '比較分析' },
+    { path: '/reports', icon: FileText, label: 'レポート' },
   ]
 
   return (

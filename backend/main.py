@@ -5,36 +5,55 @@ FastAPI Backend
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from api.routers import videos, tigers, analysis, stats
+from contextlib import asynccontextmanager
 
-# .envファイルを読み込み
-# プロジェクトルートの.envファイルを優先して読み込む
-env_path = Path(__file__).parent.parent / '.env'
-if env_path.exists():
-    load_dotenv(env_path)
-    print(f"✅ .env file loaded from: {env_path}")
-    api_key = os.environ.get('YOUTUBE_API_KEY', '')
-    if api_key:
-        print(f"✅ YOUTUBE_API_KEY loaded: {api_key[:20]}...")
+# ローカルインポート
+from api.routers import (
+    videos, tigers, analysis, stats, auth, export,
+    sentiment, wordcloud, comparison
+)
+from api.websocket import websocket_endpoint
+from core import settings
+from models import init_db
+from api.dependencies import get_current_user_optional
+
+# スタートアップイベント
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    アプリケーションのライフサイクル管理
+    """
+    # 起動時の処理
+    print("🚀 アプリケーションを起動します...")
+
+    # データベースの初期化
+    init_db()
+
+    # 設定の確認
+    if settings.youtube_api_key:
+        print(f"✅ YouTube API Key: {settings.youtube_api_key[:20]}...")
     else:
-        print("⚠️ YOUTUBE_API_KEY not found in environment")
-else:
-    # フォールバック: backend/.envも確認
-    backend_env_path = Path(__file__).parent / '.env'
-    if backend_env_path.exists():
-        load_dotenv(backend_env_path)
-        print(f"✅ .env file loaded from: {backend_env_path}")
+        print("⚠️ YouTube API Key not configured")
+
+    if settings.redis_url:
+        print(f"✅ Redis URL: {settings.redis_url}")
     else:
-        print(f"⚠️ .env file not found at {env_path}")
+        print("ℹ️ Using in-memory cache (Redis not configured)")
+
+    yield
+
+    # シャットダウン時の処理
+    print("👋 アプリケーションを終了します...")
 
 app = FastAPI(
-    title="令和の虎 コメント分析API",
+    title=settings.app_name,
     description="YouTube動画のコメントを分析し、社長別の言及を集計するAPI",
-    version="2.0.0",
-    redirect_slashes=False  # 末尾スラッシュの自動リダイレクトを無効化
+    version=settings.app_version,
+    redirect_slashes=False,  # 末尾スラッシュの自動リダイレクトを無効化
+    lifespan=lifespan
 )
 
 # 静的ファイルの配信設定
@@ -45,33 +64,67 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 # CORS設定
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # React開発サーバー
+    allow_origins=settings.backend_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # ルーター登録
-app.include_router(videos.router, prefix="/api/videos", tags=["videos"])
-app.include_router(tigers.router, prefix="/api/tigers", tags=["tigers"])
-app.include_router(analysis.router, prefix="/api/analysis", tags=["analysis"])
-app.include_router(stats.router, prefix="/api/stats", tags=["stats"])
+# API v1
+api_v1_prefix = settings.api_v1_str
+app.include_router(auth.router, prefix=api_v1_prefix, tags=["authentication"])
+app.include_router(videos.router, prefix=f"{api_v1_prefix}/videos", tags=["videos"])
+app.include_router(tigers.router, prefix=f"{api_v1_prefix}/tigers", tags=["tigers"])
+app.include_router(analysis.router, prefix=f"{api_v1_prefix}/analysis", tags=["analysis"])
+app.include_router(stats.router, prefix=f"{api_v1_prefix}/stats", tags=["stats"])
+app.include_router(export.router, prefix=f"{api_v1_prefix}/export", tags=["export"])
+app.include_router(sentiment.router, prefix=f"{api_v1_prefix}/sentiment", tags=["sentiment"])
+app.include_router(wordcloud.router, prefix=f"{api_v1_prefix}/wordcloud", tags=["wordcloud"])
+app.include_router(comparison.router, prefix=f"{api_v1_prefix}/comparison", tags=["comparison"])
+
+# WebSocketエンドポイント
+@app.websocket("/ws")
+async def websocket_route(websocket: WebSocket):
+    await websocket_endpoint(websocket)
 
 
 @app.get("/")
-async def root():
+async def root(current_user=Depends(get_current_user_optional)):
     """API ルート"""
     return {
-        "message": "令和の虎 コメント分析API",
-        "version": "2.0.0",
-        "docs": "/docs"
+        "message": settings.app_name,
+        "version": settings.app_version,
+        "docs": "/docs",
+        "redoc": "/redoc",
+        "authenticated": current_user is not None,
+        "user": current_user.username if current_user else None
     }
 
 
 @app.get("/health")
 async def health_check():
     """ヘルスチェック"""
-    return {"status": "healthy"}
+    from models import get_db
+
+    # データベース接続チェック
+    try:
+        db = next(get_db())
+        db.execute("SELECT 1")
+        db_status = "healthy"
+    except Exception as e:
+        db_status = f"unhealthy: {str(e)}"
+
+    # キャッシュ接続チェック
+    from core.cache import cache_manager
+    cache_status = "healthy" if cache_manager.redis_client else "using memory cache"
+
+    return {
+        "status": "healthy",
+        "database": db_status,
+        "cache": cache_status,
+        "version": settings.app_version
+    }
 
 
 if __name__ == "__main__":
