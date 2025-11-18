@@ -39,11 +39,18 @@ class ConnectionManager:
 
     async def broadcast(self, message: str):
         """全ての接続にメッセージをブロードキャスト"""
+        disconnected = []
         for connection in self.active_connections:
             try:
                 await connection.send_text(message)
-            except:
-                # 切断された接続を削除
+            except Exception as e:
+                # 切断された接続を記録
+                print(f"ブロードキャスト失敗: {e}")
+                disconnected.append(connection)
+
+        # 切断された接続を削除
+        for connection in disconnected:
+            if connection in self.active_connections:
                 self.disconnect(connection)
 
     async def send_json(self, data: Dict[str, Any], websocket: WebSocket):
@@ -64,58 +71,75 @@ async def get_realtime_stats(db: Session) -> Dict[str, Any]:
     """
     リアルタイム統計を取得
     """
-    # 最新の動画を取得
-    latest_videos = db.query(Video).order_by(Video.published_at.desc()).limit(5).all()
+    try:
+        # 最新の動画を取得
+        latest_videos = db.query(Video).order_by(Video.published_at.desc()).limit(5).all()
 
-    # 総コメント数
-    total_comments = db.query(Comment).count()
+        # 総コメント数
+        total_comments = db.query(Comment).count()
 
-    # 社長別の言及数（上位5名）
-    tiger_stats = db.query(
-        VideoTigerStats.tiger_id,
-        Tiger.display_name,
-        func.sum(VideoTigerStats.n_tiger).label("total_mentions")
-    ).join(
-        Tiger, VideoTigerStats.tiger_id == Tiger.tiger_id
-    ).group_by(
-        VideoTigerStats.tiger_id, Tiger.display_name
-    ).order_by(
-        func.sum(VideoTigerStats.n_tiger).desc()
-    ).limit(5).all()
+        # 社長別の言及数（上位5名）
+        tiger_stats = db.query(
+            VideoTigerStats.tiger_id,
+            Tiger.display_name,
+            func.sum(VideoTigerStats.n_tiger).label("total_mentions")
+        ).join(
+            Tiger, VideoTigerStats.tiger_id == Tiger.tiger_id
+        ).group_by(
+            VideoTigerStats.tiger_id, Tiger.display_name
+        ).order_by(
+            func.sum(VideoTigerStats.n_tiger).desc()
+        ).limit(5).all()
 
-    # 最新コメントのサンプル取得と感情分析
-    latest_comments = db.query(Comment).order_by(
-        Comment.published_at.desc()
-    ).limit(10).all()
+        # 最新コメントのサンプル取得と感情分析
+        latest_comments = db.query(Comment).order_by(
+            Comment.published_at.desc()
+        ).limit(10).all()
 
-    sentiment_summary = {"positive": 0, "negative": 0, "neutral": 0}
-    if latest_comments:
-        for comment in latest_comments:
-            result = manager.sentiment_analyzer.analyze(comment.text_original)
-            sentiment_summary[result.sentiment] += 1
+        sentiment_summary = {"positive": 0, "negative": 0, "neutral": 0}
+        if latest_comments:
+            for comment in latest_comments:
+                try:
+                    result = manager.sentiment_analyzer.analyze(comment.text_original)
+                    sentiment_summary[result.sentiment] += 1
+                except Exception as e:
+                    print(f"感情分析エラー: {e}")
+                    continue
 
-    return {
-        "timestamp": datetime.now().isoformat(),
-        "total_videos": len(latest_videos),
-        "total_comments": total_comments,
-        "top_tigers": [
-            {
-                "tiger_id": stat[0],
-                "display_name": stat[1],
-                "mentions": stat[2] or 0
-            }
-            for stat in tiger_stats
-        ],
-        "recent_sentiment": sentiment_summary,
-        "latest_videos": [
-            {
-                "video_id": v.video_id,
-                "title": v.title[:50] + "..." if len(v.title) > 50 else v.title,
-                "comment_count": v.comment_count
-            }
-            for v in latest_videos
-        ]
-    }
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "total_videos": len(latest_videos),
+            "total_comments": total_comments,
+            "top_tigers": [
+                {
+                    "tiger_id": stat[0],
+                    "display_name": stat[1],
+                    "mentions": stat[2] or 0
+                }
+                for stat in tiger_stats
+            ],
+            "recent_sentiment": sentiment_summary,
+            "latest_videos": [
+                {
+                    "video_id": v.video_id,
+                    "title": v.title[:50] + "..." if len(v.title) > 50 else v.title,
+                    "comment_count": v.comment_count
+                }
+                for v in latest_videos
+            ]
+        }
+    except Exception as e:
+        print(f"統計取得エラー: {e}")
+        # エラー時は空のデータを返す
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "total_videos": 0,
+            "total_comments": 0,
+            "top_tigers": [],
+            "recent_sentiment": {"positive": 0, "negative": 0, "neutral": 0},
+            "latest_videos": [],
+            "error": str(e)
+        }
 
 
 async def periodic_update(websocket: WebSocket, db: Session):

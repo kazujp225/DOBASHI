@@ -199,7 +199,7 @@ async def get_tiger_sentiment_trend(
 
 @router.post("/analyze")
 async def analyze_text_sentiment(
-    text: str,
+    text: str = Query(..., description="分析するテキスト"),
     current_user=Depends(get_current_user_optional)
 ):
     """
