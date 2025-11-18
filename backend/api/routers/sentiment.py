@@ -12,7 +12,7 @@ from core.cache import cache_manager, get_video_stats_cache_key
 from ..dependencies import get_current_user_optional
 from ..schemas import VideoStats
 
-router = APIRouter(prefix="/sentiment", tags=["sentiment"])
+router = APIRouter()
 
 # 感情分析器のインスタンス
 sentiment_analyzer = SentimentAnalyzer()

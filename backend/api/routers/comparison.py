@@ -13,7 +13,7 @@ from analyzers.sentiment_analyzer import SentimentAnalyzer
 from core.cache import cache_manager
 from ..dependencies import get_current_user_optional
 
-router = APIRouter(prefix="/comparison", tags=["comparison"])
+router = APIRouter()
 
 # 感情分析器のインスタンス
 sentiment_analyzer = SentimentAnalyzer()

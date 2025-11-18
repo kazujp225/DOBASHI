@@ -16,7 +16,7 @@ from utils.export import (
 )
 from ..dependencies import get_current_user_optional
 
-router = APIRouter(prefix="/export", tags=["export"])
+router = APIRouter()
 
 
 @router.get("/video/{video_id}/csv")

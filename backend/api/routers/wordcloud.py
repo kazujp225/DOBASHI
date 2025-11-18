@@ -12,7 +12,7 @@ from utils.wordcloud_generator import WordCloudGenerator
 from core.cache import cache_manager
 from ..dependencies import get_current_user_optional
 
-router = APIRouter(prefix="/wordcloud", tags=["wordcloud"])
+router = APIRouter()
 
 # ワードクラウド生成器のインスタンス
 wordcloud_generator = WordCloudGenerator()

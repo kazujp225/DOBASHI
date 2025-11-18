@@ -16,7 +16,7 @@ from core import (
 )
 from ..schemas import Token, UserCreate, UserResponse
 
-router = APIRouter(prefix="/auth", tags=["authentication"])
+router = APIRouter()
 
 @router.post("/login", response_model=Token)
 async def login(

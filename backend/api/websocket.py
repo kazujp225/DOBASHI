@@ -8,6 +8,7 @@ import asyncio
 import json
 from datetime import datetime
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from models import get_db, Video, Comment, VideoTigerStats, Tiger
 from analyzers.sentiment_analyzer import SentimentAnalyzer
@@ -73,13 +74,13 @@ async def get_realtime_stats(db: Session) -> Dict[str, Any]:
     tiger_stats = db.query(
         VideoTigerStats.tiger_id,
         Tiger.display_name,
-        db.func.sum(VideoTigerStats.n_tiger).label("total_mentions")
+        func.sum(VideoTigerStats.n_tiger).label("total_mentions")
     ).join(
         Tiger, VideoTigerStats.tiger_id == Tiger.tiger_id
     ).group_by(
         VideoTigerStats.tiger_id, Tiger.display_name
     ).order_by(
-        db.func.sum(VideoTigerStats.n_tiger).desc()
+        func.sum(VideoTigerStats.n_tiger).desc()
     ).limit(5).all()
 
     # 最新コメントのサンプル取得と感情分析
