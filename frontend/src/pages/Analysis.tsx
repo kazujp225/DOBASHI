@@ -164,6 +164,11 @@ const Analysis = () => {
                 <Users size={16} className="text-orange-600 dark:text-orange-400" />
               </div>
               <span>出演社長を選択</span>
+              {selectedTigers.length > 0 && (
+                <span className="ml-2 px-3 py-1 text-xs font-bold bg-orange-500 text-white rounded-full">
+                  {selectedTigers.length}件選択中
+                </span>
+              )}
             </label>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {tigers?.map((tiger) => (

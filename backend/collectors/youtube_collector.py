@@ -148,14 +148,17 @@ class YouTubeCollector:
             コメント情報のリスト
         """
         comments = []
-        max_retries = 3
-        retry_delay = 2  # 秒
+        max_retries = 5  # 3→5に増やす
+        retry_delay = 3  # 2→3秒に増やす
 
         try:
             next_page_token = None
             total_fetched = 0
 
+            page_count = 0
             while True:
+                page_count += 1
+
                 # max_resultsが指定されている場合は、その数まで取得
                 if max_results is not None and len(comments) >= max_results:
                     break
@@ -165,6 +168,8 @@ class YouTubeCollector:
                     page_size = 100  # 最大値
                 else:
                     page_size = min(100, max_results - len(comments))
+
+                print(f"📄 ページ {page_count}: {len(comments)}件取得済み...")
 
                 # リトライロジック
                 retry_count = 0
@@ -184,12 +189,23 @@ class YouTubeCollector:
 
                     except HttpError as e:
                         retry_count += 1
+                        error_detail = str(e)
+
+                        # エラーの詳細を表示
+                        if hasattr(e, 'resp') and hasattr(e.resp, 'status'):
+                            status_code = e.resp.status
+                            print(f"⚠️ API Error {status_code} (リトライ {retry_count}/{max_retries}): {error_detail}")
+                        else:
+                            print(f"⚠️ API Error (リトライ {retry_count}/{max_retries}): {error_detail}")
+
                         if retry_count >= max_retries:
+                            print(f"❌ 最大リトライ回数 ({max_retries}) に達しました")
                             raise  # 最大リトライ回数に達したら例外を投げる
 
-                        print(f"API Error (retry {retry_count}/{max_retries}): {e}")
                         import time
-                        time.sleep(retry_delay * retry_count)  # 指数バックオフ
+                        wait_time = retry_delay * retry_count  # 指数バックオフ
+                        print(f"⏱️  {wait_time}秒待機してリトライします...")
+                        time.sleep(wait_time)
 
                 # コメントを処理
                 for item in response['items']:
@@ -238,13 +254,38 @@ class YouTubeCollector:
                 # 次のページトークンをチェック
                 next_page_token = response.get('nextPageToken')
                 if not next_page_token:
+                    print(f"✅ 全ページ取得完了（ページ数: {page_count}）")
                     break  # これ以上ページがない
 
-            print(f"取得完了: {len(comments)}件のコメント（返信含む）")
+            print(f"🎉 取得完了: {len(comments)}件のコメント（返信含む）")
+            print(f"   📊 取得ページ数: {page_count}ページ")
+            print(f"   📝 トップレベルコメント + 返信: {total_fetched}件")
             return comments
 
         except HttpError as e:
-            print(f"Error getting comments for video {video_id}: {e}")
+            error_reason = None
+            if hasattr(e, 'resp') and hasattr(e.resp, 'status'):
+                status_code = e.resp.status
+                if status_code == 403:
+                    if 'commentsDisabled' in str(e):
+                        error_reason = "この動画はコメントが無効になっています"
+                    elif 'quotaExceeded' in str(e):
+                        error_reason = "YouTube API のクォータ制限に達しました（1日の上限）"
+                    else:
+                        error_reason = "APIアクセス権限エラー"
+                elif status_code == 404:
+                    error_reason = "動画が見つかりません"
+
+            if error_reason:
+                print(f"❌ Error getting comments for video {video_id}: {error_reason}")
+            else:
+                print(f"❌ Error getting comments for video {video_id}: {e}")
+
+            # 途中まで取得できていればそれを返す（ログに警告を出す）
+            if comments:
+                print(f"⚠️ 警告: {len(comments)}件のコメントを取得しましたが、全件取得できませんでした")
+                print(f"   理由: {error_reason or str(e)}")
+
             return comments
 
     def save_to_json(self, data: Dict, filename: str):

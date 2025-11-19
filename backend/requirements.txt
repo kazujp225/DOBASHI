@@ -23,7 +23,7 @@ google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.0
 
 # Database
-sqlalchemy==2.0.23
+sqlalchemy>=2.0.44
 alembic==1.13.1
 
 # Security & Authentication

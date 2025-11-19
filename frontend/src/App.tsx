@@ -6,8 +6,6 @@ import Dashboard from './pages/Dashboard'
 import Analysis from './pages/Analysis'
 import Collection from './pages/Collection'
 import Tigers from './pages/Tigers'
-import Sentiment from './pages/Sentiment'
-import WordCloudPage from './pages/WordCloudPage'
 import Comparison from './pages/Comparison'
 import Reports from './pages/Reports'
 
@@ -47,8 +45,6 @@ function AppContent() {
           <Route path="/analysis" element={<Analysis />} />
           <Route path="/collection" element={<Collection />} />
           <Route path="/tigers" element={<Tigers />} />
-          <Route path="/sentiment" element={<Sentiment />} />
-          <Route path="/wordcloud" element={<WordCloudPage />} />
           <Route path="/comparison" element={<Comparison />} />
           <Route path="/reports" element={<Reports />} />
         </Routes>

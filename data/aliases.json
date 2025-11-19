@@ -73,8 +73,23 @@
       "priority": 2
     },
     {
+      "alias": "岩井",
+      "type": "short",
+      "priority": 2
+    },
+    {
       "alias": "不動産岩井",
       "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "いわい",
+      "type": "hiragana",
+      "priority": 3
+    },
+    {
+      "alias": "イワイ",
+      "type": "katakana",
       "priority": 3
     },
     {
@@ -97,12 +112,22 @@
     {
       "alias": "あすか",
       "type": "short",
+      "priority": 2
+    },
+    {
+      "alias": "アスカ",
+      "type": "katakana",
       "priority": 3
     },
     {
       "alias": "美容あすか",
       "type": "nickname",
       "priority": 4
+    },
+    {
+      "alias": "あすか先生",
+      "type": "casual",
+      "priority": 3
     }
   ],
   "sasaki": [
@@ -117,8 +142,23 @@
       "priority": 2
     },
     {
+      "alias": "佐々木",
+      "type": "short",
+      "priority": 2
+    },
+    {
       "alias": "マーケ佐々木",
       "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "ささき",
+      "type": "hiragana",
+      "priority": 3
+    },
+    {
+      "alias": "ササキ",
+      "type": "katakana",
       "priority": 3
     },
     {
@@ -139,12 +179,79 @@
       "priority": 2
     },
     {
+      "alias": "田中",
+      "type": "short",
+      "priority": 2
+    },
+    {
       "alias": "IT田中",
       "type": "nickname",
       "priority": 3
     },
     {
+      "alias": "たなか",
+      "type": "hiragana",
+      "priority": 3
+    },
+    {
+      "alias": "タナカ",
+      "type": "katakana",
+      "priority": 3
+    },
+    {
       "alias": "田中修",
+      "type": "fullname",
+      "priority": 5
+    }
+  ],
+  "kuwata": [
+    {
+      "alias": "桑田社長",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "桑田さん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "桑田",
+      "type": "short",
+      "priority": 2
+    },
+    {
+      "alias": "リューピー",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "りゅーぴー",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "りゅうぴー",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "リュウピー",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "りゅーP",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "リューP",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "桑田龍生",
       "type": "fullname",
       "priority": 5
     }

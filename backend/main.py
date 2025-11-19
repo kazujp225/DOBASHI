@@ -5,7 +5,7 @@ FastAPI Backend
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends, WebSocket, Request, status
+from fastapi import FastAPI, Depends, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
@@ -16,10 +16,8 @@ import logging
 
 # ローカルインポート
 from api.routers import (
-    videos, tigers, analysis, stats, auth, export,
-    sentiment, wordcloud, comparison
+    videos, tigers, analysis, stats, auth, export, comparison, tiger_extraction
 )
-from api.websocket import websocket_endpoint
 from core import settings
 from models import init_db
 from api.dependencies import get_current_user_optional
@@ -127,14 +125,8 @@ app.include_router(tigers.router, prefix=f"{api_v1_prefix}/tigers", tags=["tiger
 app.include_router(analysis.router, prefix=f"{api_v1_prefix}/analysis", tags=["analysis"])
 app.include_router(stats.router, prefix=f"{api_v1_prefix}/stats", tags=["stats"])
 app.include_router(export.router, prefix=f"{api_v1_prefix}/export", tags=["export"])
-app.include_router(sentiment.router, prefix=f"{api_v1_prefix}/sentiment", tags=["sentiment"])
-app.include_router(wordcloud.router, prefix=f"{api_v1_prefix}/wordcloud", tags=["wordcloud"])
 app.include_router(comparison.router, prefix=f"{api_v1_prefix}/comparison", tags=["comparison"])
-
-# WebSocketエンドポイント
-@app.websocket("/ws")
-async def websocket_route(websocket: WebSocket):
-    await websocket_endpoint(websocket)
+app.include_router(tiger_extraction.router, prefix=f"{api_v1_prefix}/tigers", tags=["tiger-extraction"])
 
 
 @app.get("/")

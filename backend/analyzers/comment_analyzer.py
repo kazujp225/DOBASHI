@@ -95,7 +95,46 @@ class CommentAnalyzer:
 
                 # 文字列マッチング（単純な部分文字列検索）
                 if alias in normalized_text:
-                    # 短縮形の場合は文脈チェック
+                    # 短縮形や短い名前の場合は境界チェック
+                    skip_this_alias = False
+
+                    # 短い名前（3文字以下）の場合は前方境界チェック
+                    if len(alias) <= 3 and alias_info['type'] in ['short', 'casual']:
+                        # マッチ位置を探す
+                        alias_pos = normalized_text.find(alias)
+                        # 助詞リスト（これらの後ろは境界として扱う）
+                        particles = ['は', 'が', 'を', 'に', 'へ', 'と', 'や', 'の', 'で', 'も', 'から', 'まで']
+
+                        while alias_pos != -1:
+                            # 前の文字をチェック
+                            if alias_pos > 0:
+                                prev_char = normalized_text[alias_pos - 1]
+
+                                # 助詞の場合はOK
+                                if prev_char in particles:
+                                    break
+
+                                # 空白、記号の場合はOK
+                                if not prev_char.isalnum() and prev_char not in ['ー', 'っ', 'ゃ', 'ゅ', 'ょ']:
+                                    break
+
+                                # 前の文字が漢字（名前の一部の可能性）の場合はNG
+                                if '\u4e00' <= prev_char <= '\u9fff':
+                                    # 次の出現位置を探す
+                                    alias_pos = normalized_text.find(alias, alias_pos + 1)
+                                    continue
+
+                            # 境界チェックをパスした
+                            break
+
+                        # 有効な位置が見つからなかった
+                        if alias_pos == -1:
+                            skip_this_alias = True
+
+                    if skip_this_alias:
+                        continue
+
+                    # 短縮形（2文字以下）の場合は追加で文脈チェック
                     if alias_info['type'] == 'short' and len(alias) <= 2:
                         # 「社長」「さん」などが後続しているかチェック
                         pattern = alias + r'(社長|さん|氏)'

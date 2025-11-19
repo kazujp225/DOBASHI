@@ -9,14 +9,10 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 
 from models import get_db, Video, Comment, VideoTigerStats, Tiger, CommentTigerRelation
-from analyzers.sentiment_analyzer import SentimentAnalyzer
 from core.cache import cache_manager
 from ..dependencies import get_current_user_optional
 
 router = APIRouter()
-
-# 感情分析器のインスタンス
-sentiment_analyzer = SentimentAnalyzer()
 
 
 @router.post("/videos")
@@ -63,29 +59,13 @@ async def compare_videos(
                     "rate_total": round(stat.rate_total * 100, 2)
                 })
 
-        # コメントのサンプルを取得して感情分析
-        sample_comments = db.query(Comment).filter(
-            Comment.video_id == video_id
-        ).limit(100).all()
-
-        sentiment_summary = {"positive": 0, "negative": 0, "neutral": 0}
-        if sample_comments:
-            for comment in sample_comments:
-                result = sentiment_analyzer.analyze(comment.text_original)
-                sentiment_summary[result.sentiment] += 1
-
         comparison_results.append({
             "video_id": video_id,
             "title": video.title[:50] + "..." if len(video.title) > 50 else video.title,
             "published_at": video.published_at.isoformat() if video.published_at else None,
             "view_count": video.view_count,
             "comment_count": video.comment_count,
-            "top_tigers": top_tigers,
-            "sentiment": {
-                "positive_ratio": round(sentiment_summary["positive"] / len(sample_comments) * 100, 1) if sample_comments else 0,
-                "negative_ratio": round(sentiment_summary["negative"] / len(sample_comments) * 100, 1) if sample_comments else 0,
-                "neutral_ratio": round(sentiment_summary["neutral"] / len(sample_comments) * 100, 1) if sample_comments else 0
-            }
+            "top_tigers": top_tigers
         })
 
     # メトリクスのサマリー
@@ -155,22 +135,6 @@ async def compare_tiger_performance(
             Video.published_at <= end_date
         ).first()
 
-        # コメントの感情分析
-        comments = db.query(Comment).join(
-            CommentTigerRelation,
-            Comment.comment_id == CommentTigerRelation.comment_id
-        ).filter(
-            CommentTigerRelation.tiger_id == tiger_id,
-            Comment.published_at >= start_date,
-            Comment.published_at <= end_date
-        ).limit(200).all()
-
-        sentiment_stats = {"positive": 0, "negative": 0, "neutral": 0}
-        if comments:
-            for comment in comments:
-                result = sentiment_analyzer.analyze(comment.text_original)
-                sentiment_stats[result.sentiment] += 1
-
         comparison_results.append({
             "tiger_id": tiger_id,
             "display_name": tiger.display_name,
@@ -180,12 +144,6 @@ async def compare_tiger_performance(
                 "avg_rate_total": round((stats_query.avg_rate_total or 0) * 100, 2),
                 "avg_rate_entity": round((stats_query.avg_rate_entity or 0) * 100, 2),
                 "avg_rank": round(stats_query.avg_rank or 0, 1)
-            },
-            "sentiment": {
-                "positive_ratio": round(sentiment_stats["positive"] / len(comments) * 100, 1) if comments else 0,
-                "negative_ratio": round(sentiment_stats["negative"] / len(comments) * 100, 1) if comments else 0,
-                "neutral_ratio": round(sentiment_stats["neutral"] / len(comments) * 100, 1) if comments else 0,
-                "sample_size": len(comments)
             }
         })
 
@@ -194,14 +152,11 @@ async def compare_tiger_performance(
         if "error" not in result:
             # 総合スコアを計算（独自の重み付け）
             metrics = result["metrics"]
-            sentiment = result["sentiment"]
 
             performance_score = (
                 metrics["total_mentions"] * 0.3 +
                 metrics["avg_rate_total"] * 10 +
                 metrics["avg_rate_entity"] * 5 +
-                sentiment["positive_ratio"] * 2 -
-                sentiment["negative_ratio"] * 1 +
                 (6 - metrics["avg_rank"]) * 20  # 順位が高いほどスコア高
             )
             result["performance_score"] = round(performance_score, 2)

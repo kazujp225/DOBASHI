@@ -14,7 +14,7 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
     display_name: tiger?.display_name || '',
     full_name: tiger?.full_name || '',
     description: tiger?.description || '',
-    image_url: tiger?.image_url || '',
+    image_url: '',
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -26,7 +26,7 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
         display_name: tiger.display_name,
         full_name: tiger.full_name,
         description: tiger.description || '',
-        image_url: tiger.image_url || '',
+        image_url: '',
       })
     }
   }, [tiger])
@@ -176,27 +176,6 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
           className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 hover:border-gray-300 dark:hover:border-gray-500 transition-all resize-none"
           placeholder="フランチャイズコンサルタント"
         />
-      </div>
-
-      {/* 画像URL */}
-      <div className="relative">
-        <label htmlFor="image_url" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-          画像URL
-        </label>
-        <input
-          type="url"
-          id="image_url"
-          value={formData.image_url}
-          onChange={(e) => handleChange('image_url', e.target.value)}
-          disabled={isLoading}
-          className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 hover:border-gray-300 dark:hover:border-gray-500 transition-all"
-          placeholder="https://example.com/image.jpg"
-        />
-        <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <p className="text-xs text-blue-800 dark:text-blue-200">
-            画像URLを入力すると、自動的にダウンロードしてキャッシュします
-          </p>
-        </div>
       </div>
 
       {/* ボタン */}

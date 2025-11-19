@@ -1,0 +1,255 @@
+"""
+社長情報の自動抽出モジュール
+動画のタイトル・概要欄から出演社長を特定
+"""
+import re
+from typing import List, Dict, Optional, Tuple
+from sqlalchemy.orm import Session
+
+from models import Tiger, VideoTiger, Video
+
+
+class TigerExtractor:
+    """動画から社長情報を抽出するクラス"""
+
+    def __init__(self, db: Session):
+        self.db = db
+        # 社長マスタを全件取得してキャッシュ
+        self.tigers = db.query(Tiger).filter(Tiger.is_active == True).all()
+
+        # 社長名のバリエーションを構築
+        self.tiger_patterns = {}
+        for tiger in self.tigers:
+            patterns = set()
+
+            # 表示名
+            if tiger.display_name:
+                patterns.add(tiger.display_name)
+                # 「社長」を除いた名前
+                patterns.add(tiger.display_name.replace('社長', '').strip())
+
+            # 本名
+            if tiger.full_name:
+                patterns.add(tiger.full_name)
+                # 姓のみ
+                if ' ' in tiger.full_name:
+                    patterns.add(tiger.full_name.split()[0])
+
+            self.tiger_patterns[tiger.tiger_id] = patterns
+
+    def extract_from_title(self, title: str) -> List[str]:
+        """
+        動画タイトルから社長を抽出
+
+        Args:
+            title: 動画タイトル
+
+        Returns:
+            抽出された社長IDのリスト
+        """
+        found_tiger_ids = set()
+
+        # パターン1: 【社長名】形式
+        bracket_matches = re.findall(r'【([^】]+)】', title)
+        for match in bracket_matches:
+            tiger_id = self._match_tiger_name(match)
+            if tiger_id:
+                found_tiger_ids.add(tiger_id)
+
+        # パターン2: 各社長のパターンと直接マッチング
+        for tiger_id, patterns in self.tiger_patterns.items():
+            for pattern in patterns:
+                if len(pattern) >= 2 and pattern in title:
+                    found_tiger_ids.add(tiger_id)
+
+        return list(found_tiger_ids)
+
+    def extract_from_description(self, description: str) -> List[str]:
+        """
+        動画概要欄から社長を抽出
+
+        Args:
+            description: 動画概要欄
+
+        Returns:
+            抽出された社長IDのリスト
+        """
+        found_tiger_ids = set()
+
+        if not description:
+            return []
+
+        # 概要欄を行ごとに処理
+        lines = description.split('\n')
+
+        for line in lines[:100]:  # 最初の100行のみチェック
+            # タイムスタンプ形式: 00:00 社長名
+            timestamp_match = re.search(r'(\d{1,2}:\d{2})\s*(.+)', line)
+            if timestamp_match:
+                name_part = timestamp_match.group(2)
+                tiger_id = self._match_tiger_name(name_part)
+                if tiger_id:
+                    found_tiger_ids.add(tiger_id)
+
+            # 「出演：」や「登場：」などのキーワード
+            if any(keyword in line for keyword in ['出演', '登場', 'ゲスト', '審査員']):
+                tiger_id = self._match_tiger_name(line)
+                if tiger_id:
+                    found_tiger_ids.add(tiger_id)
+
+        return list(found_tiger_ids)
+
+    def extract_tigers(self, video_id: str) -> Dict[str, any]:
+        """
+        動画から社長を自動抽出してデータベースに登録
+
+        Args:
+            video_id: YouTube動画ID
+
+        Returns:
+            抽出結果の辞書
+        """
+        # 動画情報を取得
+        video = self.db.query(Video).filter(Video.video_id == video_id).first()
+        if not video:
+            return {
+                "success": False,
+                "error": "動画が見つかりません",
+                "video_id": video_id
+            }
+
+        # タイトルから抽出
+        title_tigers = self.extract_from_title(video.title)
+
+        # 概要欄から抽出
+        description_tigers = self.extract_from_description(video.description or "")
+
+        # 重複を除いて統合
+        all_tiger_ids = list(set(title_tigers + description_tigers))
+
+        # 既存の登録をチェック
+        existing = self.db.query(VideoTiger).filter(
+            VideoTiger.video_id == video_id
+        ).all()
+        existing_tiger_ids = {vt.tiger_id for vt in existing}
+
+        # 新規登録が必要な社長
+        new_tiger_ids = [tid for tid in all_tiger_ids if tid not in existing_tiger_ids]
+
+        # データベースに登録
+        added_count = 0
+        for tiger_id in new_tiger_ids:
+            video_tiger = VideoTiger(
+                video_id=video_id,
+                tiger_id=tiger_id
+            )
+            self.db.add(video_tiger)
+            added_count += 1
+
+        if added_count > 0:
+            self.db.commit()
+
+        # 結果を構築
+        all_registered_tigers = []
+        for tiger_id in all_tiger_ids:
+            tiger = next((t for t in self.tigers if t.tiger_id == tiger_id), None)
+            if tiger:
+                all_registered_tigers.append({
+                    "tiger_id": tiger_id,
+                    "display_name": tiger.display_name,
+                    "source": "title" if tiger_id in title_tigers else "description",
+                    "newly_added": tiger_id in new_tiger_ids
+                })
+
+        return {
+            "success": True,
+            "video_id": video_id,
+            "video_title": video.title,
+            "total_tigers_found": len(all_tiger_ids),
+            "newly_added": added_count,
+            "already_registered": len(existing_tiger_ids),
+            "tigers": all_registered_tigers
+        }
+
+    def _match_tiger_name(self, text: str) -> Optional[str]:
+        """
+        テキストから社長を特定
+
+        Args:
+            text: マッチング対象のテキスト
+
+        Returns:
+            マッチした社長のID（見つからない場合はNone）
+        """
+        text = text.strip()
+
+        # 各社長のパターンとマッチング
+        for tiger_id, patterns in self.tiger_patterns.items():
+            for pattern in patterns:
+                if len(pattern) >= 2 and pattern in text:
+                    return tiger_id
+
+        return None
+
+    def extract_batch(self, video_ids: List[str]) -> Dict[str, any]:
+        """
+        複数動画から一括抽出
+
+        Args:
+            video_ids: 動画IDのリスト
+
+        Returns:
+            一括抽出結果
+        """
+        results = []
+        total_added = 0
+        total_found = 0
+
+        for video_id in video_ids:
+            result = self.extract_tigers(video_id)
+            results.append(result)
+
+            if result.get("success"):
+                total_added += result.get("newly_added", 0)
+                total_found += result.get("total_tigers_found", 0)
+
+        return {
+            "success": True,
+            "total_videos": len(video_ids),
+            "total_tigers_found": total_found,
+            "total_newly_added": total_added,
+            "results": results
+        }
+
+
+def extract_tigers_from_video(db: Session, video_id: str) -> Dict[str, any]:
+    """
+    動画から社長を抽出する便利関数
+
+    Args:
+        db: データベースセッション
+        video_id: YouTube動画ID
+
+    Returns:
+        抽出結果
+    """
+    extractor = TigerExtractor(db)
+    return extractor.extract_tigers(video_id)
+
+
+def extract_tigers_from_all_videos(db: Session) -> Dict[str, any]:
+    """
+    全動画から社長を一括抽出
+
+    Args:
+        db: データベースセッション
+
+    Returns:
+        一括抽出結果
+    """
+    # 全動画のIDを取得
+    videos = db.query(Video).all()
+    video_ids = [v.video_id for v in videos]
+
+    extractor = TigerExtractor(db)
+    return extractor.extract_batch(video_ids)

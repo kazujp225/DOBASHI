@@ -100,92 +100,91 @@ const Tigers = () => {
           </div>
         </div>
       ) : tigers && tigers.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tigers.map((tiger) => (
-            <div
-              key={tiger.tiger_id}
-              className="group relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
-            >
-              {/* カード背景グラデーション */}
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-transparent dark:from-orange-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-              <div className="relative p-6">
-                {/* プロフィール画像 */}
-                <div className="flex items-start gap-4 mb-4">
-                  {getImageUrl(tiger.image_url) ? (
-                    <img
-                      src={getImageUrl(tiger.image_url)}
-                      alt={tiger.display_name}
-                      className="w-16 h-16 rounded-2xl object-cover shadow-md ring-2 ring-orange-100 dark:ring-orange-900/30"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                        if (fallback) fallback.style.display = 'flex';
-                      }}
-                    />
-                  ) : null}
-                  <div
-                    className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-md"
-                    style={{ display: getImageUrl(tiger.image_url) ? 'none' : 'flex' }}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gradient-to-r from-orange-50 to-orange-100/50 dark:from-gray-700 dark:to-gray-700/50 border-b border-gray-200 dark:border-gray-600">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                    社長ID
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                    表示名
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                    本名
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                    説明
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                    操作
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {tigers.map((tiger, index) => (
+                  <tr
+                    key={tiger.tiger_id}
+                    className="group hover:bg-orange-50/50 dark:hover:bg-gray-700/50 transition-colors"
                   >
-                    <span className="text-2xl font-bold text-white">
-                      {tiger.display_name.charAt(0)}
-                    </span>
-                  </div>
-
-                  {/* アクションボタン */}
-                  <div className="ml-auto flex gap-2">
-                    <button
-                      onClick={() => setViewingAliasesTiger(tiger)}
-                      className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
-                      title="別名一覧"
-                    >
-                      <Tag size={18} />
-                    </button>
-                    <button
-                      onClick={() => setEditingTiger(tiger)}
-                      className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-orange-100 dark:hover:bg-orange-900/30 text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-all"
-                      title="編集"
-                    >
-                      <Edit size={18} />
-                    </button>
-                    <button
-                      onClick={() => setDeletingTiger(tiger)}
-                      className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-all"
-                      title="削除"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* 社長情報 */}
-                <div className="space-y-3">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
-                      {tiger.display_name}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {tiger.full_name}
-                    </p>
-                  </div>
-
-                  {tiger.description && (
-                    <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
-                      {tiger.description}
-                    </p>
-                  )}
-
-                  {/* ID バッジ */}
-                  <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
-                    <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                      ID: {tiger.tiger_id}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
+                        {tiger.tiger_id}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+                          <span className="text-lg font-bold text-white">
+                            {tiger.display_name.charAt(0)}
+                          </span>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {tiger.display_name}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-900 dark:text-white">
+                        {tiger.full_name}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {tiger.description || '-'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => setViewingAliasesTiger(tiger)}
+                          className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
+                          title="別名一覧"
+                        >
+                          <Tag size={16} />
+                        </button>
+                        <button
+                          onClick={() => setEditingTiger(tiger)}
+                          className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-orange-100 dark:hover:bg-orange-900/30 text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-all"
+                          title="編集"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={() => setDeletingTiger(tiger)}
+                          className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-all"
+                          title="削除"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-12">
