@@ -660,14 +660,7 @@
     "updated_at": "2025-11-11T11:07:32Z",
     "is_reply": false,
     "parent_id": null,
-    "tiger_mentions": [
-      {
-        "tiger_id": "hayashi",
-        "matched_alias": "林社長",
-        "alias_type": "formal",
-        "priority": 1
-      }
-    ]
+    "tiger_mentions": []
   },
   {
     "comment_id": "UgzF59RTbPqculLAV5p4AaABAg",
@@ -1031,14 +1024,7 @@
     "updated_at": "2025-11-10T23:55:16Z",
     "is_reply": false,
     "parent_id": null,
-    "tiger_mentions": [
-      {
-        "tiger_id": "hayashi",
-        "matched_alias": "林さん",
-        "alias_type": "casual",
-        "priority": 2
-      }
-    ]
+    "tiger_mentions": []
   },
   {
     "comment_id": "Ugyr9svp3tTDUKZnahp4AaABAg",
@@ -1194,14 +1180,7 @@
     "updated_at": "2025-11-10T18:15:30Z",
     "is_reply": false,
     "parent_id": null,
-    "tiger_mentions": [
-      {
-        "tiger_id": "hayashi",
-        "matched_alias": "はやし",
-        "alias_type": "hiragana",
-        "priority": 3
-      }
-    ]
+    "tiger_mentions": []
   },
   {
     "comment_id": "Ugxu_OxA3wANiTb8tlR4AaABAg",
@@ -1279,14 +1258,7 @@
     "updated_at": "2025-11-10T15:54:07Z",
     "is_reply": false,
     "parent_id": null,
-    "tiger_mentions": [
-      {
-        "tiger_id": "hayashi",
-        "matched_alias": "林さん",
-        "alias_type": "casual",
-        "priority": 2
-      }
-    ]
+    "tiger_mentions": []
   },
   {
     "comment_id": "UgwwM5A64CFrijC1rdx4AaABAg",
@@ -3496,14 +3468,7 @@
     "updated_at": "2025-11-09T15:38:18Z",
     "is_reply": false,
     "parent_id": null,
-    "tiger_mentions": [
-      {
-        "tiger_id": "hayashi",
-        "matched_alias": "林社長",
-        "alias_type": "formal",
-        "priority": 1
-      }
-    ]
+    "tiger_mentions": []
   },
   {
     "comment_id": "UgxA050JycwaKpyeCgF4AaABAg",
@@ -4478,14 +4443,7 @@
     "updated_at": "2025-11-09T13:32:38Z",
     "is_reply": false,
     "parent_id": null,
-    "tiger_mentions": [
-      {
-        "tiger_id": "hayashi",
-        "matched_alias": "林さん",
-        "alias_type": "casual",
-        "priority": 2
-      }
-    ]
+    "tiger_mentions": []
   },
   {
     "comment_id": "UgxFnhx4MOitQ19PHdF4AaABAg",
@@ -4836,14 +4794,7 @@
     "updated_at": "2025-11-09T12:21:37Z",
     "is_reply": false,
     "parent_id": null,
-    "tiger_mentions": [
-      {
-        "tiger_id": "hayashi",
-        "matched_alias": "林さん",
-        "alias_type": "casual",
-        "priority": 2
-      }
-    ]
+    "tiger_mentions": []
   },
   {
     "comment_id": "UgxxrFY7ZBZ8GRnQhsl4AaABAg",
@@ -4908,14 +4859,7 @@
     "updated_at": "2025-11-09T12:12:36Z",
     "is_reply": false,
     "parent_id": null,
-    "tiger_mentions": [
-      {
-        "tiger_id": "hayashi",
-        "matched_alias": "林さん",
-        "alias_type": "casual",
-        "priority": 2
-      }
-    ]
+    "tiger_mentions": []
   },
   {
     "comment_id": "UgxSIR3OfymsbeIXha54AaABAg.APIy8uPLA7qAPJ2vSkqaD7",
@@ -5370,14 +5314,7 @@
     "updated_at": "2025-11-10T11:19:03Z",
     "is_reply": true,
     "parent_id": "UgySlbsSqt4HPu9rT-d4AaABAg",
-    "tiger_mentions": [
-      {
-        "tiger_id": "hayashi",
-        "matched_alias": "林さん",
-        "alias_type": "casual",
-        "priority": 2
-      }
-    ]
+    "tiger_mentions": []
   },
   {
     "comment_id": "UgySlbsSqt4HPu9rT-d4AaABAg.APIuMaNfpplAPMsgH8zgDh",
@@ -5689,14 +5626,7 @@
     "updated_at": "2025-11-09T11:27:36Z",
     "is_reply": false,
     "parent_id": null,
-    "tiger_mentions": [
-      {
-        "tiger_id": "hayashi",
-        "matched_alias": "林さん",
-        "alias_type": "casual",
-        "priority": 2
-      }
-    ]
+    "tiger_mentions": []
   },
   {
     "comment_id": "UgzgctQ9lCQLHyFxzXt4AaABAg",

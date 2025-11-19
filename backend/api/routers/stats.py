@@ -1,13 +1,16 @@
 """
 Stats API Router - 統計情報
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List
 import json
 import os
 import glob
 
 from ..schemas import VideoStats, RankingStats, TigerStats
+from models import get_db, Video, Tiger, VideoTigerStats, Comment, CommentTigerRelation
 
 router = APIRouter()
 
@@ -33,69 +36,47 @@ async def get_video_stats(video_id: str):
 
 
 @router.get("/ranking", response_model=RankingStats)
-async def get_ranking(period: str = "all"):
+async def get_ranking(period: str = "all", db: Session = Depends(get_db)):
     """
-    社長別ランキングを取得
+    社長別ランキングを取得（データベースベース）
 
     Args:
         period: 集計期間 ("all", "month", "week")
     """
-    data_dir = os.path.join(os.path.dirname(__file__), "../../../data")
+    # 動画数を取得
+    total_videos = db.query(Video).count()
 
-    # 全ての統計ファイルを読み込み
-    stats_files = glob.glob(os.path.join(data_dir, "video_stats_*.json"))
+    # 社長ごとの統計を集計
+    results = db.query(
+        VideoTigerStats.tiger_id,
+        Tiger.display_name,
+        func.sum(VideoTigerStats.n_tiger).label('total_mentions'),
+        func.count(VideoTigerStats.video_id).label('total_videos'),
+        func.avg(VideoTigerStats.rate_total).label('avg_rate_total'),
+        func.avg(VideoTigerStats.rate_entity).label('avg_rate_entity')
+    ).join(
+        Tiger, VideoTigerStats.tiger_id == Tiger.tiger_id
+    ).group_by(
+        VideoTigerStats.tiger_id, Tiger.display_name
+    ).order_by(
+        func.sum(VideoTigerStats.n_tiger).desc()
+    ).all()
 
-    if not stats_files:
-        return RankingStats(
-            period=period,
-            total_videos=0,
-            tiger_rankings=[]
-        )
-
-    # 社長ごとの集計
-    tiger_aggregation = {}
-
-    for stats_file in stats_files:
-        with open(stats_file, 'r', encoding='utf-8') as f:
-            stats = json.load(f)
-
-        for tiger_stat in stats.get('tiger_stats', []):
-            tiger_id = tiger_stat['tiger_id']
-
-            if tiger_id not in tiger_aggregation:
-                tiger_aggregation[tiger_id] = {
-                    'tiger_id': tiger_id,
-                    'display_name': tiger_stat['display_name'],
-                    'total_mentions': 0,
-                    'total_videos': 0,
-                    'avg_rate_total': 0,
-                    'avg_rate_entity': 0
-                }
-
-            tiger_aggregation[tiger_id]['total_mentions'] += tiger_stat.get('mention_count', 0)
-            tiger_aggregation[tiger_id]['total_videos'] += 1
-            tiger_aggregation[tiger_id]['avg_rate_total'] += tiger_stat.get('rate_total', 0)
-            tiger_aggregation[tiger_id]['avg_rate_entity'] += tiger_stat.get('rate_entity', 0)
-
-    # 平均を計算
-    for tiger_id, data in tiger_aggregation.items():
-        if data['total_videos'] > 0:
-            data['avg_rate_total'] /= data['total_videos']
-            data['avg_rate_entity'] /= data['total_videos']
-
-    # ランキングでソート
-    rankings = sorted(
-        tiger_aggregation.values(),
-        key=lambda x: x['total_mentions'],
-        reverse=True
-    )
-
-    # 順位を追加
-    for i, ranking in enumerate(rankings, 1):
-        ranking['rank'] = i
+    # ランキングを構築
+    rankings = []
+    for i, (tiger_id, display_name, total_mentions, total_vids, avg_rate_total, avg_rate_entity) in enumerate(results, 1):
+        rankings.append({
+            'tiger_id': tiger_id,
+            'display_name': display_name,
+            'total_mentions': int(total_mentions or 0),
+            'total_videos': int(total_vids or 0),
+            'avg_rate_total': float(avg_rate_total or 0),
+            'avg_rate_entity': float(avg_rate_entity or 0),
+            'rank': i
+        })
 
     return RankingStats(
         period=period,
-        total_videos=len(stats_files),
+        total_videos=total_videos,
         tiger_rankings=rankings
     )
