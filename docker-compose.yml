@@ -13,6 +13,7 @@ services:
       - DATABASE_URL=sqlite:////app/data/tora_analysis.db
       - REDIS_URL=redis://redis:6379/0
       - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - YOUTUBE_CHANNEL_IDS=UCTyKZzmKi95wxmCg9rU-j6Q
       - SECRET_KEY=${SECRET_KEY:-default-secret-key-change-in-production}
     depends_on:
       - redis

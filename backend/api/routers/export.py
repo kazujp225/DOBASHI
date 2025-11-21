@@ -15,6 +15,9 @@ from utils.export import (
     export_to_excel
 )
 from ..dependencies import get_current_user_optional
+from ..schemas import MentionsExportRequest
+from pathlib import Path
+from utils.mention_aggregator import aggregate_mentions
 
 router = APIRouter()
 
@@ -189,5 +192,62 @@ async def export_all_excel(
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"reiwa_no_tora_data_{timestamp}.xlsx"
+
+    return export_to_excel(data_dict, filename)
+
+
+@router.post("/mentions/excel")
+async def export_mentions_excel(
+    request: MentionsExportRequest,
+    current_user=Depends(get_current_user_optional)
+):
+    """
+    指定期間・対象社長の言及集計をExcel出力
+
+    Sheets:
+      - 動画一覧: 動画ごとのURL/配信日/出演者数/コメント総数/各社長のコメント出現数
+      - 人別集計: 各社長の出演動画本数/コメント出現数
+      - 年間サマリー: 期間全体の概要とランキング
+    """
+    # 期間の解析
+    try:
+        start_dt = datetime.fromisoformat(request.start_date)
+    except Exception:
+        raise HTTPException(status_code=400, detail="start_dateはYYYY-MM-DD形式で指定してください")
+
+    if request.end_date:
+        try:
+            end_dt = datetime.fromisoformat(request.end_date)
+        except Exception:
+            raise HTTPException(status_code=400, detail="end_dateはYYYY-MM-DD形式で指定してください")
+    else:
+        end_dt = datetime.now()
+
+    if not request.tiger_ids:
+        raise HTTPException(status_code=400, detail="tiger_idsを1件以上指定してください")
+
+    # 集計実行（JSONベース）
+    base_dir = Path(__file__).resolve().parents[3]
+    videos_sheet, people_sheet, summary_sheet = aggregate_mentions(
+        base_dir=base_dir,
+        start_date=start_dt,
+        end_date=end_dt,
+        tiger_ids=request.tiger_ids,
+        count_mode=(request.count_mode or "comment"),
+        performers_source=(request.performers_source or "comments"),
+    )
+
+    # Excel出力
+    data_dict = {
+        "動画一覧": videos_sheet,
+        "人別集計": people_sheet,
+        "年間サマリー": summary_sheet,
+    }
+
+    # ファイル名
+    if request.filename:
+        filename = request.filename if request.filename.endswith(".xlsx") else f"{request.filename}.xlsx"
+    else:
+        filename = f"mentions_{start_dt.strftime('%Y%m%d')}_{end_dt.strftime('%Y%m%d')}.xlsx"
 
     return export_to_excel(data_dict, filename)

@@ -88,7 +88,7 @@ class Comment(CommentBase):
 
 class CommentWithMentions(Comment):
     """言及情報付きコメント"""
-    mentioned_tigers: List[str] = []
+    mentioned_tigers: List[str] = Field(default_factory=list)
 
 
 # ========== Analysis Schemas ==========
@@ -158,7 +158,7 @@ class CollectionProgress(BaseModel):
     collected_comments: int
     total_comments: Optional[int] = None
     message: Optional[str] = None
-    logs: List[LogEntry] = []
+    logs: List[LogEntry] = Field(default_factory=list)
 
 
 # ========== Authentication Schemas ==========
@@ -208,3 +208,21 @@ class UserResponse(UserBase):
 class UserInDB(UserResponse):
     """データベース内のユーザー"""
     hashed_password: str
+
+
+# ========== Mentions Export Schemas ==========
+
+class MentionsExportRequest(BaseModel):
+    """言及集計Excel出力リクエスト"""
+    start_date: str = Field(..., description="開始日(YYYY-MM-DD)")
+    end_date: Optional[str] = Field(None, description="終了日(YYYY-MM-DD) 未指定は今日")
+    tiger_ids: List[str] = Field(..., min_items=1, description="対象社長IDの配列")
+    filename: Optional[str] = Field(None, description="保存時のファイル名(省略可)")
+    count_mode: str = Field(
+        default="comment",
+        description="言及カウント方式: 'comment' (コメント出現数) or 'occurrence' (文字列登場回数)"
+    )
+    performers_source: str = Field(
+        default="comments",
+        description="出演者算定: 'comments' (コメント上の言及) or 'db' (DBのVideoTiger)"
+    )

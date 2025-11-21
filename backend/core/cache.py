@@ -16,6 +16,7 @@ class CacheManager:
 
     def __init__(self):
         self.redis_client = None
+        # メモリキャッシュ: key -> (value, expire_ts)
         self.memory_cache = {}
 
         # Redisへの接続試行
@@ -49,7 +50,17 @@ class CacheManager:
                 if value:
                     return json.loads(value)
             else:
-                return self.memory_cache.get(key)
+                item = self.memory_cache.get(key)
+                if not item:
+                    return None
+                value, expire_ts = item
+                # 期限切れチェック
+                if expire_ts is not None:
+                    from time import time as _now
+                    if _now() >= expire_ts:
+                        del self.memory_cache[key]
+                        return None
+                return value
         except Exception as e:
             print(f"キャッシュ取得エラー: {e}")
             return None
@@ -83,9 +94,10 @@ class CacheManager:
                     json_value
                 )
             else:
-                # インメモリキャッシュ（簡易実装）
-                self.memory_cache[key] = value
-                # TODO: 有効期限の実装
+                # インメモリキャッシュ（期限設定付き）
+                from time import time as _now
+                expire_ts = _now() + expire_seconds if expire_seconds else None
+                self.memory_cache[key] = (value, expire_ts)
                 return True
         except Exception as e:
             print(f"キャッシュ設定エラー: {e}")
@@ -154,11 +166,12 @@ class CacheManager:
                 else:
                     # パターンマッチング（簡易実装）
                     keys_to_delete = [
-                        k for k in self.memory_cache.keys()
+                        k for k in list(self.memory_cache.keys())
                         if pattern == "*" or k.startswith(pattern.replace("*", ""))
                     ]
                     for key in keys_to_delete:
-                        del self.memory_cache[key]
+                        if key in self.memory_cache:
+                            del self.memory_cache[key]
                 return True
         except Exception as e:
             print(f"キャッシュクリアエラー: {e}")

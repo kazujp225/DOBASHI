@@ -11,7 +11,20 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from models import get_db, Video, Comment, VideoTigerStats, Tiger
-from analyzers.sentiment_analyzer import SentimentAnalyzer
+try:
+    from analyzers.sentiment_analyzer import SentimentAnalyzer
+except Exception:
+    class _NeutralSentiment:
+        def __init__(self):
+            self.sentiment = 'neutral'
+            self.score = 0.0
+            self.positive_score = 0.0
+            self.negative_score = 0.0
+            self.neutral_score = 1.0
+
+    class SentimentAnalyzer:  # fallback stub
+        def analyze(self, _text: str):
+            return _NeutralSentiment()
 from core.cache import cache_manager
 
 

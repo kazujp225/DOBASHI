@@ -1,7 +1,7 @@
 """
 Tigers (社長マスタ) API Router
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 import json
 import os
@@ -14,6 +14,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from utils.image_cache import download_and_cache_image, delete_cached_image
 
 from ..schemas import Tiger, TigerCreate
+from ..dependencies import get_current_user
 
 router = APIRouter()
 
@@ -71,7 +72,7 @@ async def get_tiger(tiger_id: str):
 
 
 @router.post("", response_model=Tiger)
-async def create_tiger(tiger: TigerCreate):
+async def create_tiger(tiger: TigerCreate, current_user=Depends(get_current_user)):
     """新しい社長を追加"""
     tigers = load_tigers()
 
@@ -94,7 +95,7 @@ async def create_tiger(tiger: TigerCreate):
 
 
 @router.put("/{tiger_id}", response_model=Tiger)
-async def update_tiger(tiger_id: str, tiger: TigerCreate):
+async def update_tiger(tiger_id: str, tiger: TigerCreate, current_user=Depends(get_current_user)):
     """社長情報を更新"""
     tigers = load_tigers()
 
@@ -127,7 +128,7 @@ async def update_tiger(tiger_id: str, tiger: TigerCreate):
 
 
 @router.delete("/{tiger_id}")
-async def delete_tiger(tiger_id: str):
+async def delete_tiger(tiger_id: str, current_user=Depends(get_current_user)):
     """社長を削除"""
     tigers = load_tigers()
 
@@ -182,7 +183,7 @@ async def fetch_x_profile_image(username: str) -> str | None:
 
 
 @router.post("/{tiger_id}/fetch-x-image")
-async def fetch_and_cache_x_image(tiger_id: str, request: dict):
+async def fetch_and_cache_x_image(tiger_id: str, request: dict, current_user=Depends(get_current_user)):
     """
     Xのプロフィールページからアイコンをダウンロードしてキャッシュ
 
@@ -256,7 +257,7 @@ async def get_tiger_aliases(tiger_id: str):
 
 
 @router.post("/{tiger_id}/aliases")
-async def add_tiger_alias(tiger_id: str, request: dict):
+async def add_tiger_alias(tiger_id: str, request: dict, current_user=Depends(get_current_user)):
     """
     社長にエイリアスを追加
 
@@ -309,7 +310,7 @@ async def add_tiger_alias(tiger_id: str, request: dict):
 
 
 @router.delete("/{tiger_id}/aliases/{alias}")
-async def delete_tiger_alias(tiger_id: str, alias: str):
+async def delete_tiger_alias(tiger_id: str, alias: str, current_user=Depends(get_current_user)):
     """
     社長のエイリアスを削除
 

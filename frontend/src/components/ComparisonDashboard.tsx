@@ -232,15 +232,15 @@ const ComparisonDashboard: React.FC = () => {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
               {availableVideos.map(video => (
-                <label key={video.id} className="flex items-center">
+                <label key={video.video_id} className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={selectedVideos.includes(video.id)}
+                    checked={selectedVideos.includes(video.video_id)}
                     onChange={(e) => {
                       if (e.target.checked && selectedVideos.length < 5) {
-                        setSelectedVideos([...selectedVideos, video.id]);
+                        setSelectedVideos([...selectedVideos, video.video_id]);
                       } else if (!e.target.checked) {
-                        setSelectedVideos(selectedVideos.filter(id => id !== video.id));
+                        setSelectedVideos(selectedVideos.filter(id => id !== video.video_id));
                       }
                     }}
                     className="mr-2"

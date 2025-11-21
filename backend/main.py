@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
 
     # 設定の確認
     if settings.youtube_api_key:
-        print(f"✅ YouTube API Key: {settings.youtube_api_key[:20]}...")
+        print("✅ YouTube API Key configured")
     else:
         print("⚠️ YouTube API Key not configured")
 
@@ -74,6 +74,7 @@ logger = logging.getLogger(__name__)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.backend_cors_origins,
+    allow_origin_regex=r".*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -149,12 +150,19 @@ async def health_check():
     from sqlalchemy import text
 
     # データベース接続チェック
+    db = None
     try:
         db = next(get_db())
         db.execute(text("SELECT 1"))
         db_status = "healthy"
     except Exception as e:
         db_status = f"unhealthy: {str(e)}"
+    finally:
+        try:
+            if db:
+                db.close()
+        except Exception:
+            pass
 
     # キャッシュ接続チェック
     from core.cache import cache_manager
