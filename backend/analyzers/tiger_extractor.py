@@ -3,10 +3,15 @@
 動画のタイトル・概要欄から出演社長を特定
 """
 import re
+import os
+import json
 from typing import List, Dict, Optional, Tuple
 from sqlalchemy.orm import Session
 
 from models import Tiger, VideoTiger, Video
+
+# aliases.json のパス (プロジェクトルートの data/ ディレクトリ)
+ALIASES_FILE = os.path.join(os.path.dirname(__file__), "../../data/aliases.json")
 
 
 class TigerExtractor:
@@ -16,6 +21,14 @@ class TigerExtractor:
         self.db = db
         # 社長マスタを全件取得してキャッシュ
         self.tigers = db.query(Tiger).filter(Tiger.is_active == True).all()
+
+        # aliases.json を読み込み
+        self.aliases = {}
+        try:
+            with open(ALIASES_FILE, 'r', encoding='utf-8') as f:
+                self.aliases = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass
 
         # 社長名のバリエーションを構築
         self.tiger_patterns = {}
@@ -34,6 +47,13 @@ class TigerExtractor:
                 # 姓のみ
                 if ' ' in tiger.full_name:
                     patterns.add(tiger.full_name.split()[0])
+
+            # aliases.json からエイリアスを追加
+            if tiger.tiger_id in self.aliases:
+                for alias_entry in self.aliases[tiger.tiger_id]:
+                    alias = alias_entry.get('alias', '')
+                    if alias and len(alias) >= 2:
+                        patterns.add(alias)
 
             self.tiger_patterns[tiger.tiger_id] = patterns
 
@@ -74,16 +94,59 @@ class TigerExtractor:
         Returns:
             抽出された社長IDのリスト
         """
+        result = self.extract_from_description_with_unmatched(description)
+        return result['matched_ids']
+
+    def extract_from_description_with_unmatched(self, description: str) -> Dict[str, any]:
+        """
+        動画概要欄から社長を抽出（未登録の名前も返す）
+
+        Args:
+            description: 動画概要欄
+
+        Returns:
+            {'matched_ids': [...], 'unmatched_names': [...]}
+        """
         found_tiger_ids = set()
+        unmatched_names = []
 
         if not description:
-            return []
+            return {'matched_ids': [], 'unmatched_names': []}
 
         # 概要欄を行ごとに処理
         lines = description.split('\n')
 
-        for line in lines[:100]:  # 最初の100行のみチェック
-            # タイムスタンプ形式: 00:00 社長名
+        # パターン1: ★令和の虎 セクションを探す
+        in_tiger_section = False
+        for i, line in enumerate(lines):
+            line_stripped = line.strip()
+
+            # ★令和の虎 セクション開始
+            if '★令和の虎' in line_stripped or '★レギュラー虎' in line_stripped:
+                in_tiger_section = True
+                continue
+
+            # 別のセクション開始で終了 (★で始まる別のセクション)
+            if in_tiger_section and line_stripped.startswith('★') and '令和の虎' not in line_stripped:
+                in_tiger_section = False
+                continue
+
+            # 令和の虎セクション内の行を処理
+            if in_tiger_section and line_stripped:
+                # 名前の行を検出 (括弧で始まらない、URLでない、短すぎない)
+                if not line_stripped.startswith('（') and not line_stripped.startswith('(') \
+                   and not line_stripped.startswith('【') and not line_stripped.startswith('http') \
+                   and len(line_stripped) >= 2 and len(line_stripped) <= 20:
+                    # 社長名かチェック
+                    tiger_id = self._match_tiger_name(line_stripped)
+                    if tiger_id:
+                        found_tiger_ids.add(tiger_id)
+                    else:
+                        # 未登録の名前として記録
+                        unmatched_names.append(line_stripped)
+
+        # パターン2: タイムスタンプ形式: 00:00 社長名
+        for line in lines[:100]:
             timestamp_match = re.search(r'(\d{1,2}:\d{2})\s*(.+)', line)
             if timestamp_match:
                 name_part = timestamp_match.group(2)
@@ -97,7 +160,7 @@ class TigerExtractor:
                 if tiger_id:
                     found_tiger_ids.add(tiger_id)
 
-        return list(found_tiger_ids)
+        return {'matched_ids': list(found_tiger_ids), 'unmatched_names': unmatched_names}
 
     def extract_tigers(self, video_id: str) -> Dict[str, any]:
         """
@@ -121,8 +184,10 @@ class TigerExtractor:
         # タイトルから抽出
         title_tigers = self.extract_from_title(video.title)
 
-        # 概要欄から抽出
-        description_tigers = self.extract_from_description(video.description or "")
+        # 概要欄から抽出（未登録の名前も取得）
+        description_result = self.extract_from_description_with_unmatched(video.description or "")
+        description_tigers = description_result['matched_ids']
+        unmatched_names = description_result['unmatched_names']
 
         # 重複を除いて統合
         all_tiger_ids = list(set(title_tigers + description_tigers))
@@ -168,7 +233,8 @@ class TigerExtractor:
             "total_tigers_found": len(all_tiger_ids),
             "newly_added": added_count,
             "already_registered": len(existing_tiger_ids),
-            "tigers": all_registered_tigers
+            "tigers": all_registered_tigers,
+            "unmatched_names": unmatched_names
         }
 
     def _match_tiger_name(self, text: str) -> Optional[str]:

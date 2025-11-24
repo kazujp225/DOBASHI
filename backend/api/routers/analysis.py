@@ -23,10 +23,12 @@ else:
 
 from collectors.youtube_collector import YouTubeCollector
 from analyzers.comment_analyzer import CommentAnalyzer
+from analyzers.tiger_extractor import TigerExtractor
 from aggregators.stats_aggregator import StatsAggregator
 from ..schemas import CollectionRequest, CollectionProgress, AnalysisRequest, AnalysisResult, LogEntry
 from sqlalchemy.orm import Session
 from models import get_db, Video as VideoDB, Comment as CommentDB, CommentTigerRelation, VideoTigerStats, VideoTiger, Tiger as TigerDB
+from models.database import SessionLocal
 from sqlalchemy import delete
 from datetime import datetime
 import threading
@@ -180,6 +182,66 @@ def collect_comments_task(video_id: str):
             json.dump(comments, f, ensure_ascii=False, indent=2)
 
         add_log(video_id, "success", "✅ コメントデータを保存しました", "✅")
+
+        # データベースに動画情報を保存
+        add_log(video_id, "info", "🗄️ データベースに保存中...", "🗄️")
+        db = SessionLocal()
+        try:
+            # 既存の動画を確認
+            existing_video = db.query(VideoDB).filter(VideoDB.video_id == video_id).first()
+            if existing_video:
+                # 更新
+                existing_video.title = video_info.get('title', '')
+                existing_video.description = video_info.get('description', '')
+                existing_video.thumbnail_url = video_info.get('thumbnail_url', '')
+                existing_video.view_count = video_info.get('view_count', 0)
+                existing_video.like_count = video_info.get('like_count', 0)
+                existing_video.comment_count = video_info.get('comment_count', 0)
+            else:
+                # 新規作成 - published_at を datetime に変換
+                published_at_str = video_info.get('published_at')
+                published_at_dt = None
+                if published_at_str:
+                    try:
+                        # ISO 8601 形式をパース
+                        published_at_dt = datetime.fromisoformat(published_at_str.replace('Z', '+00:00'))
+                    except (ValueError, AttributeError):
+                        pass
+
+                new_video = VideoDB(
+                    video_id=video_id,
+                    title=video_info.get('title', ''),
+                    description=video_info.get('description', ''),
+                    thumbnail_url=video_info.get('thumbnail_url', ''),
+                    published_at=published_at_dt,
+                    view_count=video_info.get('view_count', 0),
+                    like_count=video_info.get('like_count', 0),
+                    comment_count=video_info.get('comment_count', 0)
+                )
+                db.add(new_video)
+            db.commit()
+            add_log(video_id, "success", "✅ データベースに保存しました", "✅")
+
+            # 社長を自動抽出・保存
+            add_log(video_id, "info", "🔍 概要欄から社長を自動検出中...", "🔍")
+            extractor = TigerExtractor(db)
+            result = extractor.extract_tigers(video_id)
+
+            if result.get('success') and result.get('total_tigers_found', 0) > 0:
+                tiger_names = [t['display_name'] for t in result.get('tigers', [])]
+                add_log(video_id, "success", f"✅ {len(tiger_names)}名の社長を検出・登録: {', '.join(tiger_names)}", "✅")
+            else:
+                add_log(video_id, "info", "ℹ️ 概要欄から社長を検出できませんでした（分析時に手動選択可能）", "ℹ️")
+
+            # 未登録の名前があれば警告
+            unmatched = result.get('unmatched_names', [])
+            if unmatched:
+                add_log(video_id, "warning", f"⚠️ 未登録の社長名を検出: {', '.join(unmatched)}（社長管理から登録してください）", "⚠️")
+        except Exception as e:
+            add_log(video_id, "warning", f"⚠️ 社長自動検出でエラー: {str(e)}", "⚠️")
+        finally:
+            db.close()
+
         add_log(video_id, "success", "🎉 コメント収集が完了しました！", "🎉")
 
         # ステータスを更新

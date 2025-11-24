@@ -129,8 +129,10 @@ async def preview_tiger_extraction(
         # タイトルから抽出
         title_tigers = extractor.extract_from_title(video.title)
 
-        # 概要欄から抽出
-        description_tigers = extractor.extract_from_description(video.description or "")
+        # 概要欄から抽出（未登録の名前も取得）
+        description_result = extractor.extract_from_description_with_unmatched(video.description or "")
+        description_tigers = description_result['matched_ids']
+        unmatched_names = description_result['unmatched_names']
 
         # 統合
         all_tiger_ids = list(set(title_tigers + description_tigers))
@@ -151,7 +153,8 @@ async def preview_tiger_extraction(
             "video_id": video_id,
             "video_title": video.title,
             "found_tigers": tigers_info,
-            "total_found": len(all_tiger_ids)
+            "total_found": len(all_tiger_ids),
+            "unmatched_names": unmatched_names
         }
 
     except HTTPException:

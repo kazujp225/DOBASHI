@@ -29,6 +29,7 @@ const Analysis = () => {
   const [extractedTigers, setExtractedTigers] = useState<ExtractedTiger[]>([])
   const [isExtracting, setIsExtracting] = useState(false)
   const [hasRegisteredTigers, setHasRegisteredTigers] = useState(false)
+  const [unmatchedNames, setUnmatchedNames] = useState<string[]>([])
 
   const { data: videos } = useQuery({
     queryKey: ['videos'],
@@ -97,10 +98,12 @@ const Analysis = () => {
         // 登録がない場合は概要欄から抽出
         const response = await api.get(`/api/v1/tigers/extract/preview/${selectedVideoId}`)
         const extracted = response.data.found_tigers || []
+        const unmatched = response.data.unmatched_names || []
 
         setExtractedTigers(extracted)
         setSelectedTigers(extracted.map((t: ExtractedTiger) => t.tiger_id))
         setHasRegisteredTigers(false)
+        setUnmatchedNames(unmatched)
         setShowConfirmModal(true)
       }
     } catch (error: any) {
@@ -260,6 +263,26 @@ const Analysis = () => {
               </div>
             </div>
 
+            {/* 確認メッセージ */}
+            <div className="px-6 py-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border-b border-orange-200 dark:border-orange-800">
+              <p className="text-center text-lg font-bold text-orange-800 dark:text-orange-200">
+                この動画は以下の{extractedTigers.length + unmatchedNames.length}名の社長でいいですか？
+              </p>
+              <div className="mt-2 flex flex-wrap justify-center gap-2">
+                {extractedTigers.map(t => (
+                  <span key={t.tiger_id} className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium rounded-full">
+                    {t.display_name}
+                  </span>
+                ))}
+                {unmatchedNames.map((name, idx) => (
+                  <span key={idx} className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-sm font-medium rounded-full flex items-center gap-1">
+                    <AlertCircle size={12} />
+                    {name}（未登録）
+                  </span>
+                ))}
+              </div>
+            </div>
+
             {/* 動画情報 */}
             {selectedVideo && (
               <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
@@ -287,6 +310,22 @@ const Analysis = () => {
                   <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-300">
                     <AlertCircle size={16} />
                     <span className="text-sm font-medium">概要欄から社長を検出できませんでした。手動で選択してください。</span>
+                  </div>
+                </div>
+              )}
+
+              {/* 未登録の社長名警告 */}
+              {unmatchedNames.length > 0 && (
+                <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl">
+                  <div className="flex items-start gap-2 text-orange-700 dark:text-orange-300">
+                    <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+                    <div>
+                      <span className="text-sm font-medium">未登録の社長がいます</span>
+                      <p className="text-xs mt-1 opacity-80">
+                        上記の「（未登録）」の社長は分析対象外です。
+                        分析に含めるには、先に社長管理ページで登録してください。
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -368,7 +407,7 @@ const Analysis = () => {
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 rounded-xl hover:from-orange-700 hover:to-orange-600 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed shadow-lg shadow-orange-500/30 transition-all"
                 >
                   <Check size={18} />
-                  <span>{analyzeMutation.isPending ? '分析中...' : 'この社長で分析開始'}</span>
+                  <span>{analyzeMutation.isPending ? '分析中...' : 'はい、この社長で分析する'}</span>
                 </button>
               </div>
             </div>
