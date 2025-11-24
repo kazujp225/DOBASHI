@@ -10,6 +10,8 @@ import type {
   AnalysisRequest,
   AnalysisResult,
   AnalyzedComment,
+  AvailableMonths,
+  MonthlyStats,
 } from '../types';
 
 // Prefer explicit env; fallback to same-origin to avoid mixed-content in HTTPS
@@ -122,6 +124,16 @@ export const statsApi = {
 
   getRanking: async (period: string = 'all'): Promise<RankingStats> => {
     const { data } = await api.get(`/api/v1/stats/ranking?period=${period}`);
+    return data;
+  },
+
+  getAvailableMonths: async (): Promise<AvailableMonths> => {
+    const { data } = await api.get('/api/v1/stats/monthly');
+    return data;
+  },
+
+  getMonthlyStats: async (year: number, month: number): Promise<MonthlyStats> => {
+    const { data } = await api.get(`/api/v1/stats/monthly/${year}/${month}`);
     return data;
   },
 };

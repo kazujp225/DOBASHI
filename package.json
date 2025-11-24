@@ -4,7 +4,7 @@
   "description": "令和の虎 社長別コメント言及分析システム - React + FastAPI",
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd backend && python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:backend": "cd backend && ./venv/bin/python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:streamlit": "streamlit run backend/app_streamlit.py",
     "install": "cd frontend && npm install && cd ../backend && pip install -r requirements.txt",

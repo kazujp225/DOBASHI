@@ -3,8 +3,9 @@ Stats API Router - 統計情報
 """
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import func
-from typing import List
+from sqlalchemy import func, extract
+from typing import List, Optional
+from datetime import datetime
 import json
 import os
 import glob
@@ -119,10 +120,10 @@ async def get_ranking(period: str = "all", db: Session = Depends(get_db)):
         rankings.append({
             'tiger_id': tiger_id,
             'display_name': display_name,
-            'total_mentions': int(total_mentions or 0),
-            'total_videos': int(total_vids or 0),
-            'avg_rate_total': float(avg_rate_total or 0),
-            'avg_rate_entity': float(avg_rate_entity or 0),
+            'total_mentions': int(total_mentions) if total_mentions is not None else 0,
+            'total_videos': int(total_vids) if total_vids is not None else 0,
+            'avg_rate_total': float(avg_rate_total) if avg_rate_total is not None else 0.0,
+            'avg_rate_entity': float(avg_rate_entity) if avg_rate_entity is not None else 0.0,
             'rank': i
         })
 
@@ -165,4 +166,141 @@ async def get_overview(db: Session = Depends(get_db)):
         "total_comments": total_comments,
         "tiger_mentions": mention_comments,
         "period": "all"
+    }
+
+
+@router.get("/monthly")
+async def get_available_months(db: Session = Depends(get_db)):
+    """
+    利用可能な月一覧を取得
+    動画のpublished_atから年月を抽出して返す
+    """
+    # 動画の公開日から年月を抽出
+    results = db.query(
+        extract('year', Video.published_at).label('year'),
+        extract('month', Video.published_at).label('month'),
+        func.count(Video.video_id).label('video_count')
+    ).filter(
+        Video.published_at.isnot(None)
+    ).group_by(
+        extract('year', Video.published_at),
+        extract('month', Video.published_at)
+    ).order_by(
+        extract('year', Video.published_at).desc(),
+        extract('month', Video.published_at).desc()
+    ).all()
+
+    months = []
+    for year, month, video_count in results:
+        if year and month:
+            months.append({
+                "year": int(year),
+                "month": int(month),
+                "video_count": int(video_count),
+                "label": f"{int(year)}年{int(month)}月"
+            })
+
+    return {"months": months}
+
+
+@router.get("/monthly/{year}/{month}")
+async def get_monthly_stats(year: int, month: int, db: Session = Depends(get_db)):
+    """
+    特定の月の統計を取得
+
+    Args:
+        year: 年
+        month: 月
+
+    Returns:
+        - video_count: 動画数
+        - total_comments: 総コメント数
+        - mention_comments: 言及コメント数
+        - tiger_rankings: 社長別ランキング
+        - videos: その月の動画一覧
+    """
+    # その月の動画を取得
+    videos = db.query(Video).filter(
+        extract('year', Video.published_at) == year,
+        extract('month', Video.published_at) == month
+    ).order_by(Video.published_at.desc()).all()
+
+    if not videos:
+        raise HTTPException(
+            status_code=404,
+            detail=f"{year}年{month}月のデータが見つかりません"
+        )
+
+    video_ids = [v.video_id for v in videos]
+
+    # 総コメント数を取得
+    total_comments = db.query(Comment).filter(
+        Comment.video_id.in_(video_ids)
+    ).count()
+
+    # 言及コメント数を取得
+    mention_comments = db.query(Comment.comment_id).join(
+        CommentTigerRelation
+    ).filter(
+        Comment.video_id.in_(video_ids)
+    ).distinct().count()
+
+    # 社長別統計を集計
+    rankings = db.query(
+        VideoTigerStats.tiger_id,
+        Tiger.display_name,
+        func.sum(VideoTigerStats.n_tiger).label('total_mentions'),
+        func.count(VideoTigerStats.video_id).label('total_videos'),
+        func.avg(VideoTigerStats.rate_total).label('avg_rate_total'),
+        func.avg(VideoTigerStats.rate_entity).label('avg_rate_entity')
+    ).join(
+        Tiger, VideoTigerStats.tiger_id == Tiger.tiger_id
+    ).filter(
+        VideoTigerStats.video_id.in_(video_ids)
+    ).group_by(
+        VideoTigerStats.tiger_id, Tiger.display_name
+    ).order_by(
+        func.sum(VideoTigerStats.n_tiger).desc()
+    ).all()
+
+    # ランキングを構築
+    tiger_rankings = []
+    for i, (tiger_id, display_name, total_mentions, total_vids, avg_rate_total, avg_rate_entity) in enumerate(rankings, 1):
+        tiger_rankings.append({
+            'tiger_id': tiger_id,
+            'display_name': display_name,
+            'total_mentions': int(total_mentions) if total_mentions is not None else 0,
+            'total_videos': int(total_vids) if total_vids is not None else 0,
+            'avg_rate_total': float(avg_rate_total) if avg_rate_total is not None else 0.0,
+            'avg_rate_entity': float(avg_rate_entity) if avg_rate_entity is not None else 0.0,
+            'rank': i
+        })
+
+    # 動画一覧を構築
+    video_list = []
+    for v in videos:
+        # 各動画のコメント数と言及コメント数を取得
+        v_total_comments = db.query(Comment).filter(Comment.video_id == v.video_id).count()
+        v_mention_comments = db.query(Comment.comment_id).join(
+            CommentTigerRelation
+        ).filter(Comment.video_id == v.video_id).distinct().count()
+
+        video_list.append({
+            'video_id': v.video_id,
+            'title': v.title,
+            'published_at': v.published_at.isoformat() if v.published_at else None,
+            'total_comments': v_total_comments,
+            'mention_comments': v_mention_comments,
+            'thumbnail_url': v.thumbnail_url
+        })
+
+    return {
+        "year": year,
+        "month": month,
+        "label": f"{year}年{month}月",
+        "video_count": len(videos),
+        "total_comments": total_comments,
+        "mention_comments": mention_comments,
+        "tiger_rankings": tiger_rankings,
+        "videos": video_list
     }

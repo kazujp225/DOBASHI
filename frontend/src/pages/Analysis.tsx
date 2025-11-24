@@ -1,15 +1,34 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { videosApi, tigersApi, analysisApi, statsApi } from '../services/api'
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
-import { Search, Download, BarChart3, Video, Users, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp } from 'lucide-react'
+import { videosApi, tigersApi, analysisApi, statsApi, api } from '../services/api'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+import { Search, Download, Video, Users, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, X, Check, AlertCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportToCSV, formatVideoStatsForCSV } from '../utils/csv'
+
+interface ExtractedTiger {
+  tiger_id: string
+  display_name: string
+  full_name?: string
+  source: string
+}
+
+interface RegisteredTiger {
+  tiger_id: string
+  display_name: string
+  full_name?: string
+  image_url?: string
+  appearance_order: number
+}
 
 const Analysis = () => {
   const [selectedVideoId, setSelectedVideoId] = useState('')
   const [selectedTigers, setSelectedTigers] = useState<string[]>([])
   const [commentFilterTigerId, setCommentFilterTigerId] = useState<string>('all')
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [extractedTigers, setExtractedTigers] = useState<ExtractedTiger[]>([])
+  const [isExtracting, setIsExtracting] = useState(false)
+  const [hasRegisteredTigers, setHasRegisteredTigers] = useState(false)
 
   const { data: videos } = useQuery({
     queryKey: ['videos'],
@@ -41,6 +60,7 @@ const Analysis = () => {
     onSuccess: () => {
       refetch()
       refetchComments()
+      setShowConfirmModal(false)
       toast.success('分析が完了しました')
     },
     onError: (error: any) => {
@@ -48,13 +68,57 @@ const Analysis = () => {
     },
   })
 
-  const handleAnalyze = () => {
+  // 分析開始ボタン押下時：まず登録済み社長をチェック、なければ概要欄から抽出
+  const handleStartAnalysis = async () => {
     if (!selectedVideoId) {
       toast.error('動画を選択してください')
       return
     }
+
+    setIsExtracting(true)
+    try {
+      // まず登録済みの社長をチェック
+      const registeredResponse = await api.get(`/api/v1/analysis/video-tigers/${selectedVideoId}`)
+      const registeredData = registeredResponse.data
+
+      if (registeredData.has_registered && registeredData.tigers.length > 0) {
+        // 登録済みの社長がある場合はそれを使用
+        const registered = registeredData.tigers as RegisteredTiger[]
+        setExtractedTigers(registered.map(t => ({
+          tiger_id: t.tiger_id,
+          display_name: t.display_name,
+          full_name: t.full_name,
+          source: 'registered'
+        })))
+        setSelectedTigers(registered.map((t: RegisteredTiger) => t.tiger_id))
+        setHasRegisteredTigers(true)
+        setShowConfirmModal(true)
+      } else {
+        // 登録がない場合は概要欄から抽出
+        const response = await api.get(`/api/v1/tigers/extract/preview/${selectedVideoId}`)
+        const extracted = response.data.found_tigers || []
+
+        setExtractedTigers(extracted)
+        setSelectedTigers(extracted.map((t: ExtractedTiger) => t.tiger_id))
+        setHasRegisteredTigers(false)
+        setShowConfirmModal(true)
+      }
+    } catch (error: any) {
+      // 動画がDBにない場合は全社長リストから選択
+      if (error.response?.status === 404) {
+        toast.error('動画情報が見つかりません。先にコメント収集を行ってください。')
+      } else {
+        toast.error('社長の抽出に失敗しました')
+      }
+    } finally {
+      setIsExtracting(false)
+    }
+  }
+
+  // 確認後に分析実行
+  const handleConfirmAnalysis = () => {
     if (selectedTigers.length === 0) {
-      toast.error('社長を選択してください')
+      toast.error('少なくとも1人の社長を選択してください')
       return
     }
 
@@ -76,6 +140,8 @@ const Analysis = () => {
   }
 
   const colors = ['#f97316', '#fb923c', '#fdba74', '#fed7aa', '#ffedd5']
+
+  const selectedVideo = videos?.find(v => v.video_id === selectedVideoId)
 
   return (
     <div className="space-y-6">
@@ -127,9 +193,7 @@ const Analysis = () => {
                     {selectedVideoId === video.video_id && (
                       <div className="absolute inset-0 flex items-center justify-center bg-orange-600/20 rounded-lg">
                         <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center shadow-lg">
-                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
+                          <Check className="w-5 h-5 text-white" />
                         </div>
                       </div>
                     )}
@@ -157,69 +221,160 @@ const Analysis = () => {
             </div>
           </div>
 
-          {/* 社長選択 */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white mb-4">
-              <div className="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                <Users size={16} className="text-orange-600 dark:text-orange-400" />
-              </div>
-              <span>出演社長を選択</span>
-              {selectedTigers.length > 0 && (
-                <span className="ml-2 px-3 py-1 text-xs font-bold bg-orange-500 text-white rounded-full">
-                  {selectedTigers.length}件選択中
-                </span>
-              )}
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {tigers?.map((tiger) => (
-                <label
-                  key={tiger.tiger_id}
-                  className={`relative flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${
-                    selectedTigers.includes(tiger.tiger_id)
-                      ? 'bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 ring-2 ring-orange-500 shadow-md'
-                      : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-sm'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedTigers.includes(tiger.tiger_id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedTigers([...selectedTigers, tiger.tiger_id])
-                      } else {
-                        setSelectedTigers(selectedTigers.filter((id) => id !== tiger.tiger_id))
-                      }
-                    }}
-                    className="w-4 h-4 rounded border-2 border-gray-300 text-orange-600 focus:ring-2 focus:ring-orange-500 focus:ring-offset-0"
-                  />
-                  {tiger.image_url ? (
-                    <img
-                      src={tiger.image_url.startsWith('/static') ? `http://localhost:8000${tiger.image_url}` : tiger.image_url}
-                      alt={tiger.display_name}
-                      className="w-8 h-8 rounded-full object-cover shadow-sm"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                      {tiger.display_name.charAt(0)}
-                    </div>
-                  )}
-                  <span className="text-sm font-medium text-gray-900 dark:text-white flex-1">{tiger.display_name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
           {/* 分析ボタン */}
           <button
-            onClick={handleAnalyze}
-            disabled={!selectedVideoId || selectedTigers.length === 0 || analyzeMutation.isPending}
+            onClick={handleStartAnalysis}
+            disabled={!selectedVideoId || isExtracting}
             className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-orange-600 to-orange-500 text-white text-base font-semibold rounded-xl hover:from-orange-700 hover:to-orange-600 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 transition-all hover:-translate-y-0.5 disabled:shadow-none disabled:translate-y-0"
           >
             <Search size={20} />
-            <span>{analyzeMutation.isPending ? '分析中...' : '分析を開始'}</span>
+            <span>{isExtracting ? '社長を検出中...' : '分析を開始'}</span>
           </button>
         </div>
       </div>
+
+      {/* 確認モーダル */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            {/* モーダルヘッダー */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+                    <Users size={20} className="text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">出演社長の確認</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {hasRegisteredTigers ? '前回の分析で登録された社長です' : '概要欄から検出された社長です'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <X size={20} className="text-gray-500" />
+                </button>
+              </div>
+            </div>
+
+            {/* 動画情報 */}
+            {selectedVideo && (
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+                <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
+                  {selectedVideo.title}
+                </p>
+              </div>
+            )}
+
+            {/* 検出結果 */}
+            <div className="p-6 overflow-y-auto max-h-[400px]">
+              {extractedTigers.length > 0 ? (
+                <div className={`mb-4 p-3 ${hasRegisteredTigers ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'} border rounded-xl`}>
+                  <div className={`flex items-center gap-2 ${hasRegisteredTigers ? 'text-blue-700 dark:text-blue-300' : 'text-green-700 dark:text-green-300'}`}>
+                    <Check size={16} />
+                    <span className="text-sm font-medium">
+                      {hasRegisteredTigers
+                        ? `${extractedTigers.length}名の社長が登録済みです（変更可能）`
+                        : `${extractedTigers.length}名の社長を検出しました`}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
+                  <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-300">
+                    <AlertCircle size={16} />
+                    <span className="text-sm font-medium">概要欄から社長を検出できませんでした。手動で選択してください。</span>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                分析対象の社長を選択
+                <span className="ml-2 px-2 py-0.5 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full">
+                  {selectedTigers.length}名選択中
+                </span>
+              </p>
+
+              <div className="grid grid-cols-2 gap-3">
+                {tigers?.map((tiger) => {
+                  const isExtracted = extractedTigers.some(t => t.tiger_id === tiger.tiger_id)
+                  const isSelected = selectedTigers.includes(tiger.tiger_id)
+
+                  return (
+                    <label
+                      key={tiger.tiger_id}
+                      className={`relative flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${
+                        isSelected
+                          ? 'bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 ring-2 ring-orange-500 shadow-md'
+                          : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedTigers([...selectedTigers, tiger.tiger_id])
+                          } else {
+                            setSelectedTigers(selectedTigers.filter((id) => id !== tiger.tiger_id))
+                          }
+                        }}
+                        className="w-4 h-4 rounded border-2 border-gray-300 text-orange-600 focus:ring-2 focus:ring-orange-500"
+                      />
+                      {tiger.image_url ? (
+                        <img
+                          src={tiger.image_url.startsWith('/static') ? `http://localhost:8000${tiger.image_url}` : tiger.image_url}
+                          alt={tiger.display_name}
+                          className="w-8 h-8 rounded-full object-cover shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                          {tiger.display_name.charAt(0)}
+                        </div>
+                      )}
+                      <span className="text-sm font-medium text-gray-900 dark:text-white flex-1">
+                        {tiger.display_name}
+                      </span>
+                      {isExtracted && (
+                        <span className={`px-2 py-0.5 text-xs rounded-full ${
+                          hasRegisteredTigers
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                            : 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                        }`}>
+                          {hasRegisteredTigers ? '登録済' : '検出'}
+                        </span>
+                      )}
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* モーダルフッター */}
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleConfirmAnalysis}
+                  disabled={selectedTigers.length === 0 || analyzeMutation.isPending}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 rounded-xl hover:from-orange-700 hover:to-orange-600 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed shadow-lg shadow-orange-500/30 transition-all"
+                >
+                  <Check size={18} />
+                  <span>{analyzeMutation.isPending ? '分析中...' : 'この社長で分析開始'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 分析結果 */}
       {videoStats && (

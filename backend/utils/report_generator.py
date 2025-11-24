@@ -75,7 +75,7 @@ class ReportGenerator:
         if self.config.include_charts:
             charts = self._generate_charts(data)
 
-        # HTML生成
+        # HTML生成（見やすいUI）
         html = f"""
 <!DOCTYPE html>
 <html lang="ja">
@@ -84,81 +84,139 @@ class ReportGenerator:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{self.config.title}</title>
     <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 1200px;
+            font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', -apple-system, sans-serif;
+            line-height: 1.8;
+            color: #2d3748;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }}
+        .container {{
+            max-width: 900px;
             margin: 0 auto;
-            padding: 20px;
-            background: #f5f5f5;
         }}
         .header {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4c51bf 0%, #6b46c1 100%);
             color: white;
-            padding: 30px;
-            border-radius: 10px;
+            padding: 40px;
+            border-radius: 16px;
             margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(107, 70, 193, 0.3);
         }}
         h1 {{
-            margin: 0;
-            font-size: 2.5em;
+            font-size: 1.75em;
+            font-weight: 700;
+            margin-bottom: 8px;
         }}
         .subtitle {{
             opacity: 0.9;
-            margin-top: 10px;
+            font-size: 0.95em;
         }}
-        .section {{
+        .card {{
             background: white;
-            padding: 25px;
-            margin-bottom: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }}
         h2 {{
-            color: #667eea;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #4a5568;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }}
+        h2::before {{
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(135deg, #4c51bf 0%, #6b46c1 100%);
+            border-radius: 2px;
         }}
         .metrics {{
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
-            margin: 20px 0;
         }}
         .metric-card {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 12px;
             padding: 20px;
-            border-radius: 8px;
             text-align: center;
+            transition: transform 0.2s;
+        }}
+        .metric-card:hover {{
+            transform: translateY(-2px);
         }}
         .metric-value {{
-            font-size: 2.5em;
-            font-weight: bold;
-            margin: 10px 0;
+            font-size: 2em;
+            font-weight: 700;
+            color: #4c51bf;
+            line-height: 1.2;
         }}
         .metric-label {{
-            opacity: 0.9;
-            font-size: 0.9em;
+            font-size: 0.85em;
+            color: #718096;
+            margin-top: 6px;
+            font-weight: 500;
         }}
         table {{
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
         }}
         th {{
-            background: #667eea;
-            color: white;
-            padding: 12px;
+            font-weight: 600;
+            font-size: 0.75em;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 12px 16px;
             text-align: left;
+            border-bottom: 2px solid #edf2f7;
         }}
         td {{
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
+            padding: 16px;
+            border-bottom: 1px solid #f7fafc;
+            font-size: 0.95em;
         }}
         tr:hover {{
-            background: #f5f5f5;
+            background: #f7fafc;
+        }}
+        tr:last-child td {{
+            border-bottom: none;
+        }}
+        .rank {{
+            font-weight: 700;
+            width: 50px;
+            text-align: center;
+        }}
+        .rank-1 {{
+            background: linear-gradient(135deg, #f6e05e 0%, #ecc94b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.2em;
+        }}
+        .rank-2 {{
+            color: #a0aec0;
+            font-size: 1.1em;
+        }}
+        .rank-3 {{
+            color: #c67d4e;
+            font-size: 1.05em;
+        }}
+        .name {{
+            font-weight: 600;
+            color: #2d3748;
+        }}
+        .number {{
+            font-variant-numeric: tabular-nums;
+            color: #4a5568;
+            font-weight: 500;
         }}
         .chart {{
             margin: 20px 0;
@@ -166,80 +224,77 @@ class ReportGenerator:
         }}
         .chart img {{
             max-width: 100%;
-            border-radius: 8px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }}
-        .rank-badge {{
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            line-height: 30px;
-            text-align: center;
-            border-radius: 50%;
-            font-weight: bold;
-            margin-right: 10px;
+        .analysis {{
+            color: #4a5568;
+            font-size: 1em;
+            line-height: 2;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #4c51bf;
         }}
-        .rank-1 {{ background: gold; color: #333; }}
-        .rank-2 {{ background: silver; color: #333; }}
-        .rank-3 {{ background: #cd7f32; color: white; }}
-        .rank-other {{ background: #667eea; color: white; }}
-        .positive {{ color: #10b981; }}
-        .negative {{ color: #ef4444; }}
-        .neutral {{ color: #6b7280; }}
         .footer {{
             text-align: center;
-            color: #666;
-            margin-top: 50px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
+            color: #a0aec0;
+            font-size: 0.85em;
+            margin-top: 40px;
+            padding: 20px;
+        }}
+        @media (max-width: 700px) {{
+            .metrics {{ grid-template-columns: repeat(2, 1fr); }}
+            .metric-value {{ font-size: 1.5em; }}
+            .header {{ padding: 30px 20px; }}
+            h1 {{ font-size: 1.4em; }}
         }}
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>{self.config.title}</h1>
-        <div class="subtitle">
-            生成日時: {datetime.now().strftime('%Y年%m月%d日 %H:%M')}
-            | 期間: {data.get('period', self.config.period)}
+    <div class="container">
+        <div class="header">
+            <h1>{self.config.title}</h1>
+            <div class="subtitle">{datetime.now().strftime('%Y年%m月%d日')} | {data.get('period', self.config.period)}</div>
         </div>
-    </div>
 
-    <div class="section">
-        <h2>📊 概要メトリクス</h2>
-        <div class="metrics">
-            <div class="metric-card">
-                <div class="metric-label">分析動画数</div>
-                <div class="metric-value">{data.get('total_videos', 0)}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">総コメント数</div>
-                <div class="metric-value">{data.get('total_comments', 0):,}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">社長言及率</div>
-                <div class="metric-value">{data.get('mention_rate', 0):.1f}%</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">ポジティブ率</div>
-                <div class="metric-value">{data.get('positive_rate', 0):.1f}%</div>
+        <div class="card">
+            <h2>概要</h2>
+            <div class="metrics">
+                <div class="metric-card">
+                    <div class="metric-value">{data.get('total_videos', 0)}</div>
+                    <div class="metric-label">分析動画数</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">{data.get('total_comments', 0):,}</div>
+                    <div class="metric-label">総コメント</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">{data.get('tiger_mentions', 0):,}</div>
+                    <div class="metric-label">社長言及</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">{data.get('mention_rate', 0):.1f}%</div>
+                    <div class="metric-label">言及率</div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="section">
-        <h2>🏆 社長ランキング</h2>
-        {self._generate_ranking_table_html(data.get('tiger_rankings', []))}
-    </div>
+        <div class="card">
+            <h2>社長ランキング</h2>
+            {self._generate_ranking_table_html(data.get('tiger_rankings', []))}
+        </div>
 
-    {self._generate_charts_html(charts) if charts else ''}
+        {self._generate_charts_html(charts) if charts else ''}
 
-    <div class="section">
-        <h2>📈 トレンド分析</h2>
-        <p>{self._generate_trend_analysis(data)}</p>
-    </div>
+        <div class="card">
+            <h2>分析サマリー</h2>
+            <p class="analysis">{self._generate_trend_analysis(data)}</p>
+        </div>
 
-    <div class="footer">
-        <p>© 2025 令和の虎 コメント分析システム</p>
-        <p>このレポートは自動生成されました</p>
+        <div class="footer">
+            令和の虎 コメント分析システム
+        </div>
     </div>
 </body>
 </html>
@@ -250,36 +305,31 @@ class ReportGenerator:
     def _generate_ranking_table_html(self, rankings: List[Dict]) -> str:
         """ランキングテーブルのHTML生成"""
         if not rankings:
-            return "<p>データがありません</p>"
+            return "<p style='color: #718096; text-align: center; padding: 40px;'>データがありません</p>"
 
         html = """
         <table>
             <thead>
                 <tr>
-                    <th>順位</th>
+                    <th style="width: 60px;">順位</th>
                     <th>社長名</th>
-                    <th>総言及数</th>
-                    <th>Rate_total</th>
-                    <th>Rate_entity</th>
-                    <th>感情スコア</th>
+                    <th style="text-align: right;">言及数</th>
+                    <th style="text-align: right;">言及率</th>
                 </tr>
             </thead>
             <tbody>
         """
 
         for i, tiger in enumerate(rankings[:self.config.max_tigers], 1):
-            rank_class = f"rank-{i}" if i <= 3 else "rank-other"
-            sentiment_score = tiger.get('sentiment_score', 0)
-            sentiment_class = "positive" if sentiment_score > 0 else "negative" if sentiment_score < 0 else "neutral"
+            rank_class = f"rank-{i}" if i <= 3 else ""
+            rank_display = ["🥇", "🥈", "🥉"][i-1] if i <= 3 else str(i)
 
             html += f"""
                 <tr>
-                    <td><span class="rank-badge {rank_class}">{i}</span></td>
-                    <td><strong>{tiger.get('display_name', 'Unknown')}</strong></td>
-                    <td>{tiger.get('total_mentions', 0):,}</td>
-                    <td>{tiger.get('avg_rate_total', 0):.2f}%</td>
-                    <td>{tiger.get('avg_rate_entity', 0):.2f}%</td>
-                    <td class="{sentiment_class}">{sentiment_score:+.2f}</td>
+                    <td class="rank {rank_class}">{rank_display}</td>
+                    <td class="name">{tiger.get('display_name', 'Unknown')}</td>
+                    <td class="number" style="text-align: right;">{tiger.get('total_mentions', 0):,}</td>
+                    <td class="number" style="text-align: right;">{tiger.get('avg_rate_total', 0):.1f}%</td>
                 </tr>
             """
 
@@ -310,26 +360,34 @@ class ReportGenerator:
 
     def _create_ranking_bar_chart(self, rankings: List[Dict]) -> str:
         """ランキング棒グラフを作成"""
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(8, 5))
+        fig.patch.set_facecolor('white')
+        ax.set_facecolor('white')
 
-        tigers = [r['display_name'][:10] for r in rankings[:10]]  # 上位10名
-        mentions = [r['total_mentions'] for r in rankings[:10]]
+        tigers = [r['display_name'][:8] for r in rankings[:8]]
+        mentions = [r['total_mentions'] for r in rankings[:8]]
 
-        bars = ax.barh(tigers, mentions, color='#667eea')
-        ax.set_xlabel('言及数')
-        ax.set_title('社長別言及数ランキング')
-        ax.invert_yaxis()  # 上位が上に来るように
+        # 紫のグラデーション
+        colors = ['#4c51bf', '#5a5fc4', '#6b6ecb', '#7b7dd2', '#8c8dd9', '#9d9ee0', '#aeafe7', '#bfc0ee']
+        bars = ax.barh(tigers, mentions, color=colors[:len(tigers)], height=0.6)
+        ax.invert_yaxis()
 
-        # 値をバーの右に表示
+        # スタイリング
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['bottom'].set_color('#edf2f7')
+        ax.tick_params(left=False, bottom=True, colors='#4a5568')
+        ax.xaxis.set_tick_params(color='#edf2f7')
+
         for i, (bar, value) in enumerate(zip(bars, mentions)):
-            ax.text(value, bar.get_y() + bar.get_height()/2,
-                   f'{value:,}', ha='left', va='center')
+            ax.text(value + max(mentions)*0.02, bar.get_y() + bar.get_height()/2,
+                   f'{value:,}', ha='left', va='center', fontsize=9, color='#4a5568', fontweight='500')
 
         plt.tight_layout()
 
-        # Base64エンコード
         buffer = io.BytesIO()
-        plt.savefig(buffer, format='png', dpi=100)
+        plt.savefig(buffer, format='png', dpi=150, facecolor='white', edgecolor='none')
         buffer.seek(0)
         img_base64 = base64.b64encode(buffer.getvalue()).decode()
         plt.close()
@@ -338,7 +396,8 @@ class ReportGenerator:
 
     def _create_sentiment_pie_chart(self, sentiment: Dict) -> str:
         """感情分析円グラフを作成"""
-        fig, ax = plt.subplots(figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=(6, 6))
+        fig.patch.set_facecolor('white')
 
         labels = ['ポジティブ', 'ネガティブ', 'ニュートラル']
         sizes = [
@@ -346,15 +405,22 @@ class ReportGenerator:
             sentiment.get('negative', 0),
             sentiment.get('neutral', 0)
         ]
-        colors = ['#10b981', '#ef4444', '#6b7280']
+        colors = ['#48bb78', '#fc8181', '#a0aec0']
 
-        ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
-        ax.set_title('コメントの感情分析')
+        wedges, texts, autotexts = ax.pie(
+            sizes, labels=labels, colors=colors,
+            autopct='%1.0f%%', startangle=90,
+            textprops={'fontsize': 10, 'color': '#4a5568'}
+        )
+        for autotext in autotexts:
+            autotext.set_color('white')
+            autotext.set_fontsize(10)
+            autotext.set_fontweight('bold')
 
         plt.tight_layout()
 
         buffer = io.BytesIO()
-        plt.savefig(buffer, format='png', dpi=100)
+        plt.savefig(buffer, format='png', dpi=150, facecolor='white', edgecolor='none')
         buffer.seek(0)
         img_base64 = base64.b64encode(buffer.getvalue()).decode()
         plt.close()
@@ -363,23 +429,29 @@ class ReportGenerator:
 
     def _create_trend_line_chart(self, trend_data: List[Dict]) -> str:
         """トレンドライングラフを作成"""
-        fig, ax = plt.subplots(figsize=(12, 6))
+        fig, ax = plt.subplots(figsize=(8, 4))
+        fig.patch.set_facecolor('white')
+        ax.set_facecolor('white')
 
         dates = [d['date'] for d in trend_data]
         values = [d['value'] for d in trend_data]
 
-        ax.plot(dates, values, marker='o', linestyle='-', linewidth=2, markersize=6, color='#667eea')
-        ax.set_xlabel('日付')
-        ax.set_ylabel('言及数')
-        ax.set_title('言及数の推移')
-        ax.grid(True, alpha=0.3)
+        ax.plot(dates, values, marker='o', linestyle='-', linewidth=2, markersize=6, color='#4c51bf')
+        ax.fill_between(dates, values, alpha=0.1, color='#4c51bf')
 
-        # X軸のラベルを回転
-        plt.xticks(rotation=45, ha='right')
+        # スタイリング
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_color('#edf2f7')
+        ax.spines['bottom'].set_color('#edf2f7')
+        ax.tick_params(colors='#4a5568')
+        ax.grid(True, alpha=0.3, color='#edf2f7')
+
+        plt.xticks(rotation=45, ha='right', fontsize=8)
         plt.tight_layout()
 
         buffer = io.BytesIO()
-        plt.savefig(buffer, format='png', dpi=100)
+        plt.savefig(buffer, format='png', dpi=150, facecolor='white', edgecolor='none')
         buffer.seek(0)
         img_base64 = base64.b64encode(buffer.getvalue()).decode()
         plt.close()
@@ -388,12 +460,12 @@ class ReportGenerator:
 
     def _generate_charts_html(self, charts: Dict[str, str]) -> str:
         """チャートセクションのHTML生成"""
-        html = '<div class="section"><h2>📊 グラフ分析</h2><div class="charts">'
+        html = '<div class="card"><h2>グラフ</h2>'
 
         for chart_name, chart_data in charts.items():
             html += f'<div class="chart"><img src="{chart_data}" alt="{chart_name}"></div>'
 
-        html += '</div></div>'
+        html += '</div>'
         return html
 
     def _generate_trend_analysis(self, data: Dict) -> str:
@@ -402,22 +474,25 @@ class ReportGenerator:
 
         # トップ社長の分析
         if 'tiger_rankings' in data and data['tiger_rankings']:
-            top_tiger = data['tiger_rankings'][0]
-            analysis.append(
-                f"最も注目を集めたのは{top_tiger['display_name']}で、"
-                f"合計{top_tiger['total_mentions']:,}回の言及がありました。"
-            )
+            rankings = data['tiger_rankings']
+            if len(rankings) >= 1:
+                top_tiger = rankings[0]
+                analysis.append(
+                    f"最も注目を集めたのは{top_tiger['display_name']}で、"
+                    f"合計{top_tiger['total_mentions']:,}回の言及がありました。"
+                )
+            if len(rankings) >= 3:
+                top3 = [r['display_name'] for r in rankings[:3]]
+                analysis.append(
+                    f"トップ3は{top3[0]}、{top3[1]}、{top3[2]}でした。"
+                )
 
-        # 感情分析
-        if 'sentiment_summary' in data:
-            sentiment = data['sentiment_summary']
-            positive_rate = sentiment.get('positive_ratio', 0)
-            if positive_rate > 60:
-                analysis.append("全体的に非常にポジティブな反応が見られました。")
-            elif positive_rate > 40:
-                analysis.append("バランスの取れた反応が見られました。")
-            else:
-                analysis.append("批判的な意見が多く見られました。")
+        # 言及率の分析
+        mention_rate = data.get('mention_rate', 0)
+        if mention_rate > 20:
+            analysis.append("社長への言及率が高く、視聴者の関心が高いことがわかります。")
+        elif mention_rate > 10:
+            analysis.append("社長への言及率は平均的な水準です。")
 
         return " ".join(analysis) or "分析データが不足しています。"
 
@@ -430,29 +505,29 @@ class ReportGenerator:
 生成日時: {datetime.now().strftime('%Y年%m月%d日 %H:%M')}
 期間: {data.get('period', self.config.period)}
 
-## 📊 概要メトリクス
+## 概要
 
 | メトリクス | 値 |
 |-----------|-----|
 | 分析動画数 | {data.get('total_videos', 0)} |
 | 総コメント数 | {data.get('total_comments', 0):,} |
-| 社長言及率 | {data.get('mention_rate', 0):.1f}% |
-| ポジティブ率 | {data.get('positive_rate', 0):.1f}% |
+| 社長言及数 | {data.get('tiger_mentions', 0):,} |
+| 言及率 | {data.get('mention_rate', 0):.1f}% |
 
-## 🏆 社長ランキング
+## 社長ランキング
 
-| 順位 | 社長名 | 総言及数 | Rate_total | Rate_entity |
-|------|--------|----------|------------|-------------|
+| 順位 | 社長名 | 言及数 | 言及率 |
+|------|--------|--------|--------|
 """
 
         # ランキングデータを追加
         for i, tiger in enumerate(data.get('tiger_rankings', [])[:self.config.max_tigers], 1):
             md += f"| {i} | {tiger['display_name']} | {tiger['total_mentions']:,} | "
-            md += f"{tiger['avg_rate_total']:.2f}% | {tiger['avg_rate_entity']:.2f}% |\n"
+            md += f"{tiger['avg_rate_total']:.1f}% |\n"
 
         md += f"""
 
-## 📈 トレンド分析
+## 分析サマリー
 
 {self._generate_trend_analysis(data)}
 

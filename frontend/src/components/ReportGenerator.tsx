@@ -3,25 +3,15 @@ import { api } from '../services/api';
 
 interface ReportConfig {
   title: string;
-  period: 'daily' | 'weekly' | 'monthly' | 'quarterly';
+  period: 'all' | 'daily' | 'weekly' | 'monthly' | 'quarterly';
   includeCharts: boolean;
-  includeDetails: boolean;
-  includeSentiment: boolean;
-  includeWordcloud: boolean;
-  maxTigers: number;
-  maxVideos: number;
 }
 
 const ReportGenerator: React.FC = () => {
   const [config, setConfig] = useState<ReportConfig>({
     title: '令和の虎 コメント分析レポート',
-    period: 'monthly',
-    includeCharts: true,
-    includeDetails: true,
-    includeSentiment: true,
-    includeWordcloud: false,
-    maxTigers: 10,
-    maxVideos: 20
+    period: 'all',
+    includeCharts: true
   });
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,31 +39,37 @@ const ReportGenerator: React.FC = () => {
     setReportUrl(null);
 
     try {
-      // まず統計データを取得
       const statsResponse = await api.get('/api/v1/stats/overview');
-      const rankingResponse = await api.get('/api/v1/tigers/ranking');
+      const rankingResponse = await api.get(`/api/v1/stats/ranking?period=${config.period}`);
 
-      // レポート生成データを準備
+      const tigerRankings = rankingResponse.data.tiger_rankings || rankingResponse.data || [];
       const reportData = {
-        config: config,
+        config: {
+          title: config.title,
+          period: config.period,
+          includeCharts: config.includeCharts,
+          includeDetails: true,
+          includeSentiment: false,
+          includeWordcloud: false,
+          maxTigers: 9999,
+          maxVideos: 9999
+        },
         stats_data: {
           ...statsResponse.data,
-          tiger_rankings: rankingResponse.data.slice(0, config.maxTigers),
+          tiger_rankings: tigerRankings,
           period: config.period,
           mention_rate: (statsResponse.data.tiger_mentions / statsResponse.data.total_comments * 100) || 0,
-          positive_rate: 65.0 // サンプル値
+          positive_rate: 0
         },
         format: format
       };
 
-      // レポート生成APIを呼び出し
       const response = await api.post('/api/v1/reports/generate', reportData);
 
       if (response.data.report_url) {
         setReportUrl(response.data.report_url);
         setSuccess(true);
       } else {
-        // Blobとしてレポートを受信
         const blob = new Blob([response.data], {
           type: format === 'html' ? 'text/html' : 'text/markdown'
         });
@@ -88,13 +84,24 @@ const ReportGenerator: React.FC = () => {
     }
   };
 
-  const downloadReport = () => {
+  const downloadReport = (format: 'html' | 'md') => {
     if (!reportUrl) return;
 
     const link = document.createElement('a');
     link.href = reportUrl;
-    link.download = `report_${new Date().toISOString().split('T')[0]}.${config.includeCharts ? 'html' : 'md'}`;
+    link.download = `report_${new Date().toISOString().split('T')[0]}.${format}`;
     link.click();
+  };
+
+  const periodLabel = (p: string) => {
+    switch (p) {
+      case 'all': return '全期間';
+      case 'daily': return '日次';
+      case 'weekly': return '週次';
+      case 'monthly': return '月次';
+      case 'quarterly': return '四半期';
+      default: return p;
+    }
   };
 
   return (
@@ -120,7 +127,7 @@ const ReportGenerator: React.FC = () => {
                 type="text"
                 value={config.title}
                 onChange={(e) => setConfig({...config, title: e.target.value})}
-                className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
+                className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100"
               />
             </div>
 
@@ -132,8 +139,9 @@ const ReportGenerator: React.FC = () => {
               <select
                 value={config.period}
                 onChange={(e) => setConfig({...config, period: e.target.value as any})}
-                className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
+                className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100"
               >
+                <option value="all">全期間</option>
                 <option value="daily">日次</option>
                 <option value="weekly">週次</option>
                 <option value="monthly">月次</option>
@@ -141,78 +149,17 @@ const ReportGenerator: React.FC = () => {
               </select>
             </div>
 
-            {/* 含める項目 */}
+            {/* グラフ */}
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-600 dark:text-gray-300">
-                含める項目
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={config.includeCharts}
+                  onChange={(e) => setConfig({...config, includeCharts: e.target.checked})}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-600 dark:text-gray-300">グラフを含める</span>
               </label>
-              <div className="space-y-2">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={config.includeCharts}
-                    onChange={(e) => setConfig({...config, includeCharts: e.target.checked})}
-                    className="mr-2"
-                  />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">グラフ</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={config.includeDetails}
-                    onChange={(e) => setConfig({...config, includeDetails: e.target.checked})}
-                    className="mr-2"
-                  />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">詳細統計</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={config.includeSentiment}
-                    onChange={(e) => setConfig({...config, includeSentiment: e.target.checked})}
-                    className="mr-2"
-                  />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">感情分析</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={config.includeWordcloud}
-                    onChange={(e) => setConfig({...config, includeWordcloud: e.target.checked})}
-                    className="mr-2"
-                  />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">ワードクラウド</span>
-                </label>
-              </div>
-            </div>
-
-            {/* 表示件数 */}
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-300">
-                社長表示数（最大）
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="50"
-                value={config.maxTigers}
-                onChange={(e) => setConfig({...config, maxTigers: parseInt(e.target.value) || 10})}
-                className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-300">
-                動画表示数（最大）
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="100"
-                value={config.maxVideos}
-                onChange={(e) => setConfig({...config, maxVideos: parseInt(e.target.value) || 20})}
-                className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
-              />
             </div>
           </div>
         </div>
@@ -227,35 +174,24 @@ const ReportGenerator: React.FC = () => {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-300">総動画数</span>
-                <span className="font-semibold">{statsPreview.total_videos}</span>
+                <span className="font-semibold dark:text-gray-100">{statsPreview.total_videos}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-300">総コメント数</span>
-                <span className="font-semibold">{statsPreview.total_comments?.toLocaleString()}</span>
+                <span className="font-semibold dark:text-gray-100">{statsPreview.total_comments?.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-300">社長言及数</span>
-                <span className="font-semibold">{statsPreview.tiger_mentions?.toLocaleString()}</span>
+                <span className="font-semibold dark:text-gray-100">{statsPreview.tiger_mentions?.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-300">登録社長数</span>
-                <span className="font-semibold">{statsPreview.total_tigers}</span>
+                <span className="font-semibold dark:text-gray-100">{statsPreview.total_tigers}</span>
               </div>
               <div className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-600">
                 <p className="text-gray-600 dark:text-gray-300">
-                  期間: {config.period === 'daily' ? '日次' :
-                         config.period === 'weekly' ? '週次' :
-                         config.period === 'monthly' ? '月次' : '四半期'}
+                  期間: <span className="font-semibold">{periodLabel(config.period)}</span>
                 </p>
-                <p className="text-gray-600 dark:text-gray-300 mt-2">
-                  レポートに含まれる項目:
-                </p>
-                <ul className="mt-1 text-gray-600 dark:text-gray-300">
-                  {config.includeCharts && <li>• グラフ分析</li>}
-                  {config.includeDetails && <li>• 詳細統計</li>}
-                  {config.includeSentiment && <li>• 感情分析</li>}
-                  {config.includeWordcloud && <li>• ワードクラウド</li>}
-                </ul>
               </div>
             </div>
           ) : (
@@ -268,19 +204,19 @@ const ReportGenerator: React.FC = () => {
 
       {/* エラー表示 */}
       {error && (
-        <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="mt-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded">
           {error}
         </div>
       )}
 
       {/* 成功メッセージ */}
       {success && (
-        <div className="mt-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-          レポートが正常に生成されました！
+        <div className="mt-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded flex items-center justify-between">
+          <span>レポートが正常に生成されました！</span>
           {reportUrl && (
             <button
-              onClick={downloadReport}
-              className="ml-4 text-green-800 underline hover:text-green-900"
+              onClick={() => downloadReport(config.includeCharts ? 'html' : 'md')}
+              className="px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700"
             >
               ダウンロード
             </button>
@@ -300,21 +236,21 @@ const ReportGenerator: React.FC = () => {
         <button
           onClick={() => generateReport('markdown')}
           disabled={generating}
-          className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {generating ? '生成中...' : 'Markdownレポート生成'}
         </button>
       </div>
 
       {/* レポートプレビュー */}
-      {reportUrl && config.includeCharts && (
+      {reportUrl && (
         <div className="mt-6">
           <h3 className="text-lg font-semibold mb-2 text-gray-700 dark:text-gray-200">
-            レポートプレビュー
+            プレビュー
           </h3>
           <iframe
             src={reportUrl}
-            className="w-full h-96 border rounded"
+            className="w-full h-[600px] border rounded bg-white"
             title="Report Preview"
           />
         </div>

@@ -105,3 +105,35 @@ export interface CollectionProgress {
   message?: string;
   logs: LogEntry[];
 }
+
+// 月別統計の型定義
+export interface MonthInfo {
+  year: number;
+  month: number;
+  video_count: number;
+  label: string;
+}
+
+export interface AvailableMonths {
+  months: MonthInfo[];
+}
+
+export interface MonthlyVideoInfo {
+  video_id: string;
+  title: string;
+  published_at: string | null;
+  total_comments: number;
+  mention_comments: number;
+  thumbnail_url?: string;
+}
+
+export interface MonthlyStats {
+  year: number;
+  month: number;
+  label: string;
+  video_count: number;
+  total_comments: number;
+  mention_comments: number;
+  tiger_rankings: RankingItem[];
+  videos: MonthlyVideoInfo[];
+}

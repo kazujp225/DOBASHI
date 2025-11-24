@@ -1,5 +1,5 @@
 {
-  "hayashi": [
+  "hayashi_naohiro": [
     {
       "alias": "林社長",
       "type": "formal",
@@ -46,17 +46,414 @@
       "priority": 4
     },
     {
-      "alias": "キャバクラ",
+      "alias": "林尚弘",
+      "type": "fullname",
+      "priority": 5
+    }
+  ],
+  "kuwata": [
+    {
+      "alias": "桑田社長",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "桑田さん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "桑田",
+      "type": "short",
+      "priority": 2
+    },
+    {
+      "alias": "リューピー",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "りゅーぴー",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "りゅうぴー",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "リュウピー",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "りゅーP",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "リューP",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "桑田龍征",
+      "type": "fullname",
+      "priority": 5
+    }
+  ],
+  "kabumoto": [
+    {
+      "alias": "株本社長",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "株本さん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "株本",
+      "type": "short",
+      "priority": 2
+    },
+    {
+      "alias": "かぶもと",
+      "type": "hiragana",
+      "priority": 3
+    },
+    {
+      "alias": "カブモト",
+      "type": "katakana",
+      "priority": 3
+    },
+    {
+      "alias": "株本祐己",
+      "type": "fullname",
+      "priority": 5
+    },
+    {
+      "alias": "StockSun",
       "type": "business",
+      "priority": 4
+    }
+  ],
+  "hosoi": [
+    {
+      "alias": "細井社長",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "細井さん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "細井",
+      "type": "short",
+      "priority": 2
+    },
+    {
+      "alias": "ほそい",
+      "type": "hiragana",
+      "priority": 3
+    },
+    {
+      "alias": "ホソイ",
+      "type": "katakana",
+      "priority": 3
+    },
+    {
+      "alias": "ドラゴン細井",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "ドラゴン",
+      "type": "nickname",
       "priority": 4
     },
     {
-      "alias": "キャバクラ林",
-      "type": "business",
-      "priority": 4
+      "alias": "細井龍",
+      "type": "fullname",
+      "priority": 5
+    }
+  ],
+  "karasawa": [
+    {
+      "alias": "唐沢社長",
+      "type": "formal",
+      "priority": 1
     },
     {
-      "alias": "林修一",
+      "alias": "唐沢さん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "唐沢",
+      "type": "short",
+      "priority": 2
+    },
+    {
+      "alias": "からさわ",
+      "type": "hiragana",
+      "priority": 3
+    },
+    {
+      "alias": "カラサワ",
+      "type": "katakana",
+      "priority": 3
+    },
+    {
+      "alias": "ななえ",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "ナナエ",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "唐沢菜々江",
+      "type": "fullname",
+      "priority": 5
+    }
+  ],
+  "takeuchi": [
+    {
+      "alias": "竹内社長",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "竹内さん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "竹内",
+      "type": "short",
+      "priority": 2
+    },
+    {
+      "alias": "たけうち",
+      "type": "hiragana",
+      "priority": 3
+    },
+    {
+      "alias": "タケウチ",
+      "type": "katakana",
+      "priority": 3
+    },
+    {
+      "alias": "竹内亢一",
+      "type": "fullname",
+      "priority": 5
+    }
+  ],
+  "mogi": [
+    {
+      "alias": "茂木社長",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "茂木さん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "茂木",
+      "type": "short",
+      "priority": 2
+    },
+    {
+      "alias": "もぎ",
+      "type": "hiragana",
+      "priority": 3
+    },
+    {
+      "alias": "モギ",
+      "type": "katakana",
+      "priority": 3
+    },
+    {
+      "alias": "茂木哲也",
+      "type": "fullname",
+      "priority": 5
+    }
+  ],
+  "kobayashi": [
+    {
+      "alias": "小林社長",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "小林さん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "小林",
+      "type": "short",
+      "priority": 2
+    },
+    {
+      "alias": "こばやし",
+      "type": "hiragana",
+      "priority": 3
+    },
+    {
+      "alias": "コバヤシ",
+      "type": "katakana",
+      "priority": 3
+    },
+    {
+      "alias": "小林真之",
+      "type": "fullname",
+      "priority": 5
+    }
+  ],
+  "misaki": [
+    {
+      "alias": "三崎社長",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "三崎さん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "三崎",
+      "type": "short",
+      "priority": 2
+    },
+    {
+      "alias": "みさき",
+      "type": "hiragana",
+      "priority": 3
+    },
+    {
+      "alias": "ミサキ",
+      "type": "katakana",
+      "priority": 3
+    },
+    {
+      "alias": "青汁王子",
+      "type": "nickname",
+      "priority": 2
+    },
+    {
+      "alias": "青汁",
+      "type": "nickname",
+      "priority": 3
+    },
+    {
+      "alias": "三崎優太",
+      "type": "fullname",
+      "priority": 5
+    }
+  ],
+  "ando": [
+    {
+      "alias": "安藤社長",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "安藤さん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "安藤",
+      "type": "short",
+      "priority": 2
+    },
+    {
+      "alias": "あんどう",
+      "type": "hiragana",
+      "priority": 3
+    },
+    {
+      "alias": "アンドウ",
+      "type": "katakana",
+      "priority": 3
+    },
+    {
+      "alias": "安藤功一郎",
+      "type": "fullname",
+      "priority": 5
+    }
+  ],
+  "noda": [
+    {
+      "alias": "野田社長",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "野田さん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "野田",
+      "type": "short",
+      "priority": 2
+    },
+    {
+      "alias": "のだ",
+      "type": "hiragana",
+      "priority": 3
+    },
+    {
+      "alias": "ノダ",
+      "type": "katakana",
+      "priority": 3
+    },
+    {
+      "alias": "野田慎太郎",
+      "type": "fullname",
+      "priority": 5
+    }
+  ],
+  "kitagawa": [
+    {
+      "alias": "北川社長",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "北川さん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "北川",
+      "type": "short",
+      "priority": 2
+    },
+    {
+      "alias": "きたがわ",
+      "type": "hiragana",
+      "priority": 3
+    },
+    {
+      "alias": "キタガワ",
+      "type": "katakana",
+      "priority": 3
+    },
+    {
+      "alias": "北川哲平",
       "type": "fullname",
       "priority": 5
     }
@@ -130,6 +527,28 @@
       "priority": 3
     }
   ],
+  "hikaru": [
+    {
+      "alias": "ヒカル",
+      "type": "formal",
+      "priority": 1
+    },
+    {
+      "alias": "ヒカルさん",
+      "type": "casual",
+      "priority": 2
+    },
+    {
+      "alias": "ひかる",
+      "type": "hiragana",
+      "priority": 3
+    },
+    {
+      "alias": "hikaru",
+      "type": "romaji",
+      "priority": 4
+    }
+  ],
   "sasaki": [
     {
       "alias": "佐々木社長",
@@ -200,58 +619,6 @@
     },
     {
       "alias": "田中修",
-      "type": "fullname",
-      "priority": 5
-    }
-  ],
-  "kuwata": [
-    {
-      "alias": "桑田社長",
-      "type": "formal",
-      "priority": 1
-    },
-    {
-      "alias": "桑田さん",
-      "type": "casual",
-      "priority": 2
-    },
-    {
-      "alias": "桑田",
-      "type": "short",
-      "priority": 2
-    },
-    {
-      "alias": "リューピー",
-      "type": "nickname",
-      "priority": 3
-    },
-    {
-      "alias": "りゅーぴー",
-      "type": "nickname",
-      "priority": 3
-    },
-    {
-      "alias": "りゅうぴー",
-      "type": "nickname",
-      "priority": 3
-    },
-    {
-      "alias": "リュウピー",
-      "type": "nickname",
-      "priority": 3
-    },
-    {
-      "alias": "りゅーP",
-      "type": "nickname",
-      "priority": 3
-    },
-    {
-      "alias": "リューP",
-      "type": "nickname",
-      "priority": 3
-    },
-    {
-      "alias": "桑田龍生",
       "type": "fullname",
       "priority": 5
     }

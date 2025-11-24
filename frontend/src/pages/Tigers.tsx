@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { tigersApi, getImageUrl } from '../services/api'
+import { tigersApi } from '../services/api'
 import { Users, UserPlus, Edit, Trash2, Tag, Plus, X, FileText, MessageSquare, Scissors, Hash, Briefcase, Type, Languages, Globe, User } from 'lucide-react'
 import Modal from '../components/Modal'
 import TigerForm from '../components/TigerForm'
@@ -123,7 +123,7 @@ const Tigers = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {tigers.map((tiger, index) => (
+                {tigers.map((tiger) => (
                   <tr
                     key={tiger.tiger_id}
                     className="group hover:bg-orange-50/50 dark:hover:bg-gray-700/50 transition-colors"

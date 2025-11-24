@@ -16,7 +16,7 @@ import logging
 
 # ローカルインポート
 from api.routers import (
-    videos, tigers, analysis, stats, auth, export, comparison, tiger_extraction
+    videos, tigers, analysis, stats, auth, export, comparison, tiger_extraction, reports
 )
 from core import settings
 from models import init_db
@@ -128,6 +128,7 @@ app.include_router(stats.router, prefix=f"{api_v1_prefix}/stats", tags=["stats"]
 app.include_router(export.router, prefix=f"{api_v1_prefix}/export", tags=["export"])
 app.include_router(comparison.router, prefix=f"{api_v1_prefix}/comparison", tags=["comparison"])
 app.include_router(tiger_extraction.router, prefix=f"{api_v1_prefix}/tigers", tags=["tiger-extraction"])
+app.include_router(reports.router, prefix=f"{api_v1_prefix}/reports", tags=["reports"])
 
 
 @app.get("/")

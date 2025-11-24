@@ -8,6 +8,7 @@ import Collection from './pages/Collection'
 import Tigers from './pages/Tigers'
 import Comparison from './pages/Comparison'
 import Reports from './pages/Reports'
+import MonthlyRanking from './pages/MonthlyRanking'
 
 function AppContent() {
   const { theme } = useTheme()
@@ -42,6 +43,7 @@ function AppContent() {
       <Layout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/monthly" element={<MonthlyRanking />} />
           <Route path="/analysis" element={<Analysis />} />
           <Route path="/collection" element={<Collection />} />
           <Route path="/tigers" element={<Tigers />} />

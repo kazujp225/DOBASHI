@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Search, Download, Users, Moon, Sun, BarChart3, FileText } from 'lucide-react'
+import { LayoutDashboard, Search, Download, Users, Moon, Sun, BarChart3, FileText, Calendar } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 
 interface LayoutProps {
@@ -13,6 +13,7 @@ const Layout = ({ children }: LayoutProps) => {
 
   const navItems = [
     { path: '/', icon: LayoutDashboard, label: 'ダッシュボード' },
+    { path: '/monthly', icon: Calendar, label: '月別ランキング' },
     { path: '/analysis', icon: Search, label: '動画分析' },
     { path: '/collection', icon: Download, label: 'データ収集' },
     { path: '/tigers', icon: Users, label: '社長マスタ' },

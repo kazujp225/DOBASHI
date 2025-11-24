@@ -26,9 +26,10 @@ from analyzers.comment_analyzer import CommentAnalyzer
 from aggregators.stats_aggregator import StatsAggregator
 from ..schemas import CollectionRequest, CollectionProgress, AnalysisRequest, AnalysisResult, LogEntry
 from sqlalchemy.orm import Session
-from models import get_db, Video as VideoDB, Comment as CommentDB, CommentTigerRelation, VideoTigerStats
+from models import get_db, Video as VideoDB, Comment as CommentDB, CommentTigerRelation, VideoTigerStats, VideoTiger, Tiger as TigerDB
 from sqlalchemy import delete
 from datetime import datetime
+import threading
 
 # YouTube API キーを環境変数から取得（値はログに出さない）
 YOUTUBE_API_KEY = os.environ.get('YOUTUBE_API_KEY', '')
@@ -39,21 +40,32 @@ else:
 
 router = APIRouter()
 
-# 進捗管理用の簡易ストレージ
+# 進捗管理用の簡易ストレージ（スレッドセーフ）
 collection_status: Dict[str, CollectionProgress] = {}
+collection_locks: Dict[str, threading.Lock] = {}
+_status_lock = threading.Lock()  # collection_status/collection_locks へのアクセス用
+
+
+def get_collection_lock(video_id: str) -> threading.Lock:
+    """動画IDごとのロックを取得（なければ作成）"""
+    with _status_lock:
+        if video_id not in collection_locks:
+            collection_locks[video_id] = threading.Lock()
+        return collection_locks[video_id]
 
 
 def add_log(video_id: str, level: str, message: str, emoji: str = None):
-    """ログエントリを追加"""
+    """ログエントリを追加（スレッドセーフ）"""
     from datetime import datetime
-    if video_id in collection_status:
-        log_entry = LogEntry(
-            timestamp=datetime.now().isoformat(),
-            level=level,
-            message=message,
-            emoji=emoji
-        )
-        collection_status[video_id].logs.append(log_entry)
+    with _status_lock:
+        if video_id in collection_status:
+            log_entry = LogEntry(
+                timestamp=datetime.now().isoformat(),
+                level=level,
+                message=message,
+                emoji=emoji
+            )
+            collection_status[video_id].logs.append(log_entry)
 
 
 def extract_video_id(url: str) -> str:
@@ -73,14 +85,19 @@ async def collect_comments(request: CollectionRequest, background_tasks: Backgro
     """
     video_id = extract_video_id(request.video_url)
 
-    # 初期ステータスを設定
-    collection_status[video_id] = CollectionProgress(
-        status="collecting",
-        video_id=video_id,
-        collected_comments=0,
-        message="コメント収集を開始しました",
-        logs=[]
-    )
+    # 同じ動画の同時収集をチェック
+    with _status_lock:
+        if video_id in collection_status and collection_status[video_id].status == "collecting":
+            return collection_status[video_id]  # 既に収集中
+
+        # 初期ステータスを設定
+        collection_status[video_id] = CollectionProgress(
+            status="collecting",
+            video_id=video_id,
+            collected_comments=0,
+            message="コメント収集を開始しました",
+            logs=[]
+        )
 
     # バックグラウンドタスクを追加
     background_tasks.add_task(collect_comments_task, video_id)
@@ -124,12 +141,13 @@ def collect_comments_task(video_id: str):
             return
 
         add_log(video_id, "success", f"✅ 動画情報を取得: {video_info['title']}", "✅")
-        add_log(video_id, "info", f"📊 総コメント数: {video_info.get('comment_count', 0):,}件", "📊")
+        estimated_count = video_info.get('comment_count', 0)
+        add_log(video_id, "info", f"📊 コメント数（推定）: 約{estimated_count:,}件", "📊")
 
         # コメントを収集（全件取得）
         add_log(video_id, "info", "💬 コメントを収集中...", "💬")
         comments = collector.get_video_comments(video_id, max_results=None)
-        add_log(video_id, "success", f"✨ {len(comments):,}件のコメントを収集しました", "✨")
+        add_log(video_id, "success", f"✨ {len(comments):,}件のコメントを収集完了", "✨")
 
         # データを保存
         add_log(video_id, "info", "💾 データを保存中...", "💾")
@@ -213,8 +231,15 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
             detail=f"Comments for video {request.video_id} not found. Please collect first."
         )
 
-    with open(comments_file, 'r', encoding='utf-8') as f:
-        comments = json.load(f)
+    # JSONパース失敗のエラーハンドリング
+    try:
+        with open(comments_file, 'r', encoding='utf-8') as f:
+            comments = json.load(f)
+    except json.JSONDecodeError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to parse comments file: {str(e)}"
+        )
 
     # 社長マスタのパス
     tigers_file = os.path.join(os.path.dirname(__file__), "../../../data/tigers.json")
@@ -347,6 +372,7 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
         json.dump(analyzed_comments, f, ensure_ascii=False, indent=2)
 
     # ========== DB永続化 ==========
+    db_warning = None  # DB永続化の警告メッセージ
     try:
         # Video レコードの存在確認/作成
         video_in_db = db.query(VideoDB).filter(VideoDB.video_id == request.video_id).first()
@@ -367,11 +393,32 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
                 published_at=datetime.fromisoformat((video_meta or {}).get('published_at', '1970-01-01T00:00:00+00:00').replace('Z', '+00:00')) if (video_meta and video_meta.get('published_at')) else None,
                 view_count=(video_meta or {}).get('view_count', 0),
                 like_count=(video_meta or {}).get('like_count', 0),
-                comment_count=(video_meta or {}).get('comment_count', len(comments)),
+                comment_count=len(comments),  # 実際に取得したコメント数を使用
                 thumbnail_url=(video_meta or {}).get('thumbnail_url', '')
             )
             db.add(video_in_db)
             db.flush()
+        else:
+            # 既存のVideoがある場合、コメント数を実際の数で更新
+            video_in_db.comment_count = len(comments)
+
+        # ========== VideoTiger 登録 ==========
+        # 既存のVideoTiger関係を削除
+        db.query(VideoTiger).filter(VideoTiger.video_id == request.video_id).delete()
+
+        # 出演社長を登録（DBに存在する社長のみ）
+        for order, tiger_id in enumerate(request.tiger_ids, start=1):
+            # 社長がDBに存在するか確認
+            tiger_exists = db.query(TigerDB).filter(TigerDB.tiger_id == tiger_id).first()
+            if tiger_exists:
+                video_tiger = VideoTiger(
+                    video_id=request.video_id,
+                    tiger_id=tiger_id,
+                    appearance_order=order
+                )
+                db.add(video_tiger)
+            else:
+                print(f"[analyze] Warning: Tiger {tiger_id} not found in DB, skipping VideoTiger registration")
 
         # コメントのアップサートと言及関係の更新
         for c in analyzed_comments:
@@ -413,6 +460,11 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
                 tid = m.get('tiger_id') or m.get('tigerId')
                 if not tid:
                     continue
+                # 社長がDBに存在するか確認（外部キー制約エラー防止）
+                tiger_exists = db.query(TigerDB).filter(TigerDB.tiger_id == tid).first()
+                if not tiger_exists:
+                    print(f"[analyze] Warning: Tiger {tid} not found in DB, skipping CommentTigerRelation")
+                    continue
                 rel = CommentTigerRelation(
                     comment_id=c['comment_id'],
                     tiger_id=tid,
@@ -430,6 +482,11 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
         # 順位付与済みstatsから生成
         ss = list(stats['tiger_stats'].values())
         for s in ss:
+            # 社長がDBに存在するか確認
+            tiger_exists = db.query(TigerDB).filter(TigerDB.tiger_id == s['tiger_id']).first()
+            if not tiger_exists:
+                print(f"[analyze] Warning: Tiger {s['tiger_id']} not found in DB, skipping VideoTigerStats")
+                continue
             db.add(VideoTigerStats(
                 video_id=request.video_id,
                 tiger_id=s['tiger_id'],
@@ -442,10 +499,14 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
             ))
 
         db.commit()
+        print(f"[analyze] DB persistence successful for video {request.video_id}")
     except Exception as e:
-        # DBへの永続化失敗はAPI自体は成功させる（ログのみ）
+        # DBへの永続化失敗：ロールバックして警告を記録
+        db.rollback()
         import traceback
-        print(f"[analyze] DB persistence failed: {e}\n{traceback.format_exc()}")
+        error_detail = f"{e}\n{traceback.format_exc()}"
+        print(f"[analyze] DB persistence failed: {error_detail}")
+        db_warning = f"DB永続化に失敗しました: {str(e)}"
 
     processing_time = time.time() - start_time
 
@@ -496,3 +557,33 @@ async def get_analyzed_comments(video_id: str, tiger_id: str = None):
 
     # 言及があるコメントのみ返す
     return [c for c in analyzed_comments if c.get('tiger_mentions')]
+
+
+@router.get("/video-tigers/{video_id}")
+async def get_video_tigers(video_id: str, db: Session = Depends(get_db)):
+    """
+    動画に登録済みの社長一覧を取得
+    """
+    video_tigers = db.query(VideoTiger).filter(VideoTiger.video_id == video_id).order_by(VideoTiger.appearance_order).all()
+
+    if not video_tigers:
+        return {"video_id": video_id, "tigers": [], "has_registered": False}
+
+    # 社長情報を取得
+    tiger_ids = [vt.tiger_id for vt in video_tigers]
+    tigers_db = db.query(TigerDB).filter(TigerDB.tiger_id.in_(tiger_ids)).all()
+    tiger_map = {t.tiger_id: t for t in tigers_db}
+
+    tigers = []
+    for vt in video_tigers:
+        tiger = tiger_map.get(vt.tiger_id)
+        if tiger:
+            tigers.append({
+                "tiger_id": tiger.tiger_id,
+                "display_name": tiger.display_name,
+                "full_name": tiger.full_name,
+                "image_url": tiger.image_url,
+                "appearance_order": vt.appearance_order
+            })
+
+    return {"video_id": video_id, "tigers": tigers, "has_registered": True}
