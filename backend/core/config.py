@@ -1,10 +1,23 @@
 """
 アプリケーション設定
+環境変数は全てこのファイルで一元管理
 """
 from pydantic_settings import BaseSettings
 from typing import Optional
 import secrets
 from pathlib import Path
+from dotenv import load_dotenv
+
+# .envファイルを読み込み（backend/.env を優先、なければプロジェクトルート）
+_base_dir = Path(__file__).resolve().parent.parent
+_env_paths = [
+    _base_dir / ".env",           # backend/.env
+    _base_dir.parent / ".env",    # project root/.env
+]
+for _env_path in _env_paths:
+    if _env_path.exists():
+        load_dotenv(_env_path)
+        break
 
 class Settings(BaseSettings):
     """

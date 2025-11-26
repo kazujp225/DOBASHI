@@ -8,18 +8,12 @@ import os
 import time
 import sys
 from pathlib import Path
-from dotenv import load_dotenv
 
 # プロジェクトルートをパスに追加
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 
-# .envファイルを読み込み
-env_path = Path(__file__).parent.parent.parent / '.env'
-if env_path.exists():
-    load_dotenv(env_path)
-    print(f"[analysis.py] ✅ .env file loaded from: {env_path}")
-else:
-    print(f"[analysis.py] ⚠️ .env file not found at: {env_path}")
+# 設定をインポート（環境変数はconfig.pyで一元管理）
+from core.config import settings
 
 from collectors.youtube_collector import YouTubeCollector
 from analyzers.comment_analyzer import CommentAnalyzer
@@ -33,12 +27,8 @@ from sqlalchemy import delete
 from datetime import datetime
 import threading
 
-# YouTube API キーを環境変数から取得（値はログに出さない）
-YOUTUBE_API_KEY = os.environ.get('YOUTUBE_API_KEY', '')
-if YOUTUBE_API_KEY:
-    print("[analysis.py] ✅ YOUTUBE_API_KEY configured")
-else:
-    print("[analysis.py] ⚠️ YOUTUBE_API_KEY not found in environment")
+# YouTube API キーは settings から取得
+YOUTUBE_API_KEY = settings.youtube_api_key or ''
 
 router = APIRouter()
 

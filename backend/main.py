@@ -2,9 +2,7 @@
 令和の虎 社長別コメント言及分析システム
 FastAPI Backend
 """
-import os
 from pathlib import Path
-from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
