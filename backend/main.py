@@ -61,6 +61,11 @@ STATIC_DIR = Path(__file__).parent / "static"
 STATIC_DIR.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+# フロントエンドの配信設定（SPAサポート）
+FRONTEND_DIR = Path(__file__).parent / "frontend_dist"
+if FRONTEND_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIR / "assets")), name="frontend_assets")
+
 # ロギング設定
 logging.basicConfig(
     level=logging.INFO,
@@ -172,6 +177,30 @@ async def health_check():
         "database": db_status,
         "cache": cache_status,
         "version": settings.app_version
+    }
+
+
+# フロントエンドSPA用：APIルート以外は index.html を返す
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str):
+    """フロントエンドのSPAルーティング"""
+    from fastapi.responses import FileResponse
+
+    # APIパスはスキップ
+    if full_path.startswith("api/") or full_path.startswith("docs") or full_path.startswith("redoc") or full_path.startswith("openapi"):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Not found")
+
+    index_file = FRONTEND_DIR / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file)
+
+    # フロントエンドがない場合はAPI情報を返す
+    return {
+        "message": settings.app_name,
+        "version": settings.app_version,
+        "docs": "/docs",
+        "note": "Frontend not deployed. Access /docs for API documentation."
     }
 
 
