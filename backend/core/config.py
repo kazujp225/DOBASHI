@@ -54,14 +54,26 @@ class Settings(BaseSettings):
     redis_url: Optional[str] = None
     cache_expire_seconds: int = 3600  # 1時間
 
-    # CORS設定
-    backend_cors_origins: list = [
-        "http://localhost",
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:8501"
-    ]
+    # CORS設定（環境変数CORS_ORIGINSでカンマ区切りで追加可能）
+    cors_origins: Optional[str] = None
+
+    @property
+    def backend_cors_origins(self) -> list:
+        """CORSオリジンリストを取得"""
+        origins = [
+            "http://localhost",
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://localhost:8501"
+        ]
+        # 環境変数からの追加
+        if self.cors_origins:
+            for origin in self.cors_origins.split(","):
+                origin = origin.strip()
+                if origin and origin not in origins:
+                    origins.append(origin)
+        return origins
 
     # LLM設定（オプション）
     openai_api_key: Optional[str] = None
@@ -73,8 +85,8 @@ class Settings(BaseSettings):
     max_concurrent_requests: int = 5
     request_delay_seconds: float = 0.5  # APIレート制限対策
 
-    # ファイルパス設定
-    base_dir: Path = Path(__file__).resolve().parent.parent.parent
+    # ファイルパス設定（バックエンドディレクトリを基準）
+    base_dir: Path = Path(__file__).resolve().parent.parent
     data_dir: Path = base_dir / "data"
     cache_dir: Path = data_dir / "cache"
     logs_dir: Path = base_dir / "logs"

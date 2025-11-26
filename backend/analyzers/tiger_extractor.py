@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 
 from models import Tiger, VideoTiger, Video
 
-# aliases.json のパス (プロジェクトルートの data/ ディレクトリ)
-ALIASES_FILE = os.path.join(os.path.dirname(__file__), "../../data/aliases.json")
+# aliases.json のパス (バックエンドの data/ ディレクトリ)
+ALIASES_FILE = os.path.join(os.path.dirname(__file__), "../data/aliases.json")
 
 
 class TigerExtractor:
@@ -44,9 +44,19 @@ class TigerExtractor:
             # 本名
             if tiger.full_name:
                 patterns.add(tiger.full_name)
-                # 姓のみ
+                # スペースを除去したバージョンも追加
+                patterns.add(tiger.full_name.replace(' ', '').replace('　', ''))
+                # 姓のみ（スペース区切りの場合）
                 if ' ' in tiger.full_name:
                     patterns.add(tiger.full_name.split()[0])
+                # 姓と名の間にスペースを入れたバージョン（2-3文字 + 残り）
+                # 例: 林尚弘 → 林 尚弘
+                name_no_space = tiger.full_name.replace(' ', '').replace('　', '')
+                if len(name_no_space) >= 3:
+                    # 姓が1-2文字の場合のバリエーションを追加
+                    for i in range(1, min(3, len(name_no_space))):
+                        patterns.add(name_no_space[:i] + ' ' + name_no_space[i:])
+                        patterns.add(name_no_space[:i] + '　' + name_no_space[i:])
 
             # aliases.json からエイリアスを追加
             if tiger.tiger_id in self.aliases:
@@ -116,34 +126,65 @@ class TigerExtractor:
         # 概要欄を行ごとに処理
         lines = description.split('\n')
 
-        # パターン1: ★令和の虎 セクションを探す
+        # パターン1: ★令和の虎 セクションを探す（複数のフォーマットに対応）
         in_tiger_section = False
+        tiger_section_keywords = ['★令和の虎', '★レギュラー虎', '★Tiger Funding']
+        section_end_keywords = ['★志願者', '★司会', '★チャンネル', '★リライブ', '主宰・岩井', '二代目主宰']
+
         for i, line in enumerate(lines):
             line_stripped = line.strip()
 
-            # ★令和の虎 セクション開始
-            if '★令和の虎' in line_stripped or '★レギュラー虎' in line_stripped:
+            # 令和の虎 セクション開始（より柔軟なマッチ）
+            if any(kw in line_stripped for kw in tiger_section_keywords):
                 in_tiger_section = True
                 continue
 
-            # 別のセクション開始で終了 (★で始まる別のセクション)
-            if in_tiger_section and line_stripped.startswith('★') and '令和の虎' not in line_stripped:
-                in_tiger_section = False
-                continue
+            # 別のセクション開始で終了
+            if in_tiger_section:
+                # ★で始まる別のセクション（令和の虎を含まない）
+                if line_stripped.startswith('★') and '令和の虎' not in line_stripped and 'Tiger' not in line_stripped:
+                    in_tiger_section = False
+                    continue
+                # 明確なセクション終了キーワード
+                if any(kw in line_stripped for kw in section_end_keywords):
+                    in_tiger_section = False
+                    continue
 
             # 令和の虎セクション内の行を処理
             if in_tiger_section and line_stripped:
                 # 名前の行を検出 (括弧で始まらない、URLでない、短すぎない)
                 if not line_stripped.startswith('（') and not line_stripped.startswith('(') \
                    and not line_stripped.startswith('【') and not line_stripped.startswith('http') \
-                   and len(line_stripped) >= 2 and len(line_stripped) <= 20:
-                    # 社長名かチェック
+                   and len(line_stripped) >= 2 and len(line_stripped) <= 30:
+                    # 社長名かチェック（スペースを除去してもマッチ）
                     tiger_id = self._match_tiger_name(line_stripped)
                     if tiger_id:
                         found_tiger_ids.add(tiger_id)
                     else:
-                        # 未登録の名前として記録
-                        unmatched_names.append(line_stripped)
+                        # 「/」で区切られた複合名前（例：ゆうじ社長/田中 雄士）
+                        if '/' in line_stripped:
+                            for part in line_stripped.split('/'):
+                                part = part.strip()
+                                tiger_id = self._match_tiger_name(part)
+                                if tiger_id:
+                                    found_tiger_ids.add(tiger_id)
+                                    break
+                            else:
+                                # どちらもマッチしなかった場合
+                                unmatched_names.append(line_stripped)
+                        else:
+                            # 未登録の名前として記録（明らかに名前でない行を除外）
+                            skip_patterns = [
+                                'http', 'www.', '.com', '.jp', '@',
+                                '▽', '→', '【', '】', '※', '★', '◆', '◇',  # 記号で始まる/含む行
+                                'こちら', '申込', '応募', '募集', '詳細', '情報',  # URL案内などの文
+                                'チャンネル', 'CHANNEL', 'YouTube', 'Twitter', 'Instagram',
+                                'スポンサー', '運営', '加盟', '登録', '司会',
+                            ]
+                            if not any(skip in line_stripped for skip in skip_patterns):
+                                # 名前らしい形式かチェック（日本語名前は2-8文字程度）
+                                if len(line_stripped) >= 2 and len(line_stripped) <= 15:
+                                    unmatched_names.append(line_stripped)
 
         # パターン2: タイムスタンプ形式: 00:00 社長名
         for line in lines[:100]:
@@ -159,6 +200,17 @@ class TigerExtractor:
                 tiger_id = self._match_tiger_name(line)
                 if tiger_id:
                     found_tiger_ids.add(tiger_id)
+
+        # パターン3: 概要欄全体から直接マッチング（セクションに関係なく）
+        # これにより、異なるフォーマットの概要欄でも社長を検出できる
+        for tiger_id, patterns in self.tiger_patterns.items():
+            if tiger_id in found_tiger_ids:
+                continue
+            for pattern in patterns:
+                # 長めのパターン（3文字以上）のみ全文検索
+                if len(pattern) >= 3 and pattern in description:
+                    found_tiger_ids.add(tiger_id)
+                    break
 
         return {'matched_ids': list(found_tiger_ids), 'unmatched_names': unmatched_names}
 
@@ -248,12 +300,20 @@ class TigerExtractor:
             マッチした社長のID（見つからない場合はNone）
         """
         text = text.strip()
+        # スペースを除去した正規化テキストも準備
+        text_normalized = text.replace(' ', '').replace('　', '')
 
         # 各社長のパターンとマッチング
         for tiger_id, patterns in self.tiger_patterns.items():
             for pattern in patterns:
-                if len(pattern) >= 2 and pattern in text:
-                    return tiger_id
+                if len(pattern) >= 2:
+                    # 元テキストでマッチ
+                    if pattern in text:
+                        return tiger_id
+                    # スペース除去後のテキストでマッチ
+                    pattern_normalized = pattern.replace(' ', '').replace('　', '')
+                    if pattern_normalized in text_normalized:
+                        return tiger_id
 
         return None
 

@@ -25,6 +25,7 @@ google-auth-oauthlib==1.2.0
 # Database
 sqlalchemy>=2.0.44
 alembic==1.13.1
+psycopg2-binary==2.9.9
 
 # Security & Authentication
 python-jose[cryptography]==3.3.0

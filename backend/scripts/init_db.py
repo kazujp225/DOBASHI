@@ -21,7 +21,7 @@ def load_json_data(filepath: Path):
 
 def migrate_tigers_data():
     """社長データの移行"""
-    data_dir = Path(__file__).parent.parent.parent / "data"
+    data_dir = Path(__file__).parent.parent / "data"
     tigers_file = data_dir / "tigers.json"
     aliases_file = data_dir / "aliases.json"
 
@@ -73,7 +73,7 @@ def migrate_tigers_data():
 
 def migrate_videos_data():
     """動画データの移行"""
-    data_dir = Path(__file__).parent.parent.parent / "data"
+    data_dir = Path(__file__).parent.parent / "data"
     videos_file = data_dir / "videos.json"
 
     videos_data = load_json_data(videos_file)

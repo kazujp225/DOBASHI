@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 
 # .envファイルを読み込み
-env_path = Path(__file__).parent.parent.parent.parent / '.env'
+env_path = Path(__file__).parent.parent.parent / '.env'
 if env_path.exists():
     load_dotenv(env_path)
     print(f"[analysis.py] ✅ .env file loaded from: {env_path}")
@@ -153,7 +153,7 @@ def collect_comments_task(video_id: str):
 
         # データを保存
         add_log(video_id, "info", "💾 データを保存中...", "💾")
-        data_dir = os.path.join(os.path.dirname(__file__), "../../../data")
+        data_dir = os.path.join(os.path.dirname(__file__), "../../data")
         os.makedirs(data_dir, exist_ok=True)
 
         # 動画データを保存
@@ -284,7 +284,7 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
     # コメントデータを読み込み
     comments_file = os.path.join(
         os.path.dirname(__file__),
-        f"../../../data/comments_{request.video_id}.json"
+        f"../../data/comments_{request.video_id}.json"
     )
 
     if not os.path.exists(comments_file):
@@ -304,8 +304,8 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
         )
 
     # 社長マスタのパス
-    tigers_file = os.path.join(os.path.dirname(__file__), "../../../data/tigers.json")
-    aliases_file = os.path.join(os.path.dirname(__file__), "../../../data/aliases.json")
+    tigers_file = os.path.join(os.path.dirname(__file__), "../../data/tigers.json")
+    aliases_file = os.path.join(os.path.dirname(__file__), "../../data/aliases.json")
 
     # 社長データ・エイリアス読み込み（統計・表示名付与・ID解決用）
     with open(tigers_file, 'r', encoding='utf-8') as f:
@@ -390,7 +390,7 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
     )
 
     # 動画情報を取得してtitleを追加
-    videos_file = os.path.join(os.path.dirname(__file__), "../../../data/videos.json")
+    videos_file = os.path.join(os.path.dirname(__file__), "../../data/videos.json")
     video_title = "Unknown"
     if os.path.exists(videos_file):
         with open(videos_file, 'r', encoding='utf-8') as f:
@@ -420,7 +420,7 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
 
     stats_file = os.path.join(
         os.path.dirname(__file__),
-        f"../../../data/video_stats_{request.video_id}.json"
+        f"../../data/video_stats_{request.video_id}.json"
     )
     with open(stats_file, 'w', encoding='utf-8') as f:
         json.dump(save_stats, f, ensure_ascii=False, indent=2)
@@ -428,7 +428,7 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
     # 分析済みコメントも保存（コメント一覧表示用）
     analyzed_comments_file = os.path.join(
         os.path.dirname(__file__),
-        f"../../../data/analyzed_comments_{request.video_id}.json"
+        f"../../data/analyzed_comments_{request.video_id}.json"
     )
     with open(analyzed_comments_file, 'w', encoding='utf-8') as f:
         json.dump(analyzed_comments, f, ensure_ascii=False, indent=2)
@@ -440,7 +440,7 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
         video_in_db = db.query(VideoDB).filter(VideoDB.video_id == request.video_id).first()
         if not video_in_db:
             # videos.json から補完
-            videos_file = os.path.join(os.path.dirname(__file__), "../../../data/videos.json")
+            videos_file = os.path.join(os.path.dirname(__file__), "../../data/videos.json")
             video_meta = None
             if os.path.exists(videos_file):
                 with open(videos_file, 'r', encoding='utf-8') as f:
@@ -597,7 +597,7 @@ async def get_analyzed_comments(video_id: str, tiger_id: str = None):
     """
     analyzed_comments_file = os.path.join(
         os.path.dirname(__file__),
-        f"../../../data/analyzed_comments_{video_id}.json"
+        f"../../data/analyzed_comments_{video_id}.json"
     )
 
     if not os.path.exists(analyzed_comments_file):

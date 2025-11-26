@@ -24,7 +24,7 @@ async def get_video_stats(video_id: str, db: Session = Depends(get_db)):
     if not video:
         # JSONフォールバック
         try:
-            stats_path = os.path.join(os.path.dirname(__file__), f"../../../data/video_stats_{video_id}.json")
+            stats_path = os.path.join(os.path.dirname(__file__), f"../../data/video_stats_{video_id}.json")
             with open(stats_path, 'r', encoding='utf-8') as f:
                 stats_json = json.load(f)
             return VideoStats(**stats_json)
@@ -79,7 +79,7 @@ async def get_video_stats(video_id: str, db: Session = Depends(get_db)):
 
     # DBに統計がない場合はJSONフォールバック
     try:
-        stats_path = os.path.join(os.path.dirname(__file__), f"../../../data/video_stats_{video_id}.json")
+        stats_path = os.path.join(os.path.dirname(__file__), f"../../data/video_stats_{video_id}.json")
         with open(stats_path, 'r', encoding='utf-8') as f:
             stats_json = json.load(f)
         return VideoStats(**stats_json)
@@ -146,7 +146,7 @@ async def get_overview(db: Session = Depends(get_db)):
     if total_videos == 0 and total_comments == 0:
         # JSONフォールバック
         import os, json
-        base = os.path.join(os.path.dirname(__file__), "../../../data")
+        base = os.path.join(os.path.dirname(__file__), "../../data")
         videos_path = os.path.join(base, "videos.json")
         try:
             with open(videos_path, 'r', encoding='utf-8') as f:

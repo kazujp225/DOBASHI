@@ -10,7 +10,7 @@ from ..schemas import Video, VideoWithStats
 
 router = APIRouter()
 
-VIDEOS_FILE = os.path.join(os.path.dirname(__file__), "../../../data/videos.json")
+VIDEOS_FILE = os.path.join(os.path.dirname(__file__), "../../data/videos.json")
 
 
 def load_videos() -> List[dict]:
@@ -39,7 +39,7 @@ async def get_video(video_id: str):
         raise HTTPException(status_code=404, detail=f"Video {video_id} not found")
 
     # 統計情報を読み込み
-    stats_file = os.path.join(os.path.dirname(__file__), f"../../../data/video_stats_{video_id}.json")
+    stats_file = os.path.join(os.path.dirname(__file__), f"../../data/video_stats_{video_id}.json")
     try:
         with open(stats_file, 'r', encoding='utf-8') as f:
             stats = json.load(f)

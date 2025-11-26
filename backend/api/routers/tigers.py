@@ -18,8 +18,8 @@ from ..dependencies import get_current_user
 
 router = APIRouter()
 
-TIGERS_FILE = os.path.join(os.path.dirname(__file__), "../../../data/tigers.json")
-ALIASES_FILE = os.path.join(os.path.dirname(__file__), "../../../data/aliases.json")
+TIGERS_FILE = os.path.join(os.path.dirname(__file__), "../../data/tigers.json")
+ALIASES_FILE = os.path.join(os.path.dirname(__file__), "../../data/aliases.json")
 
 
 def load_tigers() -> List[dict]:
