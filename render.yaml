@@ -13,7 +13,7 @@ services:
     repo: https://github.com/kazujp225/DOBASHI
     branch: main
     rootDir: backend
-    buildCommand: "pip install -r requirements.txt && cp -r ../frontend/dist ./frontend_dist && mkdir -p data logs static"
+    buildCommand: "pip install -r requirements.txt"
     startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
     autoDeploy: true
     envVars:
