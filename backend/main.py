@@ -83,6 +83,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# UTF-8エンコーディングを確実にするミドルウェア
+@app.middleware("http")
+async def add_charset_middleware(request: Request, call_next):
+    response = await call_next(request)
+    content_type = response.headers.get("content-type", "")
+    if "application/json" in content_type and "charset" not in content_type:
+        response.headers["content-type"] = "application/json; charset=utf-8"
+    return response
+
 # グローバル例外ハンドラー
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
