@@ -63,8 +63,8 @@ yarn-error.log*
 package-lock.json
 yarn.lock
 
-# Frontend build
-frontend/dist/
+# Frontend build (dist is committed for Render deployment)
+# frontend/dist/
 frontend/build/
 frontend/.vite/
 

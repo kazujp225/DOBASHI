@@ -7,12 +7,14 @@ databases:
 services:
   - type: web
     name: tora-app
-    runtime: docker
+    runtime: python
     region: singapore
     plan: free
     repo: https://github.com/kazujp225/DOBASHI
     branch: main
-    dockerfilePath: ./Dockerfile
+    rootDir: backend
+    buildCommand: "pip install -r requirements.txt && cp -r ../frontend/dist ./frontend_dist && mkdir -p data logs static"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
     autoDeploy: true
     envVars:
       - key: DATABASE_URL
