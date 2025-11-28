@@ -12,6 +12,7 @@ services:
     plan: free
     repo: https://github.com/kazujp225/DOBASHI
     branch: main
+    rootDir: ""
     autoDeploy: true
     buildCommand: "./build.sh"
     startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
