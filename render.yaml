@@ -13,6 +13,8 @@ services:
     repo: https://github.com/kazujp225/DOBASHI
     branch: main
     autoDeploy: true
+    buildCommand: "./build.sh"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -26,3 +28,5 @@ services:
         generateValue: true
       - key: PYTHON_VERSION
         value: "3.11.0"
+      - key: NODE_VERSION
+        value: "20"

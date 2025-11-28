@@ -51,7 +51,11 @@ class Settings(BaseSettings):
     def get_database_url(self) -> str:
         """データベースURLを取得"""
         if self.database_url:
-            return self.database_url
+            # Render uses postgres:// but SQLAlchemy requires postgresql://
+            url = self.database_url
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql://", 1)
+            return url
 
         if self.database_type == "postgresql":
             return f"postgresql://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
