@@ -166,5 +166,96 @@
     "full_name": "細井 龍",
     "description": "アマソラクリニック院長・美容医療/医学生教育コンテンツ発信者",
     "image_url": ""
+  },
+  {
+    "tiger_id": "aosasa_hirofumi",
+    "display_name": "あお社長",
+    "full_name": "青笹 寛史",
+    "description": "動画編集スクール/動画マーケ事業の創業者（アズール/KIBUN）",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "iguchi_tomoaki",
+    "display_name": "井口社長",
+    "full_name": "井口 智明",
+    "description": "美容室チェーン運営・ディアローグHD代表・元志願者",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "moteki_tetsuya",
+    "display_name": "茂木社長",
+    "full_name": "茂木 哲也",
+    "description": "ピナイ家事代行サービス代表・家事代行事業/司会も担当",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "tanimoto_yoshitsugu",
+    "display_name": "谷本社長",
+    "full_name": "谷本 吉紹",
+    "description": "介護/福祉/飲食/AI等を展開するエースタイルHD創業者",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "kabumoto_yuki",
+    "display_name": "株本社長",
+    "full_name": "株本 祐己",
+    "description": "StockSun創業者・Webマーケ/広告/フリーランス組織化コンサル",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "shimada_takafumi",
+    "display_name": "島やん",
+    "full_name": "島田 隆史",
+    "description": "OMO（お客様みなさまおかげさま）代表・ラーメンFC展開",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "tanaka_yuji",
+    "display_name": "田中社長",
+    "full_name": "田中 雄士",
+    "description": "ユージーエース代表・港区不動産仲介/投資コンサル",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "kinoshita_hayato",
+    "display_name": "木下社長",
+    "full_name": "木下 勇人",
+    "description": "レディング税理士法人創業者・相続/資産税専門",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "araki_anna",
+    "display_name": "アンナ社長",
+    "full_name": "荒木 杏奈",
+    "description": "アンナアドバイザーズ代表・海外不動産投資の専門家",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "sasaki_takashi",
+    "display_name": "佐々木社長",
+    "full_name": "佐々木 貴史",
+    "description": "リライブシャツ開発・リライブウェア運営",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "takenouchi_yukihiro",
+    "display_name": "竹之内社長",
+    "full_name": "竹之内 教博",
+    "description": "りらくる創業者・多数事業を持つ連続起業家",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "endo_yuki",
+    "display_name": "遠藤社長",
+    "full_name": "遠藤 悠記",
+    "description": "美容サロン経営/武田塾FCオーナー",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "kobayashi_masayuki",
+    "display_name": "小林社長",
+    "full_name": "小林 真之",
+    "description": "ProLogue代表・Web広告/マーケティング支援",
+    "image_url": ""
   }
 ]
