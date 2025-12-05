@@ -2,6 +2,7 @@ export interface Tiger {
   tiger_id: string;
   display_name: string;
   full_name: string;
+  category?: 'regular' | 'semi_regular' | 'other';
   description?: string;
   image_url?: string;
 }
