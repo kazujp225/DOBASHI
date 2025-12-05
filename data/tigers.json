@@ -4,258 +4,439 @@
     "display_name": "林社長",
     "full_name": "林 尚弘",
     "description": "株式会社FCチャンネル代表取締役・武田塾元塾長・令和の虎二代目主宰",
-    "image_url": ""
-  },
-  {
-    "tiger_id": "iwai",
-    "display_name": "岩井社長",
-    "full_name": "岩井良明",
-    "description": "株式会社モノリス代表取締役・マネーの虎出演者",
-    "image_url": ""
-  },
-  {
-    "tiger_id": "kuwata",
-    "display_name": "桑田社長",
-    "full_name": "桑田龍征",
-    "description": "NEW GENERATION GROUPオーナー・元ホスト",
-    "image_url": ""
-  },
-  {
-    "tiger_id": "kabumoto",
-    "display_name": "株本社長",
-    "full_name": "株本祐己",
-    "description": "StockSun株式会社代表・フリーランスの王",
-    "image_url": ""
-  },
-  {
-    "tiger_id": "hosoi",
-    "display_name": "細井社長",
-    "full_name": "細井龍",
-    "description": "アマソラクリニック院長・ドラゴン細井",
-    "image_url": ""
-  },
-  {
-    "tiger_id": "karasawa",
-    "display_name": "唐沢社長",
-    "full_name": "唐沢菜々江",
-    "description": "銀座クラブ『Nanae』ママ",
-    "image_url": ""
-  },
-  {
-    "tiger_id": "takeuchi",
-    "display_name": "竹内社長",
-    "full_name": "竹内亢一",
-    "description": "株式会社Suneight代表・YouTubeマーケティング",
-    "image_url": ""
-  },
-  {
-    "tiger_id": "mogi",
-    "display_name": "茂木社長",
-    "full_name": "茂木哲也",
-    "description": "株式会社ピナイ・インターナショナル代表・家事代行サービス",
-    "image_url": ""
-  },
-  {
-    "tiger_id": "kobayashi",
-    "display_name": "小林社長",
-    "full_name": "小林真之",
-    "description": "ProLogue株式会社代表・コンサルティング",
-    "image_url": ""
-  },
-  {
-    "tiger_id": "misaki",
-    "display_name": "三崎社長",
-    "full_name": "三崎優太",
-    "description": "青汁王子・実業家",
-    "image_url": ""
-  },
-  {
-    "tiger_id": "ando",
-    "display_name": "安藤社長",
-    "full_name": "安藤功一郎",
-    "description": "タイ年商100億超・実業家",
-    "image_url": ""
-  },
-  {
-    "tiger_id": "noda",
-    "display_name": "野田社長",
-    "full_name": "野田慎太郎",
-    "description": "物流業経営者",
-    "image_url": ""
-  },
-  {
-    "tiger_id": "kitagawa",
-    "display_name": "北川社長",
-    "full_name": "北川哲平",
-    "description": "Reクリエイト株式会社代表・経営コンサルティング",
-    "image_url": ""
-  },
-  {
-    "tiger_id": "asuka",
-    "display_name": "あすか社長",
-    "full_name": "あすか",
-    "description": "美容系経営者",
-    "image_url": ""
-  },
-  {
-    "tiger_id": "hikaru",
-    "display_name": "ヒカル",
-    "full_name": "ヒカル",
-    "description": "トップYouTuber・実業家",
-    "image_url": ""
-  },
-  {
-    "tiger_id": "sasaki",
-    "display_name": "佐々木社長",
-    "full_name": "佐々木啓治",
-    "description": "マーケティング専門家",
-    "image_url": ""
-  },
-  {
-    "tiger_id": "tanaka",
-    "display_name": "田中社長",
-    "full_name": "田中修",
-    "description": "IT企業経営者",
-    "image_url": ""
+    "image_url": "",
+    "category": "regular"
   },
   {
     "tiger_id": "saito_tomoharu",
     "display_name": "トモハッピー",
     "full_name": "齋藤 友晴",
     "description": "株式会社トモハッピー代表取締役・TCG専門店/メディア事業",
-    "image_url": ""
+    "image_url": "",
+    "category": "regular"
   },
   {
     "tiger_id": "kuwata_ryusei",
     "display_name": "桑田社長",
     "full_name": "桑田 龍征",
     "description": "NEW GENERATION GROUP創業者・ホストクラブ経営・組織の左腕代表",
-    "image_url": ""
+    "image_url": "",
+    "category": "regular"
   },
   {
     "tiger_id": "takeuchi_koichi",
     "display_name": "竹内社長",
     "full_name": "竹内 亢一",
     "description": "株式会社Suneight代表取締役・企業向け動画マーケティング支援",
-    "image_url": ""
+    "image_url": "",
+    "category": "regular"
   },
   {
     "tiger_id": "karasawa_nanae",
     "display_name": "唐沢ママ",
     "full_name": "唐沢 菜々江",
     "description": "銀座クラブ「Nanae」ママ・飲食/ナイトワーク経営者",
-    "image_url": ""
+    "image_url": "",
+    "category": "regular"
   },
   {
     "tiger_id": "ando_koichiro",
     "display_name": "安藤社長",
     "full_name": "安藤 功一郎",
     "description": "不動産テック/海外不動産事業を手掛ける実業家",
-    "image_url": ""
+    "image_url": "",
+    "category": "regular"
   },
   {
     "tiger_id": "takazawa_yuki",
     "display_name": "高澤社長",
     "full_name": "高澤 有紀",
     "description": "Web広告運用/SEO/投資事業を展開するマーケティング企業代表",
-    "image_url": ""
+    "image_url": "",
+    "category": "regular"
   },
   {
     "tiger_id": "hosoi_ryu",
     "display_name": "ドラゴン細井",
     "full_name": "細井 龍",
     "description": "アマソラクリニック院長・美容医療/医学生教育コンテンツ発信者",
-    "image_url": ""
+    "image_url": "",
+    "category": "regular"
   },
   {
     "tiger_id": "aosasa_hirofumi",
     "display_name": "あお社長",
     "full_name": "青笹 寛史",
     "description": "動画編集スクール/動画マーケ事業の創業者（アズール/KIBUN）",
-    "image_url": ""
+    "image_url": "",
+    "category": "semi_regular"
   },
   {
     "tiger_id": "iguchi_tomoaki",
     "display_name": "井口社長",
     "full_name": "井口 智明",
     "description": "美容室チェーン運営・ディアローグHD代表・元志願者",
-    "image_url": ""
+    "image_url": "",
+    "category": "semi_regular"
   },
   {
     "tiger_id": "moteki_tetsuya",
     "display_name": "茂木社長",
     "full_name": "茂木 哲也",
     "description": "ピナイ家事代行サービス代表・家事代行事業/司会も担当",
-    "image_url": ""
+    "image_url": "",
+    "category": "semi_regular"
   },
   {
     "tiger_id": "tanimoto_yoshitsugu",
     "display_name": "谷本社長",
     "full_name": "谷本 吉紹",
     "description": "介護/福祉/飲食/AI等を展開するエースタイルHD創業者",
-    "image_url": ""
+    "image_url": "",
+    "category": "semi_regular"
   },
   {
     "tiger_id": "kabumoto_yuki",
     "display_name": "株本社長",
     "full_name": "株本 祐己",
     "description": "StockSun創業者・Webマーケ/広告/フリーランス組織化コンサル",
-    "image_url": ""
+    "image_url": "",
+    "category": "semi_regular"
   },
   {
     "tiger_id": "shimada_takafumi",
     "display_name": "島やん",
     "full_name": "島田 隆史",
     "description": "OMO（お客様みなさまおかげさま）代表・ラーメンFC展開",
-    "image_url": ""
+    "image_url": "",
+    "category": "semi_regular"
   },
   {
     "tiger_id": "tanaka_yuji",
     "display_name": "田中社長",
     "full_name": "田中 雄士",
     "description": "ユージーエース代表・港区不動産仲介/投資コンサル",
-    "image_url": ""
+    "image_url": "",
+    "category": "semi_regular"
   },
   {
     "tiger_id": "kinoshita_hayato",
     "display_name": "木下社長",
     "full_name": "木下 勇人",
     "description": "レディング税理士法人創業者・相続/資産税専門",
-    "image_url": ""
+    "image_url": "",
+    "category": "semi_regular"
   },
   {
     "tiger_id": "araki_anna",
     "display_name": "アンナ社長",
     "full_name": "荒木 杏奈",
     "description": "アンナアドバイザーズ代表・海外不動産投資の専門家",
-    "image_url": ""
+    "image_url": "",
+    "category": "semi_regular"
   },
   {
     "tiger_id": "sasaki_takashi",
     "display_name": "佐々木社長",
     "full_name": "佐々木 貴史",
     "description": "リライブシャツ開発・リライブウェア運営",
-    "image_url": ""
+    "image_url": "",
+    "category": "semi_regular"
   },
   {
     "tiger_id": "takenouchi_yukihiro",
     "display_name": "竹之内社長",
     "full_name": "竹之内 教博",
     "description": "りらくる創業者・多数事業を持つ連続起業家",
-    "image_url": ""
+    "image_url": "",
+    "category": "semi_regular"
   },
   {
     "tiger_id": "endo_yuki",
     "display_name": "遠藤社長",
     "full_name": "遠藤 悠記",
     "description": "美容サロン経営/武田塾FCオーナー",
-    "image_url": ""
+    "image_url": "",
+    "category": "semi_regular"
   },
   {
     "tiger_id": "kobayashi_masayuki",
     "display_name": "小林社長",
     "full_name": "小林 真之",
     "description": "ProLogue代表・Web広告/マーケティング支援",
-    "image_url": ""
+    "image_url": "",
+    "category": "semi_regular"
+  },
+  {
+    "tiger_id": "miyamoto_sena",
+    "display_name": "セナ社長",
+    "full_name": "宮本 聖菜",
+    "description": "ホワイトニングサロン「ecxia」運営・美容サロン経営者",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "hiraide_shin",
+    "display_name": "平出社長",
+    "full_name": "平出 心",
+    "description": "競馬予想家・データ分析型予想サービス運営",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "inaba_shin",
+    "display_name": "稲葉社長",
+    "full_name": "稲葉 信",
+    "description": "ネルプ代表・SNS自動化SaaS（iステップ/XTEP）開発",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "jo_hayato",
+    "display_name": "條社長",
+    "full_name": "條 隼人",
+    "description": "SGGK Group International代表・食品/通販事業",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "iwai_yoshiaki",
+    "display_name": "岩井社長",
+    "full_name": "岩井 良明",
+    "description": "令和の虎創設者・MONOLITH Japan元代表・マネーの虎出演者",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "miura_tetsuro",
+    "display_name": "三浦会長",
+    "full_name": "三浦 哲郎",
+    "description": "トリアイナグループ会長・リユース/オークション事業",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "kirihara_takashi",
+    "display_name": "桐原社長",
+    "full_name": "桐原 隆",
+    "description": "海外不動産関連ビジネス運営",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "terada_takashi",
+    "display_name": "寺田社長",
+    "full_name": "寺田 高士",
+    "description": "一会不動産代表・投資不動産/賃貸管理",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "okada_mayumi",
+    "display_name": "岡田社長",
+    "full_name": "岡田 真弓",
+    "description": "探偵社MR代表・浮気調査等の探偵業",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "kitagawa_teppei",
+    "display_name": "北川社長",
+    "full_name": "北川 哲平",
+    "description": "りくりえいと代表・障がい者グループホーム事業",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "oishi_junpei",
+    "display_name": "大石社長",
+    "full_name": "大石 純平",
+    "description": "ファミリーオフィス・ジャパン代表・資産管理/承継コンサル",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "mori_ryuichi",
+    "display_name": "森社長",
+    "full_name": "森 龍一",
+    "description": "NEXTスタッフサービス代表・人材派遣/人材紹介",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "watanabe_masato",
+    "display_name": "渡邊社長",
+    "full_name": "渡邊 正都",
+    "description": "Fine Fast Foods代表・飲食事業",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "takenaga_atsushi",
+    "display_name": "竹長社長",
+    "full_name": "竹長 篤史",
+    "description": "広島お好み焼き「電光石火」運営・飲食FC経営",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "sugita_fumi",
+    "display_name": "Fumi社長",
+    "full_name": "Fumi Sugita",
+    "description": "Terra Matcha創業者・抹茶D2Cブランド運営",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "azuma_masahiro",
+    "display_name": "東社長",
+    "full_name": "東 将大",
+    "description": "ロレインブロウ代表・眉毛サロン/FC展開",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "iwasaki_kento",
+    "display_name": "岩崎社長",
+    "full_name": "岩崎 健人",
+    "description": "喜創産業代表・企業コンサル/建設関連事業",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "son_shunichiro",
+    "display_name": "孫院長",
+    "full_name": "孫 駿一郎",
+    "description": "X CLINIC統括院長・美容医療/エイジングケア",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "osako_genichi",
+    "display_name": "大迫社長",
+    "full_name": "大迫 源一",
+    "description": "ふじなコーポレーション代表・飲食/食品事業",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "takahashi_miki",
+    "display_name": "高橋社長",
+    "full_name": "高橋 未樹",
+    "description": "虹視力クリエイティブアソシエイト代表・ビジョン構築/コーチング",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "fukuda_masanori",
+    "display_name": "福田社長",
+    "full_name": "福田 雅典",
+    "description": "葬祭事業「メモワールしおん」運営",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "noda_shintaro",
+    "display_name": "野田社長",
+    "full_name": "野田 慎太郎",
+    "description": "AEトランスポート代表・物流/運送業",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "nanbara_tatsuki",
+    "display_name": "南原社長",
+    "full_name": "南原 竜樹",
+    "description": "LUFTホールディングス代表・自動車事業・元マネーの虎",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "kanda_mitsuki",
+    "display_name": "神田みつき",
+    "full_name": "神田 みつき",
+    "description": "アニソンバー/コンカフェ経営・元志願者の虎",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "kurokawa_takuya",
+    "display_name": "黒川社長",
+    "full_name": "黒川 たくや",
+    "description": "化粧品D2Cブランド「セインムー」運営",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "yagami_sara",
+    "display_name": "矢神サラ",
+    "full_name": "矢神 サラ",
+    "description": "バーGENIEオーナー・インフルエンサー",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "toma_rei",
+    "display_name": "冬真社長",
+    "full_name": "冬真 怜",
+    "description": "広告代理店WMC代表・Webマーケ/広告運用",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "adachi_ippei",
+    "display_name": "安達社長",
+    "full_name": "安達 逸平",
+    "description": "J-GATE代表・営業代行/営業コンサル",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "yoshino_shigeru",
+    "display_name": "吉野社長",
+    "full_name": "吉野 繁",
+    "description": "からあげ店チェーン「CREAM HONPO」運営",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "yamasawa_rey",
+    "display_name": "山澤社長",
+    "full_name": "山澤 礼明（Rey Yamasawa）",
+    "description": "FIT PLACE代表・24hジム運営",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "sugimoto_motonori",
+    "display_name": "もとのり社長",
+    "full_name": "杉本 幸倫",
+    "description": "メルヴェイユ代表・光回線/通信代理店事業",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "kawanago_terutaka",
+    "display_name": "川中子社長",
+    "full_name": "川中子 輝昂",
+    "description": "LINGs代表・軽貨物配送/物流事業",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "noguchi_koji",
+    "display_name": "野口社長",
+    "full_name": "野口 功司",
+    "description": "CBTソリューションズ代表・テストセンター/CBT化事業",
+    "image_url": "",
+    "category": "other"
+  },
+  {
+    "tiger_id": "sakakibara_seiichi",
+    "display_name": "榊原社長",
+    "full_name": "榊原 清一",
+    "description": "EMOLVA代表・SNS運用代行/インフルエンサーマーケ支援",
+    "image_url": "",
+    "category": "other"
   }
 ]

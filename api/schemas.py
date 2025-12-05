@@ -15,6 +15,7 @@ class TigerBase(BaseModel):
     full_name: str
     description: Optional[str] = None
     image_url: Optional[str] = None
+    category: str = "other"  # regular / semi_regular / other
 
 
 class TigerCreate(TigerBase):
