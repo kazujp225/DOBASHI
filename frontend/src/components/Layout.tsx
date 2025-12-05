@@ -76,7 +76,7 @@ const Layout = ({ children }: LayoutProps) => {
                     }`}
                   >
                     <Icon size={20} aria-hidden="true" className={isActive ? '' : 'group-hover:scale-110 transition-transform'} />
-                    <span>{item.label}</span>
+                    <span className="whitespace-nowrap">{item.label}</span>
                   </Link>
                 )
               })}

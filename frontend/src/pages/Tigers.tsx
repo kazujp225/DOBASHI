@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { tigersApi } from '../services/api'
-import { Users, UserPlus, Edit, Trash2, Tag, Plus, X, FileText, MessageSquare, Scissors, Hash, Briefcase, Type, Languages, Globe, User } from 'lucide-react'
+import { Users, UserPlus, Edit, Trash2, Tag, Plus, X, FileText, MessageSquare, Scissors, Hash, Briefcase, Type, Languages, Globe, User, Search } from 'lucide-react'
 import Modal from '../components/Modal'
 import TigerForm from '../components/TigerForm'
 import toast from 'react-hot-toast'
@@ -12,6 +12,7 @@ const Tigers = () => {
   const [editingTiger, setEditingTiger] = useState<Tiger | null>(null)
   const [deletingTiger, setDeletingTiger] = useState<Tiger | null>(null)
   const [viewingAliasesTiger, setViewingAliasesTiger] = useState<Tiger | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
 
   const queryClient = useQueryClient()
 
@@ -74,21 +75,45 @@ const Tigers = () => {
     deleteMutation.mutate(deletingTiger.tiger_id)
   }
 
+  const filteredTigers =
+    tigers?.filter((tiger) => {
+      const keyword = searchTerm.trim().toLowerCase()
+      if (!keyword) return true
+      return (
+        tiger.tiger_id.toLowerCase().includes(keyword) ||
+        tiger.display_name.toLowerCase().includes(keyword) ||
+        (tiger.full_name?.toLowerCase() || '').includes(keyword) ||
+        (tiger.description?.toLowerCase() || '').includes(keyword)
+      )
+    }) || []
+
   return (
     <div className="space-y-8">
       {/* ヘッダー */}
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">社長マスタ</h1>
           <p className="mt-2 text-base text-gray-600 dark:text-gray-400">登録されている社長の管理</p>
         </div>
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 rounded-xl hover:from-orange-700 hover:to-orange-600 shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
-        >
-          <UserPlus size={18} />
-          <span>社長を追加</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="名前で検索"
+              className="pl-9 pr-3 py-2.5 w-56 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm"
+            />
+          </div>
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 rounded-xl hover:from-orange-700 hover:to-orange-600 shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
+          >
+            <UserPlus size={18} />
+            <span>社長を追加</span>
+          </button>
+        </div>
       </div>
 
       {/* 社長一覧 */}
@@ -99,7 +124,7 @@ const Tigers = () => {
             <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">読み込み中...</p>
           </div>
         </div>
-      ) : tigers && tigers.length > 0 ? (
+      ) : tigers && filteredTigers.length > 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -123,7 +148,7 @@ const Tigers = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {tigers.map((tiger) => (
+                {filteredTigers.map((tiger) => (
                   <tr
                     key={tiger.tiger_id}
                     className="group hover:bg-orange-50/50 dark:hover:bg-gray-700/50 transition-colors"
@@ -184,6 +209,18 @@ const Tigers = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      ) : tigers && tigers.length > 0 ? (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-12">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/20 mb-4">
+              <Search size={32} className="text-orange-600 dark:text-orange-400" />
+            </div>
+            <p className="text-gray-900 dark:text-white font-semibold text-lg mb-2">該当する社長が見つかりませんでした</p>
+            <p className="text-gray-500 dark:text-gray-400">
+              検索条件を変えるか、新しく社長を追加してください
+            </p>
           </div>
         </div>
       ) : (

@@ -150,18 +150,35 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {ranking.tiger_rankings.map((item, index) => (
-                    <tr key={item.tiger_id} className={`${index < 3 ? 'bg-orange-50' : ''} hover:bg-orange-100 transition-colors`}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`text-lg font-bold ${
-                          index === 0 ? 'text-yellow-500' :
-                          index === 1 ? 'text-gray-400' :
-                          index === 2 ? 'text-orange-700' :
-                          'text-gray-900 dark:text-white'
-                        }`}>
-                          {item.rank}
-                        </span>
-                      </td>
+                  {ranking.tiger_rankings.map((item, index) => {
+                    const rowStyle =
+                      index === 0
+                        ? 'bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                        : index === 1
+                          ? 'bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                          : index === 2
+                            ? 'bg-orange-50 dark:bg-orange-900/15 hover:bg-orange-100 dark:hover:bg-orange-900/25'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/40'
+
+                    const rankStyle =
+                      index === 0
+                        ? 'bg-amber-500 text-white'
+                        : index === 1
+                          ? 'bg-gray-400 text-white'
+                          : index === 2
+                            ? 'bg-orange-500 text-white'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+
+                    return (
+                      <tr
+                        key={item.tiger_id}
+                        className={`${rowStyle} transition-colors`}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center justify-center w-9 h-9 rounded-full text-base font-bold ${rankStyle}`}>
+                            {item.rank}
+                          </span>
+                        </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
                           {item.display_name}
@@ -176,8 +193,9 @@ const Dashboard = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
                         {(item.avg_rate_total * 100).toFixed(1)}%
                       </td>
-                    </tr>
-                  ))}
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

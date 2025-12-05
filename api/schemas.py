@@ -96,7 +96,7 @@ class CommentWithMentions(Comment):
 class AnalysisRequest(BaseModel):
     """分析リクエスト"""
     video_id: str
-    tiger_ids: List[str] = Field(..., min_items=1, max_items=10)
+    tiger_ids: List[str] = Field(..., min_items=1, max_items=500)
 
 
 class AnalysisResult(BaseModel):
