@@ -622,5 +622,32 @@
       "type": "fullname",
       "priority": 5
     }
+  ],
+  "saito_tomoharu": [
+    {
+      "alias": "友晴",
+      "type": "nickname",
+      "priority": 2
+    },
+    {
+      "alias": "トモ",
+      "type": "nickname",
+      "priority": 2
+    },
+    {
+      "alias": "ハッピー",
+      "type": "nickname",
+      "priority": 2
+    },
+    {
+      "alias": "トモハッピー",
+      "type": "nickname",
+      "priority": 1
+    },
+    {
+      "alias": "ともハッピー",
+      "type": "nickname",
+      "priority": 1
+    }
   ]
 }
