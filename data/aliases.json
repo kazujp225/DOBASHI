@@ -49,6 +49,11 @@
       "alias": "林尚弘",
       "type": "fullname",
       "priority": 5
+    },
+    {
+      "alias": "主宰",
+      "type": "nickname",
+      "priority": 2
     }
   ],
   "kuwata": [
