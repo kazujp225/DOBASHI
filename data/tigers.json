@@ -2,8 +2,8 @@
   {
     "tiger_id": "hayashi_naohiro",
     "display_name": "林社長",
-    "full_name": "林尚弘",
-    "description": "株式会社FCチャンネル代表取締役・令和の虎後継者",
+    "full_name": "林 尚弘",
+    "description": "株式会社FCチャンネル代表取締役・武田塾元塾長・令和の虎二代目主宰",
     "image_url": ""
   },
   {
@@ -116,6 +116,55 @@
     "display_name": "田中社長",
     "full_name": "田中修",
     "description": "IT企業経営者",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "saito_tomoharu",
+    "display_name": "トモハッピー",
+    "full_name": "齋藤 友晴",
+    "description": "株式会社トモハッピー代表取締役・TCG専門店/メディア事業",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "kuwata_ryusei",
+    "display_name": "桑田社長",
+    "full_name": "桑田 龍征",
+    "description": "NEW GENERATION GROUP創業者・ホストクラブ経営・組織の左腕代表",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "takeuchi_koichi",
+    "display_name": "竹内社長",
+    "full_name": "竹内 亢一",
+    "description": "株式会社Suneight代表取締役・企業向け動画マーケティング支援",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "karasawa_nanae",
+    "display_name": "唐沢ママ",
+    "full_name": "唐沢 菜々江",
+    "description": "銀座クラブ「Nanae」ママ・飲食/ナイトワーク経営者",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "ando_koichiro",
+    "display_name": "安藤社長",
+    "full_name": "安藤 功一郎",
+    "description": "不動産テック/海外不動産事業を手掛ける実業家",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "takazawa_yuki",
+    "display_name": "高澤社長",
+    "full_name": "高澤 有紀",
+    "description": "Web広告運用/SEO/投資事業を展開するマーケティング企業代表",
+    "image_url": ""
+  },
+  {
+    "tiger_id": "hosoi_ryu",
+    "display_name": "ドラゴン細井",
+    "full_name": "細井 龍",
+    "description": "アマソラクリニック院長・美容医療/医学生教育コンテンツ発信者",
     "image_url": ""
   }
 ]
