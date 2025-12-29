@@ -259,27 +259,43 @@ const ComparisonDashboard: React.FC = () => {
             <h3 className="font-semibold mb-2 text-gray-700 dark:text-gray-200">
               比較する社長を選択（最大5名）
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {availableTigers.map(tiger => (
-                <label key={tiger.id} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={selectedTigers.includes(tiger.id)}
-                    onChange={(e) => {
-                      if (e.target.checked && selectedTigers.length < 5) {
-                        setSelectedTigers([...selectedTigers, tiger.id]);
-                      } else if (!e.target.checked) {
-                        setSelectedTigers(selectedTigers.filter(id => id !== tiger.id));
-                      }
-                    }}
-                    className="mr-2"
-                  />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">
-                    {tiger.display_name}
-                  </span>
-                </label>
-              ))}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-64 overflow-y-auto">
+              {availableTigers.map(tiger => {
+                const tigerId = tiger.tiger_id || tiger.id;
+                const isSelected = selectedTigers.includes(tigerId);
+                return (
+                  <label
+                    key={tigerId}
+                    className={`flex items-center p-2 rounded cursor-pointer transition-colors ${
+                      isSelected
+                        ? 'bg-orange-100 dark:bg-orange-900/30 border border-orange-400'
+                        : 'bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-500'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={(e) => {
+                        if (e.target.checked && selectedTigers.length < 5) {
+                          setSelectedTigers([...selectedTigers, tigerId]);
+                        } else if (!e.target.checked) {
+                          setSelectedTigers(selectedTigers.filter(id => id !== tigerId));
+                        }
+                      }}
+                      className="mr-2 w-4 h-4 accent-orange-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-200">
+                      {tiger.display_name}
+                    </span>
+                  </label>
+                );
+              })}
             </div>
+            {selectedTigers.length > 0 && (
+              <p className="mt-2 text-sm text-orange-600 dark:text-orange-400">
+                {selectedTigers.length}名選択中
+              </p>
+            )}
           </div>
         )}
 
@@ -294,11 +310,14 @@ const ComparisonDashboard: React.FC = () => {
               className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500"
             >
               <option value="">選択してください</option>
-              {availableTigers.map(tiger => (
-                <option key={tiger.id} value={tiger.id}>
-                  {tiger.display_name}
-                </option>
-              ))}
+              {availableTigers.map(tiger => {
+                const tigerId = tiger.tiger_id || tiger.id;
+                return (
+                  <option key={tigerId} value={tigerId}>
+                    {tiger.display_name}
+                  </option>
+                );
+              })}
             </select>
           </div>
         )}
