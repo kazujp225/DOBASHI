@@ -28,12 +28,25 @@ is_postgresql = (
 )
 
 if is_postgresql:
-    engine = create_engine(
-        SQLALCHEMY_DATABASE_URL,
-        pool_size=10,
-        max_overflow=20,
-        pool_pre_ping=True  # 接続の健全性チェック
-    )
+    # Supabase Pooler（Transaction Mode）対応
+    # poolerを使用する場合はアプリ側のプーリングを無効化
+    is_pooler = "pooler.supabase.com" in SQLALCHEMY_DATABASE_URL
+
+    if is_pooler:
+        engine = create_engine(
+            SQLALCHEMY_DATABASE_URL,
+            pool_pre_ping=True,
+            pool_size=5,
+            max_overflow=10,
+            pool_recycle=300,  # 5分で接続をリサイクル
+        )
+    else:
+        engine = create_engine(
+            SQLALCHEMY_DATABASE_URL,
+            pool_size=10,
+            max_overflow=20,
+            pool_pre_ping=True  # 接続の健全性チェック
+        )
 else:  # SQLite
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL,
