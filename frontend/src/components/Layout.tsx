@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Search, Download, Users, Moon, Sun, BarChart3, FileText, Calendar, Menu, X, ChevronDown } from 'lucide-react'
+import { LayoutDashboard, Search, Download, Users, Moon, Sun, BarChart3, FileText, Calendar, Menu, X } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 
 interface LayoutProps {
