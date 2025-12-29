@@ -1,8 +1,5 @@
-databases:
-  - name: tora-db
-    plan: free
-    databaseName: tora_analysis
-    user: tora_user
+# Render.com deployment configuration
+# Database: Supabase PostgreSQL (external)
 
 services:
   - type: web
@@ -17,16 +14,18 @@ services:
     buildCommand: "./build.sh"
     startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
     envVars:
+      # Supabase PostgreSQL
       - key: DATABASE_URL
-        fromDatabase:
-          name: tora-db
-          property: connectionString
+        sync: false
       - key: DATABASE_TYPE
         value: postgresql
+      # YouTube API
       - key: YOUTUBE_API_KEY
         sync: false
+      # Security
       - key: SECRET_KEY
         generateValue: true
+      # Runtime versions
       - key: PYTHON_VERSION
         value: "3.11.0"
       - key: NODE_VERSION
