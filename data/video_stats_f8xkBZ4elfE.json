@@ -2,15 +2,447 @@
   "video_id": "f8xkBZ4elfE",
   "title": "【FULL】｢頭が悪い虎は理解できない｣｢クラファン版 令和の虎｣で新しい未来を作りたい【三浦 哲郎】[15人目]虎版令和の虎",
   "total_comments": 511,
-  "tiger_mention_comments": 0,
+  "tiger_mention_comments": 232,
   "tiger_stats": [
+    {
+      "tiger_id": "miura_tetsuro",
+      "display_name": "三浦会長",
+      "mention_count": 147,
+      "rate_total": 0.2876712328767123,
+      "rate_entity": 0.6336206896551724,
+      "rank": 1
+    },
+    {
+      "tiger_id": "iguchi_tomoaki",
+      "display_name": "井口社長",
+      "mention_count": 35,
+      "rate_total": 0.0684931506849315,
+      "rate_entity": 0.15086206896551724,
+      "rank": 2
+    },
+    {
+      "tiger_id": "kuwata_ryusei",
+      "display_name": "桑田社長",
+      "mention_count": 23,
+      "rate_total": 0.04500978473581213,
+      "rate_entity": 0.09913793103448276,
+      "rank": 3
+    },
+    {
+      "tiger_id": "noguchi_koji",
+      "display_name": "野口社長",
+      "mention_count": 19,
+      "rate_total": 0.03718199608610567,
+      "rate_entity": 0.08189655172413794,
+      "rank": 4
+    },
+    {
+      "tiger_id": "son_shunichiro",
+      "display_name": "孫院長",
+      "mention_count": 15,
+      "rate_total": 0.02935420743639922,
+      "rate_entity": 0.06465517241379311,
+      "rank": 5
+    },
     {
       "tiger_id": "hayashi_naohiro",
       "display_name": "林社長",
+      "mention_count": 13,
+      "rate_total": 0.025440313111545983,
+      "rate_entity": 0.05603448275862069,
+      "rank": 6
+    },
+    {
+      "tiger_id": "takazawa_yuki",
+      "display_name": "高澤社長",
+      "mention_count": 10,
+      "rate_total": 0.019569471624266144,
+      "rate_entity": 0.04310344827586207,
+      "rank": 7
+    },
+    {
+      "tiger_id": "moteki_tetsuya",
+      "display_name": "茂木社長",
+      "mention_count": 10,
+      "rate_total": 0.019569471624266144,
+      "rate_entity": 0.04310344827586207,
+      "rank": 8
+    },
+    {
+      "tiger_id": "noda_shintaro",
+      "display_name": "野田社長",
+      "mention_count": 7,
+      "rate_total": 0.0136986301369863,
+      "rate_entity": 0.030172413793103446,
+      "rank": 9
+    },
+    {
+      "tiger_id": "iwai_yoshiaki",
+      "display_name": "岩井社長",
+      "mention_count": 6,
+      "rate_total": 0.011741682974559686,
+      "rate_entity": 0.02586206896551724,
+      "rank": 10
+    },
+    {
+      "tiger_id": "tanimoto_yoshitsugu",
+      "display_name": "谷本社長",
+      "mention_count": 5,
+      "rate_total": 0.009784735812133072,
+      "rate_entity": 0.021551724137931036,
+      "rank": 11
+    },
+    {
+      "tiger_id": "ando_koichiro",
+      "display_name": "安藤社長",
+      "mention_count": 3,
+      "rate_total": 0.005870841487279843,
+      "rate_entity": 0.01293103448275862,
+      "rank": 12
+    },
+    {
+      "tiger_id": "saito_tomoharu",
+      "display_name": "トモハッピー",
+      "mention_count": 2,
+      "rate_total": 0.003913894324853229,
+      "rate_entity": 0.008620689655172414,
+      "rank": 13
+    },
+    {
+      "tiger_id": "sasaki_takashi",
+      "display_name": "佐々木社長",
+      "mention_count": 2,
+      "rate_total": 0.003913894324853229,
+      "rate_entity": 0.008620689655172414,
+      "rank": 14
+    },
+    {
+      "tiger_id": "inaba_shin",
+      "display_name": "稲葉社長",
+      "mention_count": 2,
+      "rate_total": 0.003913894324853229,
+      "rate_entity": 0.008620689655172414,
+      "rank": 15
+    },
+    {
+      "tiger_id": "nanbara_tatsuki",
+      "display_name": "南原社長",
+      "mention_count": 2,
+      "rate_total": 0.003913894324853229,
+      "rate_entity": 0.008620689655172414,
+      "rank": 16
+    },
+    {
+      "tiger_id": "takeuchi_koichi",
+      "display_name": "竹内社長",
+      "mention_count": 1,
+      "rate_total": 0.0019569471624266144,
+      "rate_entity": 0.004310344827586207,
+      "rank": 17
+    },
+    {
+      "tiger_id": "hosoi_ryu",
+      "display_name": "ドラゴン細井",
+      "mention_count": 1,
+      "rate_total": 0.0019569471624266144,
+      "rate_entity": 0.004310344827586207,
+      "rank": 18
+    },
+    {
+      "tiger_id": "hiraide_shin",
+      "display_name": "平出社長",
+      "mention_count": 1,
+      "rate_total": 0.0019569471624266144,
+      "rate_entity": 0.004310344827586207,
+      "rank": 19
+    },
+    {
+      "tiger_id": "mori_ryuichi",
+      "display_name": "森社長",
+      "mention_count": 1,
+      "rate_total": 0.0019569471624266144,
+      "rate_entity": 0.004310344827586207,
+      "rank": 20
+    },
+    {
+      "tiger_id": "karasawa_nanae",
+      "display_name": "唐沢ママ",
       "mention_count": 0,
       "rate_total": 0.0,
       "rate_entity": 0.0,
-      "rank": 1
+      "rank": 21
+    },
+    {
+      "tiger_id": "aosasa_hirofumi",
+      "display_name": "あお社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 22
+    },
+    {
+      "tiger_id": "kabumoto_yuki",
+      "display_name": "株本社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 23
+    },
+    {
+      "tiger_id": "shimada_takafumi",
+      "display_name": "島やん",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 24
+    },
+    {
+      "tiger_id": "tanaka_yuji",
+      "display_name": "田中社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 25
+    },
+    {
+      "tiger_id": "kinoshita_hayato",
+      "display_name": "木下社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 26
+    },
+    {
+      "tiger_id": "araki_anna",
+      "display_name": "アンナ社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 27
+    },
+    {
+      "tiger_id": "takenouchi_yukihiro",
+      "display_name": "竹之内社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 28
+    },
+    {
+      "tiger_id": "endo_yuki",
+      "display_name": "遠藤社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 29
+    },
+    {
+      "tiger_id": "kobayashi_masayuki",
+      "display_name": "小林社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 30
+    },
+    {
+      "tiger_id": "miyamoto_sena",
+      "display_name": "セナ社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 31
+    },
+    {
+      "tiger_id": "jo_hayato",
+      "display_name": "條社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 32
+    },
+    {
+      "tiger_id": "kirihara_takashi",
+      "display_name": "桐原社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 33
+    },
+    {
+      "tiger_id": "terada_takashi",
+      "display_name": "寺田社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 34
+    },
+    {
+      "tiger_id": "okada_mayumi",
+      "display_name": "岡田社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 35
+    },
+    {
+      "tiger_id": "kitagawa_teppei",
+      "display_name": "北川社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 36
+    },
+    {
+      "tiger_id": "oishi_junpei",
+      "display_name": "大石社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 37
+    },
+    {
+      "tiger_id": "watanabe_masato",
+      "display_name": "渡邊社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 38
+    },
+    {
+      "tiger_id": "takenaga_atsushi",
+      "display_name": "竹長社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 39
+    },
+    {
+      "tiger_id": "sugita_fumi",
+      "display_name": "Fumi社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 40
+    },
+    {
+      "tiger_id": "azuma_masahiro",
+      "display_name": "東社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 41
+    },
+    {
+      "tiger_id": "iwasaki_kento",
+      "display_name": "岩崎社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 42
+    },
+    {
+      "tiger_id": "osako_genichi",
+      "display_name": "大迫社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 43
+    },
+    {
+      "tiger_id": "takahashi_miki",
+      "display_name": "高橋社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 44
+    },
+    {
+      "tiger_id": "fukuda_masanori",
+      "display_name": "福田社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 45
+    },
+    {
+      "tiger_id": "kanda_mitsuki",
+      "display_name": "神田みつき",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 46
+    },
+    {
+      "tiger_id": "kurokawa_takuya",
+      "display_name": "黒川社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 47
+    },
+    {
+      "tiger_id": "yagami_sara",
+      "display_name": "矢神サラ",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 48
+    },
+    {
+      "tiger_id": "toma_rei",
+      "display_name": "冬真社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 49
+    },
+    {
+      "tiger_id": "adachi_ippei",
+      "display_name": "安達社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 50
+    },
+    {
+      "tiger_id": "yoshino_shigeru",
+      "display_name": "吉野社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 51
+    },
+    {
+      "tiger_id": "yamasawa_rey",
+      "display_name": "山澤社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 52
+    },
+    {
+      "tiger_id": "sugimoto_motonori",
+      "display_name": "もとのり社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 53
+    },
+    {
+      "tiger_id": "kawanago_terutaka",
+      "display_name": "川中子社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 54
+    },
+    {
+      "tiger_id": "sakakibara_seiichi",
+      "display_name": "榊原社長",
+      "mention_count": 0,
+      "rate_total": 0.0,
+      "rate_entity": 0.0,
+      "rank": 55
     }
   ]
 }

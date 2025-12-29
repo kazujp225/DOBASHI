@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { api } from '../services/api';
 
 interface ReportConfig {
@@ -18,6 +19,7 @@ const ReportGenerator: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [reportUrl, setReportUrl] = useState<string | null>(null);
   const [statsPreview, setStatsPreview] = useState<any>(null);
+  const [isPeriodOpen, setIsPeriodOpen] = useState(false);
 
   useEffect(() => {
     fetchStatsPreview();
@@ -131,22 +133,55 @@ const ReportGenerator: React.FC = () => {
               />
             </div>
 
-            {/* 期間 */}
+            {/* 期間 - アコーディオン */}
             <div>
               <label className="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-300">
                 集計期間
               </label>
-              <select
-                value={config.period}
-                onChange={(e) => setConfig({...config, period: e.target.value as any})}
-                className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100"
-              >
-                <option value="all">全期間</option>
-                <option value="daily">日次</option>
-                <option value="weekly">週次</option>
-                <option value="monthly">月次</option>
-                <option value="quarterly">四半期</option>
-              </select>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsPeriodOpen(!isPeriodOpen)}
+                  className="w-full p-3 border rounded-lg dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100 flex items-center justify-between bg-white hover:bg-gray-50 dark:hover:bg-gray-550 transition-colors"
+                >
+                  <span>{periodLabel(config.period)}</span>
+                  <ChevronDown
+                    size={20}
+                    className={`text-gray-500 transition-transform duration-200 ${isPeriodOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    isPeriodOpen ? 'max-h-60 opacity-100 mt-2' : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  <div className="border rounded-lg dark:border-gray-500 bg-white dark:bg-gray-600 overflow-hidden">
+                    {[
+                      { value: 'all', label: '全期間' },
+                      { value: 'daily', label: '日次' },
+                      { value: 'weekly', label: '週次' },
+                      { value: 'monthly', label: '月次' },
+                      { value: 'quarterly', label: '四半期' },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          setConfig({...config, period: option.value as any});
+                          setIsPeriodOpen(false);
+                        }}
+                        className={`w-full px-4 py-3 text-left transition-colors ${
+                          config.period === option.value
+                            ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 font-medium'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* グラフ */}

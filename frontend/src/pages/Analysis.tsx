@@ -2,13 +2,14 @@ import { useMemo, useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { videosApi, tigersApi, analysisApi, statsApi } from '../services/api'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
-import { Search, Download, Video, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, Check } from 'lucide-react'
+import { Search, Download, Video, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, Check, ArrowUpDown, TrendingUp, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportToCSV, formatVideoStatsForCSV } from '../utils/csv'
 
 const Analysis = () => {
   const [selectedVideoId, setSelectedVideoId] = useState('')
   const [commentFilterTigerId, setCommentFilterTigerId] = useState<string>('all')
+  const [commentSortOrder, setCommentSortOrder] = useState<'likes' | 'newest'>('likes')
   const [isExtracting, setIsExtracting] = useState(false)
 
   const { data: videos } = useQuery({
@@ -90,6 +91,18 @@ const Analysis = () => {
   }
 
   const colors = ['#f97316', '#fb923c', '#fdba74', '#fed7aa', '#ffedd5', '#9ca3af']
+
+  // コメントをソート
+  const sortedComments = useMemo(() => {
+    if (!comments) return []
+    const sorted = [...comments]
+    if (commentSortOrder === 'likes') {
+      sorted.sort((a, b) => (b.like_count || 0) - (a.like_count || 0))
+    } else {
+      sorted.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime())
+    }
+    return sorted
+  }, [comments, commentSortOrder])
 
   // シェア表示用データ（1%未満は「その他社長」に集約）
   const shareData = useMemo(() => {
@@ -347,36 +360,73 @@ const Analysis = () => {
           {/* コメント一覧 */}
           {videoStats && videoStats.tiger_stats.length > 0 && (
             <div className="bg-white dark:bg-gray-800 p-7 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl">
                     <MessageSquare size={20} className="text-indigo-600 dark:text-indigo-400" />
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">言及コメント一覧</h3>
+                  {sortedComments.length > 0 && (
+                    <span className="text-sm text-gray-500 dark:text-gray-400">({sortedComments.length}件)</span>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Filter size={16} className="text-gray-500 dark:text-gray-400" />
-                  <select
-                    value={commentFilterTigerId}
-                    onChange={(e) => setCommentFilterTigerId(e.target.value)}
-                    className="px-4 py-2.5 text-sm font-medium border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white dark:bg-gray-700 shadow-sm transition-all hover:shadow-md"
-                  >
-                    <option value="all">全ての社長</option>
-                    {videoStats.tiger_stats.map((stat) => (
-                      <option key={stat.tiger_id} value={stat.tiger_id}>
-                        {stat.display_name} ({stat.mention_count}件)
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* ソート切り替え */}
+                  <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-xl p-1">
+                    <button
+                      onClick={() => setCommentSortOrder('likes')}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                        commentSortOrder === 'likes'
+                          ? 'bg-white dark:bg-gray-600 text-orange-600 dark:text-orange-400 shadow-sm'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                      }`}
+                    >
+                      <TrendingUp size={16} />
+                      <span>いいね順</span>
+                    </button>
+                    <button
+                      onClick={() => setCommentSortOrder('newest')}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                        commentSortOrder === 'newest'
+                          ? 'bg-white dark:bg-gray-600 text-orange-600 dark:text-orange-400 shadow-sm'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                      }`}
+                    >
+                      <Clock size={16} />
+                      <span>新着順</span>
+                    </button>
+                  </div>
+                  {/* フィルター */}
+                  <div className="flex items-center gap-2">
+                    <Filter size={16} className="text-gray-500 dark:text-gray-400" />
+                    <select
+                      value={commentFilterTigerId}
+                      onChange={(e) => setCommentFilterTigerId(e.target.value)}
+                      className="px-4 py-2.5 text-sm font-medium border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white dark:bg-gray-700 shadow-sm transition-all hover:shadow-md"
+                    >
+                      <option value="all">全ての社長</option>
+                      {videoStats.tiger_stats.map((stat) => (
+                        <option key={stat.tiger_id} value={stat.tiger_id}>
+                          {stat.display_name} ({stat.mention_count}件)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              {comments && comments.length > 0 ? (
+              {sortedComments.length > 0 ? (
                 <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                  {comments.map((comment) => (
+                  {sortedComments.map((comment, index) => (
                     <div
                       key={comment.comment_id}
-                      className="group p-5 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-all border border-gray-100 dark:border-gray-600"
+                      className={`group p-5 rounded-xl hover:shadow-lg transition-all border ${
+                        commentSortOrder === 'likes' && index === 0
+                          ? 'bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-orange-300 dark:border-orange-700 ring-2 ring-orange-400/50'
+                          : commentSortOrder === 'likes' && index < 3
+                            ? 'bg-orange-50/50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-800'
+                            : 'bg-gray-50 dark:bg-gray-700/50 border-gray-100 dark:border-gray-600 hover:bg-white dark:hover:bg-gray-700'
+                      }`}
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-3 flex-1">
@@ -396,9 +446,26 @@ const Analysis = () => {
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-gray-600 rounded-lg shadow-sm">
-                          <ThumbsUp size={14} className="text-gray-600 dark:text-gray-300" />
-                          <span className="text-xs font-medium text-gray-700 dark:text-gray-200">{comment.like_count || 0}</span>
+                        <div className="flex items-center gap-2">
+                          {commentSortOrder === 'likes' && index < 3 && (
+                            <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
+                              index === 0 ? 'bg-yellow-400 text-yellow-900' :
+                              index === 1 ? 'bg-gray-300 text-gray-700' :
+                              'bg-orange-300 text-orange-800'
+                            }`}>
+                              {index + 1}
+                            </div>
+                          )}
+                          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg shadow-sm ${
+                            commentSortOrder === 'likes' && index === 0
+                              ? 'bg-orange-100 dark:bg-orange-800/50'
+                              : 'bg-white dark:bg-gray-600'
+                          }`}>
+                            <ThumbsUp size={14} className={commentSortOrder === 'likes' && index === 0 ? 'text-orange-600' : 'text-gray-600 dark:text-gray-300'} />
+                            <span className={`text-sm font-bold ${
+                              commentSortOrder === 'likes' && index === 0 ? 'text-orange-600' : 'text-gray-700 dark:text-gray-200'
+                            }`}>{comment.like_count || 0}</span>
+                          </div>
                         </div>
                       </div>
                       <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed mb-3 whitespace-pre-wrap">

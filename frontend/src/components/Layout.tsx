@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Search, Download, Users, Moon, Sun, BarChart3, FileText, Calendar, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Search, Download, Users, Moon, Sun, BarChart3, FileText, Calendar, Menu, X, ChevronDown } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 
 interface LayoutProps {
@@ -38,6 +38,7 @@ const Layout = ({ children }: LayoutProps) => {
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="md:hidden p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 aria-label="Toggle menu"
+                aria-expanded={isMobileMenuOpen}
               >
                 {isMobileMenuOpen ? (
                   <X size={24} className="text-gray-700 dark:text-gray-300" />
@@ -72,15 +73,40 @@ const Layout = ({ children }: LayoutProps) => {
             </button>
           </div>
         </div>
-      </header>
 
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
+        {/* Mobile Accordion Menu */}
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
+          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+            isMobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <nav className="px-4 pb-4 border-t border-gray-200/50 dark:border-gray-700/50">
+            <div className="pt-3 space-y-1">
+              {navItems.map((item) => {
+                const Icon = item.icon
+                const isActive = location.pathname === item.path
+
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={handleNavClick}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                      isActive
+                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30 font-semibold'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/70'
+                    }`}
+                  >
+                    <Icon size={20} aria-hidden="true" />
+                    <span>{item.label}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </nav>
+        </div>
+      </header>
 
       <div className="flex w-full">
         {/* Sidebar - Desktop */}
@@ -104,39 +130,6 @@ const Layout = ({ children }: LayoutProps) => {
                   >
                     <Icon size={20} aria-hidden="true" className={isActive ? '' : 'group-hover:scale-110 transition-transform'} />
                     <span className="whitespace-nowrap">{item.label}</span>
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-        </nav>
-
-        {/* Sidebar - Mobile */}
-        <nav
-          className={`fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
-            isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
-        >
-          <div className="p-4 pt-20">
-            <div className="space-y-2">
-              {navItems.map((item) => {
-                const Icon = item.icon
-                const isActive = location.pathname === item.path
-
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={handleNavClick}
-                    aria-current={isActive ? 'page' : undefined}
-                    className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                      isActive
-                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30 font-semibold'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/70 hover:shadow-md'
-                    }`}
-                  >
-                    <Icon size={20} aria-hidden="true" />
-                    <span>{item.label}</span>
                   </Link>
                 )
               })}

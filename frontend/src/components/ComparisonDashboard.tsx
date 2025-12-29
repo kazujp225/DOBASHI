@@ -82,7 +82,20 @@ const ComparisonDashboard: React.FC = () => {
         params.append('period_days', '30');
 
         const response = await api.get(`/api/v1/comparison/tigers/performance?${params.toString()}`);
-        setTigerPerformances(response.data.performances);
+        // APIは tigers または performances としてデータを返す
+        const performances = response.data.performances || response.data.tigers || [];
+        // metrics が入っている場合はフラット化
+        const flattenedPerformances = performances.map((t: any) => ({
+          tiger_id: t.tiger_id,
+          display_name: t.display_name,
+          total_mentions: t.metrics?.total_mentions || t.total_mentions || 0,
+          avg_rate_total: t.metrics?.avg_rate_total || t.avg_rate_total || 0,
+          avg_rate_entity: t.metrics?.avg_rate_entity || t.avg_rate_entity || 0,
+          sentiment_score: t.sentiment_score || 0,
+          growth_rate: t.growth_rate || 0,
+          performance_score: t.performance_score || 0,
+        }));
+        setTigerPerformances(flattenedPerformances);
       } else if (comparisonType === 'periods' && selectedTigers.length > 0) {
         const response = await api.get(`/api/v1/comparison/periods?tiger_id=${selectedTigers[0]}`);
         setPeriodComparisons(response.data.periods);
@@ -383,6 +396,9 @@ const ComparisonDashboard: React.FC = () => {
 
           {comparisonType === 'tigers' && tigerPerformances.length > 0 && (
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
+                比較結果: {tigerPerformances.map(t => t.display_name).join(' vs ')}
+              </h3>
               <Radar
                 data={getTigerPerformanceRadar()}
                 options={{
@@ -407,6 +423,31 @@ const ComparisonDashboard: React.FC = () => {
                   }
                 }}
               />
+              {/* 詳細テーブル */}
+              <div className="mt-6 overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="border-b dark:border-gray-600">
+                      <th className="text-left py-2 px-3 text-gray-700 dark:text-gray-300">社長名</th>
+                      <th className="text-right py-2 px-3 text-gray-700 dark:text-gray-300">言及数</th>
+                      <th className="text-right py-2 px-3 text-gray-700 dark:text-gray-300">Rate Total</th>
+                      <th className="text-right py-2 px-3 text-gray-700 dark:text-gray-300">Rate Entity</th>
+                      <th className="text-right py-2 px-3 text-gray-700 dark:text-gray-300">スコア</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tigerPerformances.map((t, i) => (
+                      <tr key={t.tiger_id} className={i % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-100 dark:bg-gray-700'}>
+                        <td className="py-2 px-3 font-medium text-gray-900 dark:text-gray-100">{t.display_name}</td>
+                        <td className="text-right py-2 px-3 text-gray-700 dark:text-gray-300">{t.total_mentions}</td>
+                        <td className="text-right py-2 px-3 text-gray-700 dark:text-gray-300">{(t.avg_rate_total * 100).toFixed(1)}%</td>
+                        <td className="text-right py-2 px-3 text-gray-700 dark:text-gray-300">{(t.avg_rate_entity * 100).toFixed(1)}%</td>
+                        <td className="text-right py-2 px-3 text-orange-600 dark:text-orange-400 font-semibold">{t.performance_score.toFixed(0)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
