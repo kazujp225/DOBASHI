@@ -145,7 +145,14 @@ app.include_router(reports.router, prefix=f"{api_v1_prefix}/reports", tags=["rep
 
 @app.get("/")
 async def root(current_user=Depends(get_current_user_optional)):
-    """API ルート"""
+    """フロントエンドまたはAPI情報を返す"""
+    from fastapi.responses import FileResponse
+
+    index_file = FRONTEND_DIR / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file)
+
+    # フロントエンドがない場合はAPI情報を返す
     return {
         "message": settings.app_name,
         "version": settings.app_version,
