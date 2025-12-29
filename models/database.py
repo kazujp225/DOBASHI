@@ -21,7 +21,13 @@ if settings.database_type == "sqlite":
 SQLALCHEMY_DATABASE_URL = settings.get_database_url
 
 # エンジンの作成（データベースタイプに応じて設定を変更）
-if settings.database_type == "postgresql":
+# DATABASE_URLがpostgresql://で始まるか、database_typeがpostgresqlの場合はPostgreSQL
+is_postgresql = (
+    SQLALCHEMY_DATABASE_URL.startswith("postgresql://") or
+    settings.database_type == "postgresql"
+)
+
+if is_postgresql:
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL,
         pool_size=10,
