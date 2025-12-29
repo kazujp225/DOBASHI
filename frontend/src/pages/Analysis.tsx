@@ -158,14 +158,19 @@ const Analysis = () => {
               <span>動画を選択</span>
             </label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {videos?.map((video) => (
+              {videos?.map((video) => {
+                const isAnalyzing = isExtracting || analyzeMutation.isPending
+                const isDisabled = isAnalyzing && selectedVideoId !== video.video_id
+                return (
                 <div
                   key={video.video_id}
-                  onClick={() => setSelectedVideoId(video.video_id)}
-                  className={`group flex gap-4 p-4 rounded-xl cursor-pointer transition-all ${
-                    selectedVideoId === video.video_id
-                      ? 'bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 ring-2 ring-orange-500 shadow-lg'
-                      : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md'
+                  onClick={() => !isDisabled && setSelectedVideoId(video.video_id)}
+                  className={`group flex gap-4 p-4 rounded-xl transition-all ${
+                    isDisabled
+                      ? 'opacity-40 cursor-not-allowed bg-gray-100 dark:bg-gray-800'
+                      : selectedVideoId === video.video_id
+                        ? 'bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 ring-2 ring-orange-500 shadow-lg cursor-pointer'
+                        : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md cursor-pointer'
                   }`}
                 >
                   <div className="relative flex-shrink-0">
@@ -201,7 +206,8 @@ const Analysis = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           </div>
 

@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { statsApi } from '../services/api'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { Calendar, Video, MessageSquare, Users, Download, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Calendar, Video, MessageSquare, Users, Download, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 import { exportToCSV, formatRankingForCSV } from '../utils/csv'
 import toast from 'react-hot-toast'
 
 const MonthlyRanking = () => {
   const [selectedYear, setSelectedYear] = useState<number | null>(null)
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null)
+  const [isYearOpen, setIsYearOpen] = useState(false)
+  const [isMonthOpen, setIsMonthOpen] = useState(false)
 
   // 利用可能な月一覧を取得
   const { data: availableMonths, isLoading: monthsLoading } = useQuery({
@@ -126,56 +128,139 @@ const MonthlyRanking = () => {
         )}
       </div>
 
-      {/* 月選択 */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div className="flex items-center justify-between">
+      {/* 月選択 - モダンデザイン */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-6">
+        <div className="flex items-center justify-between gap-4">
+          {/* 前月ボタン */}
           <button
             onClick={goPrevMonth}
             disabled={isFirstMonth}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`p-3 rounded-xl transition-all duration-200 ${
               isFirstMonth
-                ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 hover:text-orange-600 dark:hover:text-orange-400 bg-gray-50 dark:bg-gray-700/50'
             }`}
           >
             <ChevronLeft size={24} />
           </button>
 
-          <div className="flex items-center space-x-4">
-            <select
-              value={selectedYear || ''}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-            >
-              {Array.from(new Set(availableMonths.months.map(m => m.year))).map(year => (
-                <option key={year} value={year}>{year}年</option>
-              ))}
-            </select>
+          {/* 年月セレクター */}
+          <div className="flex items-center gap-3 flex-1 justify-center">
+            {/* 年選択 - アコーディオン */}
+            <div className="relative min-w-[140px]">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsYearOpen(!isYearOpen)
+                  setIsMonthOpen(false)
+                }}
+                className="w-full px-5 py-3 bg-gradient-to-r from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 border border-orange-200 dark:border-orange-800/50 rounded-xl flex items-center justify-between hover:shadow-md transition-all duration-200"
+              >
+                <span className="font-bold text-orange-700 dark:text-orange-300 text-lg">
+                  {selectedYear}年
+                </span>
+                <ChevronDown
+                  size={20}
+                  className={`text-orange-500 transition-transform duration-200 ${isYearOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+              <div
+                className={`absolute z-20 w-full mt-2 overflow-hidden transition-all duration-300 ease-in-out ${
+                  isYearOpen ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+                }`}
+              >
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl overflow-hidden">
+                  {Array.from(new Set(availableMonths.months.map(m => m.year)))
+                    .sort((a, b) => b - a)
+                    .map(year => (
+                      <button
+                        key={year}
+                        type="button"
+                        onClick={() => {
+                          setSelectedYear(year)
+                          setIsYearOpen(false)
+                        }}
+                        className={`w-full px-5 py-3 text-left transition-all duration-150 ${
+                          selectedYear === year
+                            ? 'bg-orange-500 text-white font-bold'
+                            : 'text-gray-700 dark:text-gray-200 hover:bg-orange-100 dark:hover:bg-orange-900/30'
+                        }`}
+                      >
+                        {year}年
+                      </button>
+                    ))}
+                </div>
+              </div>
+            </div>
 
-            <select
-              value={selectedMonth || ''}
-              onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-            >
-              {availableMonths.months
-                .filter(m => m.year === selectedYear)
-                .map(m => (
-                  <option key={m.month} value={m.month}>{m.month}月</option>
-                ))}
-            </select>
+            {/* 月選択 - アコーディオン */}
+            <div className="relative min-w-[120px]">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMonthOpen(!isMonthOpen)
+                  setIsYearOpen(false)
+                }}
+                className="w-full px-5 py-3 bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border border-blue-200 dark:border-blue-800/50 rounded-xl flex items-center justify-between hover:shadow-md transition-all duration-200"
+              >
+                <span className="font-bold text-blue-700 dark:text-blue-300 text-lg">
+                  {selectedMonth}月
+                </span>
+                <ChevronDown
+                  size={20}
+                  className={`text-blue-500 transition-transform duration-200 ${isMonthOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+              <div
+                className={`absolute z-20 w-full mt-2 overflow-hidden transition-all duration-300 ease-in-out ${
+                  isMonthOpen ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+                }`}
+              >
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+                  {availableMonths.months
+                    .filter(m => m.year === selectedYear)
+                    .map(m => (
+                      <button
+                        key={m.month}
+                        type="button"
+                        onClick={() => {
+                          setSelectedMonth(m.month)
+                          setIsMonthOpen(false)
+                        }}
+                        className={`w-full px-5 py-3 text-left transition-all duration-150 ${
+                          selectedMonth === m.month
+                            ? 'bg-blue-500 text-white font-bold'
+                            : 'text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                        }`}
+                      >
+                        {m.month}月
+                      </button>
+                    ))}
+                </div>
+              </div>
+            </div>
           </div>
 
+          {/* 次月ボタン */}
           <button
             onClick={goNextMonth}
             disabled={isLastMonth}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`p-3 rounded-xl transition-all duration-200 ${
               isLastMonth
-                ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 hover:text-orange-600 dark:hover:text-orange-400 bg-gray-50 dark:bg-gray-700/50'
             }`}
           >
             <ChevronRight size={24} />
           </button>
+        </div>
+
+        {/* 選択中の期間表示 */}
+        <div className="mt-4 text-center">
+          <span className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-full text-sm text-gray-600 dark:text-gray-300">
+            <Calendar size={16} />
+            {selectedYear}年{selectedMonth}月のデータを表示中
+          </span>
         </div>
       </div>
 

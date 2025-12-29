@@ -309,6 +309,128 @@ async def add_tiger_alias(tiger_id: str, request: dict, current_user=Depends(get
     }
 
 
+@router.post("/import/csv")
+async def import_tigers_from_csv(request: dict, current_user=Depends(get_current_user)):
+    """
+    CSVデータから社長を一括インポート
+
+    Args:
+        request: {
+            "data": [
+                {"tiger_id": "xxx", "display_name": "xxx", "full_name": "xxx", "category": "regular", "description": "xxx"},
+                ...
+            ],
+            "mode": "add" | "update" | "replace"  # add=追加のみ, update=既存更新+追加, replace=全置換
+        }
+    """
+    data = request.get('data', [])
+    mode = request.get('mode', 'add')
+
+    if not data:
+        raise HTTPException(status_code=400, detail="No data provided")
+
+    tigers = load_tigers()
+    existing_ids = {t['tiger_id'] for t in tigers}
+
+    results = {
+        "added": 0,
+        "updated": 0,
+        "skipped": 0,
+        "errors": []
+    }
+
+    if mode == 'replace':
+        # 全置換モード: 既存データをクリア
+        tigers = []
+        existing_ids = set()
+
+    for row in data:
+        tiger_id = row.get('tiger_id', '').strip()
+        display_name = row.get('display_name', '').strip()
+        full_name = row.get('full_name', '').strip()
+        category = row.get('category', 'other').strip()
+        description = row.get('description', '').strip()
+
+        # バリデーション
+        if not tiger_id:
+            results['errors'].append(f"社長ID未指定: {row}")
+            results['skipped'] += 1
+            continue
+
+        if not display_name:
+            results['errors'].append(f"表示名未指定: {tiger_id}")
+            results['skipped'] += 1
+            continue
+
+        # IDの形式チェック（英数字とアンダースコアのみ）
+        if not re.match(r'^[a-z0-9_]+$', tiger_id):
+            results['errors'].append(f"社長IDは半角英小文字、数字、アンダースコアのみ: {tiger_id}")
+            results['skipped'] += 1
+            continue
+
+        # カテゴリの正規化
+        if category not in ['regular', 'semi_regular', 'other']:
+            category = 'other'
+
+        new_tiger = {
+            "tiger_id": tiger_id,
+            "display_name": display_name,
+            "full_name": full_name or display_name,
+            "category": category,
+            "description": description,
+            "is_active": True,
+            "image_url": None
+        }
+
+        if tiger_id in existing_ids:
+            if mode in ['update', 'replace']:
+                # 既存データを更新
+                index = next(i for i, t in enumerate(tigers) if t['tiger_id'] == tiger_id)
+                # image_urlは保持
+                new_tiger['image_url'] = tigers[index].get('image_url')
+                tigers[index] = new_tiger
+                results['updated'] += 1
+            else:
+                # addモードでは既存をスキップ
+                results['skipped'] += 1
+        else:
+            tigers.append(new_tiger)
+            existing_ids.add(tiger_id)
+            results['added'] += 1
+
+    save_tigers(tigers)
+
+    return {
+        "message": f"インポート完了: 追加{results['added']}件, 更新{results['updated']}件, スキップ{results['skipped']}件",
+        "results": results
+    }
+
+
+@router.get("/export/csv")
+async def export_tigers_to_csv():
+    """
+    社長マスタをCSV形式でエクスポート
+    """
+    tigers = load_tigers()
+
+    # CSVデータを生成
+    csv_data = []
+    for tiger in tigers:
+        csv_data.append({
+            "tiger_id": tiger.get('tiger_id', ''),
+            "display_name": tiger.get('display_name', ''),
+            "full_name": tiger.get('full_name', ''),
+            "category": tiger.get('category', 'other'),
+            "description": tiger.get('description', ''),
+            "is_active": tiger.get('is_active', True)
+        })
+
+    return {
+        "data": csv_data,
+        "total": len(csv_data)
+    }
+
+
 @router.delete("/{tiger_id}/aliases/{alias}")
 async def delete_tiger_alias(tiger_id: str, alias: str, current_user=Depends(get_current_user)):
     """

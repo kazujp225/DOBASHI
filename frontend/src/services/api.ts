@@ -79,6 +79,16 @@ export const tigersApi = {
     const { data } = await api.delete(`/api/v1/tigers/${tigerId}/aliases/${encodeURIComponent(alias)}`);
     return data;
   },
+
+  importCsv: async (csvData: Array<{tiger_id: string; display_name: string; full_name?: string; category?: string; description?: string}>, mode: 'add' | 'update' | 'replace' = 'add'): Promise<{message: string; results: {added: number; updated: number; skipped: number; errors: string[]}}> => {
+    const { data } = await api.post('/api/v1/tigers/import/csv', { data: csvData, mode });
+    return data;
+  },
+
+  exportCsv: async (): Promise<{data: Array<{tiger_id: string; display_name: string; full_name: string; category: string; description: string}>; total: number}> => {
+    const { data } = await api.get('/api/v1/tigers/export/csv');
+    return data;
+  },
 };
 
 export const videosApi = {

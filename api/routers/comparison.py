@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional
 from datetime import datetime, timedelta
+from pydantic import BaseModel
 
 from models import get_db, Video, Comment, VideoTigerStats, Tiger, CommentTigerRelation
 from core.cache import cache_manager
@@ -15,15 +16,21 @@ from ..dependencies import get_current_user_optional
 router = APIRouter()
 
 
+class VideoComparisonRequest(BaseModel):
+    video_ids: List[str]
+
+
 @router.post("/videos")
 async def compare_videos(
-    video_ids: List[str],
+    request: VideoComparisonRequest,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user_optional)
 ):
     """
     複数動画の統計を比較
     """
+    video_ids = request.video_ids
+
     if len(video_ids) > 10:
         raise HTTPException(
             status_code=400,

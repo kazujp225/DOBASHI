@@ -1,18 +1,31 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { tigersApi } from '../services/api'
-import { Users, UserPlus, Edit, Trash2, Tag, Plus, X, FileText, MessageSquare, Scissors, Hash, Briefcase, Type, Languages, Globe, User, Search } from 'lucide-react'
+import { Users, UserPlus, Edit, Trash2, Tag, Plus, X, FileText, MessageSquare, Scissors, Hash, Briefcase, Type, Languages, Globe, User, Search, Upload, Download, AlertCircle, CheckCircle } from 'lucide-react'
 import Modal from '../components/Modal'
 import TigerForm from '../components/TigerForm'
 import toast from 'react-hot-toast'
 import type { Tiger } from '../types'
 
+interface CsvRow {
+  tiger_id: string
+  display_name: string
+  full_name?: string
+  category?: string
+  description?: string
+}
+
 const Tigers = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [editingTiger, setEditingTiger] = useState<Tiger | null>(null)
   const [deletingTiger, setDeletingTiger] = useState<Tiger | null>(null)
   const [viewingAliasesTiger, setViewingAliasesTiger] = useState<Tiger | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [importData, setImportData] = useState<CsvRow[]>([])
+  const [importMode, setImportMode] = useState<'add' | 'update' | 'replace'>('add')
+  const [importPreview, setImportPreview] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const queryClient = useQueryClient()
 
@@ -75,6 +88,108 @@ const Tigers = () => {
     deleteMutation.mutate(deletingTiger.tiger_id)
   }
 
+  // CSVインポート
+  const importMutation = useMutation({
+    mutationFn: ({ data, mode }: { data: CsvRow[]; mode: 'add' | 'update' | 'replace' }) =>
+      tigersApi.importCsv(data, mode),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['tigers'] })
+      setIsImportModalOpen(false)
+      setImportData([])
+      setImportPreview(false)
+      toast.success(result.message)
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'インポートに失敗しました')
+    },
+  })
+
+  // CSVファイルをパース
+  const parseCSV = (text: string): CsvRow[] => {
+    const lines = text.trim().split('\n')
+    if (lines.length < 2) return []
+
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''))
+    const rows: CsvRow[] = []
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+      const row: any = {}
+
+      headers.forEach((header, index) => {
+        // ヘッダー名を正規化
+        const normalizedHeader = header.toLowerCase().replace(/\s+/g, '_')
+        if (normalizedHeader === 'tiger_id' || normalizedHeader === '社長id') {
+          row.tiger_id = values[index] || ''
+        } else if (normalizedHeader === 'display_name' || normalizedHeader === '表示名') {
+          row.display_name = values[index] || ''
+        } else if (normalizedHeader === 'full_name' || normalizedHeader === '本名') {
+          row.full_name = values[index] || ''
+        } else if (normalizedHeader === 'category' || normalizedHeader === 'カテゴリ') {
+          row.category = values[index] || 'other'
+        } else if (normalizedHeader === 'description' || normalizedHeader === '説明') {
+          row.description = values[index] || ''
+        }
+      })
+
+      if (row.tiger_id && row.display_name) {
+        rows.push(row as CsvRow)
+      }
+    }
+
+    return rows
+  }
+
+  // ファイル選択時の処理
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const text = e.target?.result as string
+      const parsed = parseCSV(text)
+      if (parsed.length === 0) {
+        toast.error('有効なデータがありません。CSVフォーマットを確認してください。')
+        return
+      }
+      setImportData(parsed)
+      setImportPreview(true)
+    }
+    reader.readAsText(file)
+  }
+
+  // CSVエクスポート
+  const handleExport = async () => {
+    try {
+      const result = await tigersApi.exportCsv()
+      const headers = ['tiger_id', 'display_name', 'full_name', 'category', 'description']
+      const csvContent = [
+        headers.join(','),
+        ...result.data.map(row =>
+          headers.map(h => `"${(row as any)[h] || ''}"`).join(',')
+        )
+      ].join('\n')
+
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `社長マスタ_${new Date().toISOString().split('T')[0]}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('CSVをエクスポートしました')
+    } catch (error) {
+      toast.error('エクスポートに失敗しました')
+    }
+  }
+
+  // インポート実行
+  const handleImport = () => {
+    if (importData.length === 0) return
+    importMutation.mutate({ data: importData, mode: importMode })
+  }
+
   const filteredTigers =
     tigers?.filter((tiger) => {
       const keyword = searchTerm.trim().toLowerCase()
@@ -101,7 +216,7 @@ const Tigers = () => {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">社長マスタ</h1>
           <p className="mt-2 text-base text-gray-600 dark:text-gray-400">登録されている社長の管理</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true" />
             <input
@@ -112,6 +227,20 @@ const Tigers = () => {
               className="pl-9 pr-3 py-2.5 w-56 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm"
             />
           </div>
+          <button
+            onClick={handleExport}
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-all shadow-sm"
+          >
+            <Download size={18} />
+            <span>CSV出力</span>
+          </button>
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl hover:from-blue-700 hover:to-blue-600 shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40"
+          >
+            <Upload size={18} />
+            <span>CSVインポート</span>
+          </button>
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 rounded-xl hover:from-orange-700 hover:to-orange-600 shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
@@ -330,6 +459,181 @@ const Tigers = () => {
 
       {/* 別名一覧モーダル */}
       {viewingAliasesTiger && <AliasesModal tiger={viewingAliasesTiger} onClose={() => setViewingAliasesTiger(null)} />}
+
+      {/* CSVインポートモーダル */}
+      <Modal
+        isOpen={isImportModalOpen}
+        onClose={() => {
+          setIsImportModalOpen(false)
+          setImportData([])
+          setImportPreview(false)
+        }}
+        title="CSVインポート"
+      >
+        <div className="space-y-6">
+          {/* ファイル入力（非表示） */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+
+          {!importPreview ? (
+            <>
+              {/* ファイルドロップエリア */}
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center cursor-pointer hover:border-orange-400 dark:hover:border-orange-500 hover:bg-orange-50/50 dark:hover:bg-orange-900/10 transition-all"
+              >
+                <Upload className="mx-auto text-gray-400 mb-4" size={48} />
+                <p className="text-gray-700 dark:text-gray-200 font-medium mb-2">
+                  CSVファイルをクリックして選択
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  .csv形式のファイルをアップロード
+                </p>
+              </div>
+
+              {/* CSVフォーマット説明 */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
+                <h4 className="font-medium text-blue-800 dark:text-blue-200 flex items-center gap-2 mb-3">
+                  <FileText size={18} />
+                  CSVフォーマット
+                </h4>
+                <div className="text-sm text-blue-700 dark:text-blue-300 space-y-2">
+                  <p>必須カラム: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">tiger_id</code>, <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">display_name</code></p>
+                  <p>任意カラム: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">full_name</code>, <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">category</code>, <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">description</code></p>
+                  <p className="mt-2 font-medium">例:</p>
+                  <pre className="bg-blue-100 dark:bg-blue-800 p-2 rounded text-xs overflow-x-auto">
+{`tiger_id,display_name,full_name,category,description
+hayashi_naohiro,林社長,林尚弘,regular,フランチャイズコンサルタント
+iguchi_tomoaki,井口社長,井口智明,regular,株式会社クラウドワークス`}
+                  </pre>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* プレビュー */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                  <CheckCircle size={20} />
+                  <span className="font-medium">{importData.length}件のデータを読み込みました</span>
+                </div>
+                <button
+                  onClick={() => {
+                    setImportData([])
+                    setImportPreview(false)
+                  }}
+                  className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  やり直す
+                </button>
+              </div>
+
+              {/* インポートモード選択 */}
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-3">インポートモード</h4>
+                <div className="space-y-2">
+                  {[
+                    { value: 'add' as const, label: '追加のみ', desc: '既存データと重複するIDはスキップ' },
+                    { value: 'update' as const, label: '追加＋更新', desc: '既存データは更新、新規は追加' },
+                    { value: 'replace' as const, label: '全置換', desc: '既存データを全て削除して入れ替え（注意）' },
+                  ].map((mode) => (
+                    <label
+                      key={mode.value}
+                      className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all ${
+                        importMode === mode.value
+                          ? 'bg-orange-100 dark:bg-orange-900/30 border-2 border-orange-400'
+                          : 'bg-white dark:bg-gray-700 border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="importMode"
+                        value={mode.value}
+                        checked={importMode === mode.value}
+                        onChange={() => setImportMode(mode.value)}
+                        className="mt-1"
+                      />
+                      <div>
+                        <p className="font-medium text-gray-800 dark:text-gray-200">{mode.label}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{mode.desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* プレビューテーブル */}
+              <div className="max-h-60 overflow-auto border border-gray-200 dark:border-gray-700 rounded-xl">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-gray-700 dark:text-gray-300">社長ID</th>
+                      <th className="px-3 py-2 text-left text-gray-700 dark:text-gray-300">表示名</th>
+                      <th className="px-3 py-2 text-left text-gray-700 dark:text-gray-300">本名</th>
+                      <th className="px-3 py-2 text-left text-gray-700 dark:text-gray-300">カテゴリ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {importData.slice(0, 10).map((row, i) => (
+                      <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-3 py-2 font-mono text-xs text-gray-800 dark:text-gray-200">{row.tiger_id}</td>
+                        <td className="px-3 py-2 text-gray-800 dark:text-gray-200">{row.display_name}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.full_name || '-'}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.category || 'other'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {importData.length > 10 && (
+                  <p className="text-center text-sm text-gray-500 py-2">
+                    他 {importData.length - 10}件...
+                  </p>
+                )}
+              </div>
+
+              {importMode === 'replace' && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={20} />
+                    <div>
+                      <p className="font-medium text-red-800 dark:text-red-200">注意</p>
+                      <p className="text-sm text-red-700 dark:text-red-300">
+                        全置換モードでは、既存の社長データがすべて削除されます。この操作は取り消せません。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* アクションボタン */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => {
+                    setIsImportModalOpen(false)
+                    setImportData([])
+                    setImportPreview(false)
+                  }}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleImport}
+                  disabled={importMutation.isPending}
+                  className="px-6 py-2 text-white bg-gradient-to-r from-orange-600 to-orange-500 rounded-lg hover:from-orange-700 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md"
+                >
+                  {importMutation.isPending ? 'インポート中...' : `${importData.length}件をインポート`}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
     </div>
   )
 }

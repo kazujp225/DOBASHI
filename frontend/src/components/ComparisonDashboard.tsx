@@ -75,7 +75,8 @@ const ComparisonDashboard: React.FC = () => {
         const response = await api.post('/api/v1/comparison/videos', {
           video_ids: selectedVideos
         });
-        setVideoComparisons(response.data.comparisons);
+        // APIは videos または comparisons としてデータを返す
+        setVideoComparisons(response.data.videos || response.data.comparisons || []);
       } else if (comparisonType === 'tigers' && selectedTigers.length > 0) {
         const params = new URLSearchParams();
         selectedTigers.forEach(id => params.append('tiger_ids', id));
