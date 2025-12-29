@@ -57,7 +57,7 @@ const Layout = ({ children }: LayoutProps) => {
 
       <div className="flex w-full">
         {/* Sidebar */}
-        <nav className="w-64 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm shadow-lg min-h-[calc(100vh-80px)] border-r border-gray-200/50 dark:border-gray-700/50 transition-all duration-200">
+        <nav className="w-56 flex-shrink-0 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm shadow-lg min-h-[calc(100vh-80px)] border-r border-gray-200/50 dark:border-gray-700/50 transition-all duration-200">
           <div className="p-4">
             <div className="space-y-2">
               {navItems.map((item) => {
@@ -85,8 +85,10 @@ const Layout = ({ children }: LayoutProps) => {
         </nav>
 
         {/* Main Content */}
-        <main className="flex-1 p-8 transition-colors duration-200">
-          {children}
+        <main className="flex-1 min-w-0 p-6 transition-colors duration-200">
+          <div className="w-full">
+            {children}
+          </div>
         </main>
       </div>
 
