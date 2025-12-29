@@ -33,7 +33,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <div className="space-y-6 animate-fadeIn w-full">
       {/* ヘッダー */}
       <div className="flex justify-between items-center">
         <div>
@@ -52,7 +52,7 @@ const Dashboard = () => {
       </div>
 
       {/* クイックスタッツ */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transform transition-all hover:shadow-lg hover:-translate-y-1">
           <div className="flex items-center justify-between">
             <div>

@@ -85,8 +85,8 @@ const Layout = ({ children }: LayoutProps) => {
         </nav>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 p-6 transition-colors duration-200">
-          <div className="w-full">
+        <main className="flex-1 min-w-0 p-4 transition-colors duration-200">
+          <div className="w-full max-w-none">
             {children}
           </div>
         </main>
