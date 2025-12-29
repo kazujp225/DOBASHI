@@ -1,6 +1,6 @@
-import { ReactNode } from 'react'
+import { ReactNode, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Search, Download, Users, Moon, Sun, BarChart3, FileText, Calendar } from 'lucide-react'
+import { LayoutDashboard, Search, Download, Users, Moon, Sun, BarChart3, FileText, Calendar, Menu, X } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 
 interface LayoutProps {
@@ -10,6 +10,7 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation()
   const { theme, toggleTheme } = useTheme()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const navItems = [
     { path: '/', icon: LayoutDashboard, label: 'ダッシュボード' },
@@ -21,28 +22,46 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/reports', icon: FileText, label: 'レポート' },
   ]
 
+  const handleNavClick = () => {
+    setIsMobileMenuOpen(false)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-all duration-200">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-40 transition-all duration-200">
-        <div className="w-full px-6">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 shadow-lg shadow-orange-500/30">
-                <span className="text-2xl">🐯</span>
+      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-50 transition-all duration-200">
+        <div className="w-full px-4 md:px-6">
+          <div className="flex justify-between items-center py-3 md:py-4">
+            <div className="flex items-center gap-3 md:gap-4">
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="md:hidden p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                aria-label="Toggle menu"
+              >
+                {isMobileMenuOpen ? (
+                  <X size={24} className="text-gray-700 dark:text-gray-300" />
+                ) : (
+                  <Menu size={24} className="text-gray-700 dark:text-gray-300" />
+                )}
+              </button>
+
+              <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 shadow-lg shadow-orange-500/30">
+                <span className="text-xl md:text-2xl">🐯</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-                  令和の虎 コメント分析
+                <h1 className="text-base md:text-xl font-bold text-gray-900 dark:text-white tracking-tight">
+                  <span className="hidden sm:inline">令和の虎 コメント分析</span>
+                  <span className="sm:hidden">令和の虎</span>
                 </h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">v2.2 Professional</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium hidden sm:block">v2.2 Professional</p>
               </div>
             </div>
 
             {/* Dark Mode Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2.5 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 hover:from-gray-200 hover:to-gray-300 dark:hover:from-gray-600 dark:hover:to-gray-500 shadow-md hover:shadow-lg transition-all duration-200"
+              className="p-2 md:p-2.5 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 hover:from-gray-200 hover:to-gray-300 dark:hover:from-gray-600 dark:hover:to-gray-500 shadow-md hover:shadow-lg transition-all duration-200"
               aria-label="Toggle dark mode"
             >
               {theme === 'light' ? (
@@ -55,9 +74,17 @@ const Layout = ({ children }: LayoutProps) => {
         </div>
       </header>
 
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       <div className="flex w-full">
-        {/* Sidebar */}
-        <nav className="w-56 flex-shrink-0 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm shadow-lg min-h-[calc(100vh-80px)] border-r border-gray-200/50 dark:border-gray-700/50 transition-all duration-200">
+        {/* Sidebar - Desktop */}
+        <nav className="hidden md:block w-56 flex-shrink-0 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm shadow-lg min-h-[calc(100vh-80px)] border-r border-gray-200/50 dark:border-gray-700/50 transition-all duration-200">
           <div className="p-4">
             <div className="space-y-2">
               {navItems.map((item) => {
@@ -84,8 +111,41 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
         </nav>
 
+        {/* Sidebar - Mobile */}
+        <nav
+          className={`fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
+            isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          <div className="p-4 pt-20">
+            <div className="space-y-2">
+              {navItems.map((item) => {
+                const Icon = item.icon
+                const isActive = location.pathname === item.path
+
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={handleNavClick}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                      isActive
+                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/30 font-semibold'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/70 hover:shadow-md'
+                    }`}
+                  >
+                    <Icon size={20} aria-hidden="true" />
+                    <span>{item.label}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        </nav>
+
         {/* Main Content */}
-        <main className="flex-1 min-w-0 p-4 transition-colors duration-200">
+        <main className="flex-1 min-w-0 p-3 md:p-4 transition-colors duration-200">
           <div className="w-full max-w-none">
             {children}
           </div>
@@ -93,9 +153,9 @@ const Layout = ({ children }: LayoutProps) => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-t-2 border-gray-200/50 dark:border-gray-700/50 mt-12 transition-all duration-200">
-        <div className="w-full px-6 py-6">
-          <p className="text-center text-sm text-gray-600 dark:text-gray-400 font-medium">
+      <footer className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-t-2 border-gray-200/50 dark:border-gray-700/50 mt-8 md:mt-12 transition-all duration-200">
+        <div className="w-full px-4 md:px-6 py-4 md:py-6">
+          <p className="text-center text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
             © 2025 令和の虎分析システム | Version 2.2
           </p>
         </div>
