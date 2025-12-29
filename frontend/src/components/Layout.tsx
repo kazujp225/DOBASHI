@@ -25,7 +25,7 @@ const Layout = ({ children }: LayoutProps) => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-all duration-200">
       {/* Header */}
       <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-40 transition-all duration-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-6">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 shadow-lg shadow-orange-500/30">
@@ -55,7 +55,7 @@ const Layout = ({ children }: LayoutProps) => {
         </div>
       </header>
 
-      <div className="flex max-w-7xl mx-auto">
+      <div className="flex w-full">
         {/* Sidebar */}
         <nav className="w-64 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm shadow-lg min-h-[calc(100vh-80px)] border-r border-gray-200/50 dark:border-gray-700/50 transition-all duration-200">
           <div className="p-4">
@@ -92,7 +92,7 @@ const Layout = ({ children }: LayoutProps) => {
 
       {/* Footer */}
       <footer className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-t-2 border-gray-200/50 dark:border-gray-700/50 mt-12 transition-all duration-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="w-full px-6 py-6">
           <p className="text-center text-sm text-gray-600 dark:text-gray-400 font-medium">
             © 2025 令和の虎分析システム | Version 2.2
           </p>
