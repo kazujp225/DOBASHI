@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { videosApi, analysisApi, statsApi } from '../services/api'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
-import { Search, Download, Video, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, Check, TrendingUp, Clock, ChevronDown } from 'lucide-react'
+import { Search, Download, Video, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, Check, TrendingUp, Clock, ChevronDown, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportToCSV, formatVideoStatsForCSV } from '../utils/csv'
 
@@ -229,11 +229,44 @@ const Analysis = () => {
             disabled={!selectedVideoId || isExtracting || analyzeMutation.isPending}
             className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-orange-600 to-orange-500 text-white text-base font-semibold rounded-xl hover:from-orange-700 hover:to-orange-600 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 transition-all hover:-translate-y-0.5 disabled:shadow-none disabled:translate-y-0"
           >
-            <Search size={20} />
+            {isExtracting || analyzeMutation.isPending ? (
+              <Loader2 size={20} className="animate-spin" />
+            ) : (
+              <Search size={20} />
+            )}
             <span>{isExtracting || analyzeMutation.isPending ? '分析を実行中...' : '分析を開始'}</span>
           </button>
         </div>
       </div>
+
+      {/* 分析中のローディングオーバーレイ */}
+      {(isExtracting || analyzeMutation.isPending) && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md mx-4 text-center">
+            <div className="relative w-20 h-20 mx-auto mb-6">
+              {/* 外側の回転リング */}
+              <div className="absolute inset-0 border-4 border-orange-200 dark:border-orange-900/30 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-transparent border-t-orange-500 rounded-full animate-spin"></div>
+              {/* 内側のアイコン */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Search size={28} className="text-orange-500" />
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              分析を実行中...
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              コメントを解析しています。<br />
+              しばらくお待ちください。
+            </p>
+            <div className="flex items-center justify-center gap-1">
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 分析結果 */}
       {videoStats && (
