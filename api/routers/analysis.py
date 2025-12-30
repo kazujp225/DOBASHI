@@ -452,7 +452,7 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
     with open(analyzed_comments_file, 'w', encoding='utf-8') as f:
         json.dump(analyzed_comments, f, ensure_ascii=False, indent=2)
 
-    # ========== DB永続化 ==========
+    # ========== DB永続化（統計のみ - コメント保存は省略して高速化） ==========
     db_warning = None  # DB永続化の警告メッセージ
     try:
         # Video レコードの存在確認/作成
@@ -487,11 +487,12 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
         # 既存のVideoTiger関係を削除
         db.query(VideoTiger).filter(VideoTiger.video_id == request.video_id).delete()
 
+        # 社長IDセットを事前に取得（クエリ回数削減）
+        all_tiger_ids = {t.tiger_id for t in db.query(TigerDB.tiger_id).all()}
+
         # 出演社長を登録（DBに存在する社長のみ）
         for order, tiger_id in enumerate(request.tiger_ids, start=1):
-            # 社長がDBに存在するか確認
-            tiger_exists = db.query(TigerDB).filter(TigerDB.tiger_id == tiger_id).first()
-            if tiger_exists:
+            if tiger_id in all_tiger_ids:
                 video_tiger = VideoTiger(
                     video_id=request.video_id,
                     tiger_id=tiger_id,
@@ -501,61 +502,7 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
             else:
                 print(f"[analyze] Warning: Tiger {tiger_id} not found in DB, skipping VideoTiger registration")
 
-        # コメントのアップサートと言及関係の更新
-        for c in analyzed_comments:
-            # コメント本体
-            model = db.query(CommentDB).filter(CommentDB.comment_id == c['comment_id']).first()
-            published_at = None
-            try:
-                if c.get('published_at'):
-                    published_at = datetime.fromisoformat(c['published_at'].replace('Z', '+00:00'))
-            except Exception:
-                published_at = None
-            if not model:
-                model = CommentDB(
-                    comment_id=c['comment_id'],
-                    video_id=request.video_id,
-                    text_original=c.get('text', ''),
-                    normalized_text=c.get('normalized_text'),
-                    author_name=c.get('author_name') or c.get('author') or '',
-                    author_channel_id=c.get('author_channel_id') or '',
-                    like_count=c.get('like_count') or 0,
-                    published_at=published_at,
-                    is_reply=bool(c.get('is_reply')),
-                    parent_comment_id=c.get('parent_id')
-                )
-                db.add(model)
-            else:
-                model.text_original = c.get('text', '')
-                model.normalized_text = c.get('normalized_text')
-                model.author_name = c.get('author_name') or c.get('author') or ''
-                model.author_channel_id = c.get('author_channel_id') or ''
-                model.like_count = c.get('like_count') or 0
-                model.published_at = published_at
-                model.is_reply = bool(c.get('is_reply'))
-                model.parent_comment_id = c.get('parent_id')
-
-            # 既存の関係を削除してから再登録
-            db.query(CommentTigerRelation).filter(CommentTigerRelation.comment_id == c['comment_id']).delete()
-            for m in c.get('tiger_mentions', []):
-                tid = m.get('tiger_id') or m.get('tigerId')
-                if not tid:
-                    continue
-                # 社長がDBに存在するか確認（外部キー制約エラー防止）
-                tiger_exists = db.query(TigerDB).filter(TigerDB.tiger_id == tid).first()
-                if not tiger_exists:
-                    print(f"[analyze] Warning: Tiger {tid} not found in DB, skipping CommentTigerRelation")
-                    continue
-                rel = CommentTigerRelation(
-                    comment_id=c['comment_id'],
-                    tiger_id=tid,
-                    matched_alias=m.get('matched_alias') or m.get('matched_text'),
-                    match_method='rule_based',
-                    confidence_score=1.0
-                )
-                db.add(rel)
-
-        # VideoTigerStats を更新
+        # VideoTigerStats を更新（統計情報のみDB保存）
         N_total = stats['N_total']
         N_entity = stats['N_entity']
         # いったんこの動画の統計を削除してから再作成
@@ -563,9 +510,7 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
         # 順位付与済みstatsから生成
         ss = list(stats['tiger_stats'].values())
         for s in ss:
-            # 社長がDBに存在するか確認
-            tiger_exists = db.query(TigerDB).filter(TigerDB.tiger_id == s['tiger_id']).first()
-            if not tiger_exists:
+            if s['tiger_id'] not in all_tiger_ids:
                 print(f"[analyze] Warning: Tiger {s['tiger_id']} not found in DB, skipping VideoTigerStats")
                 continue
             db.add(VideoTigerStats(
