@@ -1,25 +1,16 @@
 import { useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { analysisApi, tigersApi } from '../services/api'
-import { Download, CheckCircle, XCircle, Loader, Link as LinkIcon, ArrowRight, Zap, Search } from 'lucide-react'
+import { analysisApi } from '../services/api'
+import { Download, CheckCircle, XCircle, Loader, Link as LinkIcon, ArrowRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import LogViewer from '../components/LogViewer'
 
 const Collection = () => {
   const [videoUrl, setVideoUrl] = useState('')
   const [progress, setProgress] = useState<any>(null)
-  const [autoAnalyze, setAutoAnalyze] = useState(true)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [analysisComplete, setAnalysisComplete] = useState(false)
   const queryClient = useQueryClient()
   const navigate = useNavigate()
-
-  // 全社長マスタを取得（自動分析用）
-  const { data: tigers } = useQuery({
-    queryKey: ['tigers'],
-    queryFn: tigersApi.getAll,
-  })
 
   const collectMutation = useMutation({
     mutationFn: (params: { video_url: string }) => analysisApi.collect(params),
@@ -35,33 +26,6 @@ const Collection = () => {
     },
   })
 
-  // 自動分析を実行
-  const runAutoAnalysis = async (videoId: string) => {
-    if (!tigers || tigers.length === 0) {
-      toast.error('社長データが取得できませんでした')
-      return
-    }
-
-    setIsAnalyzing(true)
-    try {
-      // 全社長で分析実行
-      const tigerIds = tigers.map(t => t.tiger_id)
-      await analysisApi.analyze({ video_id: videoId, tiger_ids: tigerIds })
-
-      // キャッシュを更新
-      queryClient.invalidateQueries({ queryKey: ['videoStats', videoId] })
-      queryClient.invalidateQueries({ queryKey: ['comments', videoId] })
-
-      setAnalysisComplete(true)
-      toast.success('分析が完了しました！')
-    } catch (error) {
-      console.error('Auto analysis error:', error)
-      toast.error('自動分析に失敗しました')
-    } finally {
-      setIsAnalyzing(false)
-    }
-  }
-
   const pollProgress = async (videoId: string) => {
     let retryCount = 0
     const maxRetries = 3
@@ -69,19 +33,13 @@ const Collection = () => {
     const interval = setInterval(async () => {
       try {
         const status = await analysisApi.getCollectionStatus(videoId)
-        retryCount = 0  // 成功したらリトライカウントをリセット
+        retryCount = 0
         setProgress(status)
 
         if (status.status === 'completed') {
           clearInterval(interval)
-          // 動画一覧を再読み込み
           queryClient.invalidateQueries({ queryKey: ['videos'] })
           toast.success('収集が完了しました！')
-
-          // 自動分析が有効なら実行
-          if (autoAnalyze) {
-            await runAutoAnalysis(videoId)
-          }
         } else if (status.status === 'error') {
           clearInterval(interval)
           toast.error(status.message || '収集中にエラーが発生しました')
@@ -92,9 +50,7 @@ const Collection = () => {
 
         if (retryCount >= maxRetries) {
           clearInterval(interval)
-          // 404エラーの場合は収集が完了している可能性
           if (error.response?.status === 404) {
-            // 動画一覧を再読み込みして確認
             queryClient.invalidateQueries({ queryKey: ['videos'] })
             setProgress((prev: any) => prev ? {
               ...prev,
@@ -162,31 +118,9 @@ const Collection = () => {
               </p>
             </div>
 
-            {/* 自動分析オプション */}
-            <div className="flex items-center p-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl border border-orange-200 dark:border-orange-800">
-              <label className="flex items-center cursor-pointer flex-1">
-                <input
-                  type="checkbox"
-                  checked={autoAnalyze}
-                  onChange={(e) => setAutoAnalyze(e.target.checked)}
-                  disabled={collectMutation.isPending || isAnalyzing}
-                  className="w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
-                />
-                <div className="ml-3">
-                  <div className="flex items-center gap-2">
-                    <Zap size={18} className="text-orange-500" />
-                    <span className="font-medium text-gray-900 dark:text-white">収集後に自動で分析</span>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    全登録社長でコメント分析を自動実行し、結果ページへ移動します
-                  </p>
-                </div>
-              </label>
-            </div>
-
             <button
               type="submit"
-              disabled={!videoUrl.trim() || collectMutation.isPending || isAnalyzing}
+              disabled={!videoUrl.trim() || collectMutation.isPending}
               className="flex items-center space-x-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-md"
             >
               <Download size={20} />
@@ -251,50 +185,13 @@ const Collection = () => {
                       </p>
                     </div>
 
-                    {/* 自動分析中の表示 */}
-                    {isAnalyzing && (
-                      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <div className="flex items-center gap-3">
-                          <div className="relative">
-                            <Search size={20} className="text-blue-500 animate-pulse" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                              コメントを分析中...
-                            </p>
-                            <p className="text-xs text-blue-600 dark:text-blue-400">
-                              全社長への言及を検出しています
-                            </p>
-                          </div>
-                        </div>
-                        <div className="mt-3 w-full bg-blue-200 dark:bg-blue-800 rounded-full h-1.5 overflow-hidden">
-                          <div className="bg-blue-500 h-1.5 rounded-full animate-pulse w-2/3"></div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 分析完了時 */}
-                    {analysisComplete && !isAnalyzing && (
-                      <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle size={18} className="text-purple-500" />
-                          <p className="text-sm font-medium text-purple-800 dark:text-purple-300">
-                            分析が完了しました！
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 結果ページへのボタン */}
-                    {!isAnalyzing && (
-                      <button
-                        onClick={() => navigate(`/analysis?video=${progress.video_id}`)}
-                        className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-all transform hover:scale-105 shadow-md"
-                      >
-                        <span>{analysisComplete ? '分析結果を見る' : '動画分析ページへ移動'}</span>
-                        <ArrowRight size={20} />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => navigate(`/analysis?video=${progress.video_id}`)}
+                      className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-all transform hover:scale-105 shadow-md"
+                    >
+                      <span>動画分析ページへ移動</span>
+                      <ArrowRight size={20} />
+                    </button>
                   </div>
                 )}
 
@@ -317,7 +214,7 @@ const Collection = () => {
       )}
 
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-        <h3 className="font-medium text-blue-900 mb-2">💡 使い方</h3>
+        <h3 className="font-medium text-blue-900 mb-2">使い方</h3>
         <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800">
           <li>令和の虎のYouTube動画URLをコピーして上のフォームに貼り付けます</li>
           <li>「コメントを収集」ボタンをクリックすると、収集が開始されます</li>
