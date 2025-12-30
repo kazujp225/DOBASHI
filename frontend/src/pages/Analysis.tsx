@@ -1,10 +1,11 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { videosApi, analysisApi, statsApi, tigersApi } from '../services/api'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
-import { Search, Download, Video, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, Check, TrendingUp, Clock, ChevronDown, Loader2, Users } from 'lucide-react'
+import { Search, Download, Video, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, Check, TrendingUp, Clock, ChevronDown, Loader2, Users, Image, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
+import html2canvas from 'html2canvas'
 import { exportToCSV, formatVideoStatsForCSV } from '../utils/csv'
 
 const Analysis = () => {
@@ -15,6 +16,9 @@ const Analysis = () => {
   const [isExtracting, setIsExtracting] = useState(false)
   const [isTigerFilterOpen, setIsTigerFilterOpen] = useState(false)
   const [selectedTigerIds, setSelectedTigerIds] = useState<string[]>([])
+  const [isExportingImage, setIsExportingImage] = useState(false)
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false)
+  const resultsRef = useRef<HTMLDivElement>(null)
 
   const { data: videos } = useQuery({
     queryKey: ['videos'],
@@ -119,6 +123,48 @@ const Analysis = () => {
     const csvData = formatVideoStatsForCSV(videoStats)
     exportToCSV(csvData, `動画分析結果_${videoStats.video_id}_${new Date().toISOString().split('T')[0]}`)
     toast.success('CSVをエクスポートしました')
+    setIsExportMenuOpen(false)
+  }
+
+  // 画像エクスポート
+  const handleExportImage = async () => {
+    if (!resultsRef.current || !videoStats) {
+      toast.error('エクスポートするデータがありません')
+      return
+    }
+
+    setIsExportingImage(true)
+    setIsExportMenuOpen(false)
+
+    try {
+      // 一時的にスタイルを調整（エクスポート用）
+      const element = resultsRef.current
+      const originalWidth = element.style.width
+      element.style.width = '1200px'
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false,
+      })
+
+      // スタイルを元に戻す
+      element.style.width = originalWidth
+
+      // ダウンロード
+      const link = document.createElement('a')
+      link.download = `分析結果_${videoStats.video_id}_${new Date().toISOString().split('T')[0]}.png`
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+
+      toast.success('画像をエクスポートしました')
+    } catch (error) {
+      console.error('Image export error:', error)
+      toast.error('画像のエクスポートに失敗しました')
+    } finally {
+      setIsExportingImage(false)
+    }
   }
 
   const colors = ['#f97316', '#fb923c', '#fdba74', '#fed7aa', '#ffedd5', '#9ca3af']
@@ -172,13 +218,39 @@ const Analysis = () => {
           <p className="mt-2 text-base text-gray-600 dark:text-gray-400">社長別のコメント言及を分析</p>
         </div>
         {videoStats && videoStats.tiger_stats && videoStats.tiger_stats.length > 0 && (
-          <button
-            onClick={handleExportCSV}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 rounded-xl hover:from-orange-700 hover:to-orange-600 shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
-          >
-            <Download size={18} />
-            <span>CSV出力</span>
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+              disabled={isExportingImage}
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 rounded-xl hover:from-orange-700 hover:to-orange-600 shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5 disabled:opacity-50"
+            >
+              {isExportingImage ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Download size={18} />
+              )}
+              <span>エクスポート</span>
+              <ChevronDown size={16} className={`transition-transform ${isExportMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isExportMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden min-w-[180px]">
+                <button
+                  onClick={handleExportCSV}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <FileText size={18} className="text-green-600" />
+                  <span>CSV形式</span>
+                </button>
+                <button
+                  onClick={handleExportImage}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <Image size={18} className="text-blue-600" />
+                  <span>画像形式</span>
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -358,6 +430,18 @@ const Analysis = () => {
       {/* 分析結果 */}
       {videoStats && videoStats.tiger_stats.length > 0 && (
         <div className="space-y-6">
+          {/* 画像エクスポート対象エリア */}
+          <div ref={resultsRef} className="space-y-6 bg-white dark:bg-gray-900 p-6 rounded-2xl">
+            {/* 動画タイトル - 画像エクスポート用 */}
+            <div className="text-center pb-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">
+                {videos?.find(v => v.video_id === selectedVideoId)?.title || '分析結果'}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                令和の虎 コメント分析
+              </p>
+            </div>
+
           {/* サマリーカード - コメントがある時のみ表示 */}
           {videoStats.total_comments > 0 && (
           <div className="grid grid-cols-3 gap-2 sm:gap-5">
@@ -506,6 +590,8 @@ const Analysis = () => {
               </div>
             </div>
           )}
+          </div>
+          {/* 画像エクスポート対象エリアここまで */}
 
           {/* コメント一覧 */}
           {videoStats && videoStats.tiger_stats.length > 0 && (
