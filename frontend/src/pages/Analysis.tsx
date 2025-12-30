@@ -346,47 +346,50 @@ const Analysis = () => {
         <div className="space-y-6">
           {/* サマリーカード - コメントがある時のみ表示 */}
           {videoStats.total_comments > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden group hover:shadow-xl transition-shadow">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 dark:bg-blue-500/10 rounded-full -mr-16 -mt-16"></div>
+          <div className="grid grid-cols-3 gap-2 sm:gap-5">
+            <div className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-3 sm:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden group hover:shadow-xl transition-shadow">
+              <div className="absolute top-0 right-0 w-16 sm:w-32 h-16 sm:h-32 bg-blue-500/5 dark:bg-blue-500/10 rounded-full -mr-8 sm:-mr-16 -mt-8 sm:-mt-16"></div>
               <div className="relative">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                    <MessageCircle size={20} className="text-blue-600 dark:text-blue-400" />
+                <div className="flex items-center gap-1.5 sm:gap-3 mb-1.5 sm:mb-3">
+                  <div className="p-1.5 sm:p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg sm:rounded-xl">
+                    <MessageCircle size={14} className="sm:hidden text-blue-600 dark:text-blue-400" />
+                    <MessageCircle size={20} className="hidden sm:block text-blue-600 dark:text-blue-400" />
                   </div>
-                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">総コメント数</p>
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400">総コメント</p>
                 </div>
-                <p className="text-4xl font-bold text-gray-900 dark:text-white tracking-tight">
+                <p className="text-xl sm:text-4xl font-bold text-gray-900 dark:text-white tracking-tight">
                   {videoStats.total_comments.toLocaleString()}
                 </p>
               </div>
             </div>
 
-            <div className="relative bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 p-6 rounded-2xl shadow-lg border border-orange-200 dark:border-orange-800 overflow-hidden group hover:shadow-xl transition-shadow">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 dark:bg-orange-500/20 rounded-full -mr-16 -mt-16"></div>
+            <div className="relative bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 p-3 sm:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-orange-200 dark:border-orange-800 overflow-hidden group hover:shadow-xl transition-shadow">
+              <div className="absolute top-0 right-0 w-16 sm:w-32 h-16 sm:h-32 bg-orange-500/10 dark:bg-orange-500/20 rounded-full -mr-8 sm:-mr-16 -mt-8 sm:-mt-16"></div>
               <div className="relative">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2.5 bg-orange-200 dark:bg-orange-800/50 rounded-xl">
-                    <AtSign size={20} className="text-orange-700 dark:text-orange-300" />
+                <div className="flex items-center gap-1.5 sm:gap-3 mb-1.5 sm:mb-3">
+                  <div className="p-1.5 sm:p-2.5 bg-orange-200 dark:bg-orange-800/50 rounded-lg sm:rounded-xl">
+                    <AtSign size={14} className="sm:hidden text-orange-700 dark:text-orange-300" />
+                    <AtSign size={20} className="hidden sm:block text-orange-700 dark:text-orange-300" />
                   </div>
-                  <p className="text-sm font-semibold text-orange-700 dark:text-orange-300">社長言及コメント</p>
+                  <p className="text-xs sm:text-sm font-semibold text-orange-700 dark:text-orange-300">社長言及</p>
                 </div>
-                <p className="text-4xl font-bold text-orange-700 dark:text-orange-300 tracking-tight">
+                <p className="text-xl sm:text-4xl font-bold text-orange-700 dark:text-orange-300 tracking-tight">
                   {videoStats.tiger_mention_comments.toLocaleString()}
                 </p>
               </div>
             </div>
 
-            <div className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden group hover:shadow-xl transition-shadow">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/5 dark:bg-green-500/10 rounded-full -mr-16 -mt-16"></div>
+            <div className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-3 sm:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden group hover:shadow-xl transition-shadow">
+              <div className="absolute top-0 right-0 w-16 sm:w-32 h-16 sm:h-32 bg-green-500/5 dark:bg-green-500/10 rounded-full -mr-8 sm:-mr-16 -mt-8 sm:-mt-16"></div>
               <div className="relative">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2.5 bg-green-100 dark:bg-green-900/30 rounded-xl">
-                    <Percent size={20} className="text-green-600 dark:text-green-400" />
+                <div className="flex items-center gap-1.5 sm:gap-3 mb-1.5 sm:mb-3">
+                  <div className="p-1.5 sm:p-2.5 bg-green-100 dark:bg-green-900/30 rounded-lg sm:rounded-xl">
+                    <Percent size={14} className="sm:hidden text-green-600 dark:text-green-400" />
+                    <Percent size={20} className="hidden sm:block text-green-600 dark:text-green-400" />
                   </div>
-                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">言及率</p>
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400">言及率</p>
                 </div>
-                <p className="text-4xl font-bold text-gray-900 dark:text-white tracking-tight">
+                <p className="text-xl sm:text-4xl font-bold text-gray-900 dark:text-white tracking-tight">
                   {videoStats.total_comments > 0
                     ? ((videoStats.tiger_mention_comments / videoStats.total_comments) * 100).toFixed(1)
                     : '0.0'}%
@@ -398,16 +401,17 @@ const Analysis = () => {
 
           {/* グラフとテーブル */}
           {videoStats.tiger_stats.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {/* 円グラフ */}
-              <div className="bg-white dark:bg-gray-800 p-7 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
-                    <PieChartIcon size={20} className="text-purple-600 dark:text-purple-400" />
+              <div className="bg-white dark:bg-gray-800 p-4 sm:p-7 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                  <div className="p-1.5 sm:p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg sm:rounded-xl">
+                    <PieChartIcon size={16} className="sm:hidden text-purple-600 dark:text-purple-400" />
+                    <PieChartIcon size={20} className="hidden sm:block text-purple-600 dark:text-purple-400" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">社長別シェア</h3>
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">社長別シェア</h3>
                 </div>
-                <ResponsiveContainer width="100%" height={320}>
+                <ResponsiveContainer width="100%" height={280} className="sm:!h-[320px]">
                   <PieChart>
                     <Pie
                       data={shareData as any}
@@ -415,7 +419,7 @@ const Analysis = () => {
                       nameKey="display_name"
                       cx="50%"
                       cy="50%"
-                      outerRadius={110}
+                      outerRadius="80%"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                       labelLine={true}
                     >
@@ -429,25 +433,26 @@ const Analysis = () => {
               </div>
 
               {/* ランキングテーブル */}
-              <div className="bg-white dark:bg-gray-800 p-7 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl">
-                    <Trophy size={20} className="text-yellow-600 dark:text-yellow-400" />
+              <div className="bg-white dark:bg-gray-800 p-4 sm:p-7 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                  <div className="p-1.5 sm:p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg sm:rounded-xl">
+                    <Trophy size={16} className="sm:hidden text-yellow-600 dark:text-yellow-400" />
+                    <Trophy size={20} className="hidden sm:block text-yellow-600 dark:text-yellow-400" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">ランキング</h3>
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">ランキング</h3>
                 </div>
                 <div className="space-y-3">
                   {videoStats.tiger_stats.map((stat, index) => (
                     <div
                       key={stat.tiger_id}
-                      className={`relative flex items-center justify-between p-5 rounded-xl transition-all ${
+                      className={`relative flex items-center justify-between p-3 sm:p-5 rounded-xl transition-all ${
                         index === 0
                           ? 'bg-gradient-to-r from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 ring-2 ring-orange-400 shadow-lg'
                           : 'bg-gray-50 dark:bg-gray-700/50 hover:shadow-md'
                       }`}
                     >
-                      <div className="flex items-center gap-4">
-                        <div className={`flex items-center justify-center w-12 h-12 rounded-xl text-lg font-bold shadow-sm ${
+                      <div className="flex items-center gap-2 sm:gap-4">
+                        <div className={`flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl text-base sm:text-lg font-bold shadow-sm ${
                           index === 0 ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white' :
                           index === 1 ? 'bg-gradient-to-br from-gray-400 to-gray-500 text-white' :
                           index === 2 ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white' :
@@ -456,15 +461,16 @@ const Analysis = () => {
                           {stat.rank}
                         </div>
                         <div>
-                          <p className="font-bold text-gray-900 dark:text-white text-base mb-1">{stat.display_name}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                            <MessageCircle size={14} />
+                          <p className="font-bold text-gray-900 dark:text-white text-sm sm:text-base mb-0.5 sm:mb-1">{stat.display_name}</p>
+                          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                            <MessageCircle size={12} className="sm:hidden" />
+                            <MessageCircle size={14} className="hidden sm:block" />
                             {stat.mention_count}件の言及
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                        <p className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400">
                           {totalMentionCount > 0
                             ? ((stat.mention_count / totalMentionCount) * 100).toFixed(1)
                             : '0.0'}%
