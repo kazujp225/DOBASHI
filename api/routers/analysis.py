@@ -323,26 +323,48 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
     """
     start_time = time.time()
 
-    # コメントデータを読み込み
+    comments = None
+
+    # コメントデータを読み込み（JSONファイル優先、なければDB）
     comments_file = os.path.join(
         os.path.dirname(__file__),
         f"../../data/comments_{request.video_id}.json"
     )
 
-    if not os.path.exists(comments_file):
+    if os.path.exists(comments_file):
+        # JSONファイルから読み込み
+        try:
+            with open(comments_file, 'r', encoding='utf-8') as f:
+                comments = json.load(f)
+        except json.JSONDecodeError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to parse comments file: {str(e)}"
+            )
+    else:
+        # DBからコメントを取得
+        db_comments = db.query(CommentDB).filter(CommentDB.video_id == request.video_id).all()
+        if db_comments:
+            comments = [
+                {
+                    "comment_id": c.comment_id,
+                    "video_id": c.video_id,
+                    "text": c.text,
+                    "text_normalized": c.text_normalized or c.text,
+                    "author_name": c.author_name,
+                    "author_channel_id": c.author_channel_id,
+                    "like_count": c.like_count or 0,
+                    "published_at": c.published_at.isoformat() if c.published_at else None,
+                    "is_reply": c.is_reply or False,
+                    "parent_id": c.parent_id
+                }
+                for c in db_comments
+            ]
+
+    if not comments:
         raise HTTPException(
             status_code=404,
             detail=f"Comments for video {request.video_id} not found. Please collect first."
-        )
-
-    # JSONパース失敗のエラーハンドリング
-    try:
-        with open(comments_file, 'r', encoding='utf-8') as f:
-            comments = json.load(f)
-    except json.JSONDecodeError as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to parse comments file: {str(e)}"
         )
 
     # 社長マスタのパス
