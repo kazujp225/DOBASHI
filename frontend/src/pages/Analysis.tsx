@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { videosApi, analysisApi, statsApi, tigersApi } from '../services/api'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
-import { Search, Download, Video, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, Check, TrendingUp, Clock, ChevronDown, Loader2, Users, Image, FileText } from 'lucide-react'
+import { Search, Download, Video, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, Check, TrendingUp, Clock, ChevronDown, Loader2, Image, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import html2canvas from 'html2canvas'
 import { exportToCSV, formatVideoStatsForCSV } from '../utils/csv'
@@ -15,10 +15,10 @@ const Analysis = () => {
   const [commentSortOrder, setCommentSortOrder] = useState<'likes' | 'newest'>('likes')
   const [isExtracting, setIsExtracting] = useState(false)
   const [isTigerFilterOpen, setIsTigerFilterOpen] = useState(false)
-  const [selectedTigerIds, setSelectedTigerIds] = useState<string[]>([])
   const [isExportingImage, setIsExportingImage] = useState(false)
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false)
   const resultsRef = useRef<HTMLDivElement>(null)
+  const commentSectionRef = useRef<HTMLDivElement>(null)
 
   const { data: videos } = useQuery({
     queryKey: ['videos'],
@@ -43,11 +43,6 @@ const Analysis = () => {
     }
   }, [searchParams, videos])
 
-  // 動画が変わったら選択をリセット
-  useEffect(() => {
-    setSelectedTigerIds([])
-  }, [selectedVideoId])
-
   const { data: videoStats, refetch } = useQuery({
     queryKey: ['videoStats', selectedVideoId],
     queryFn: () => statsApi.getVideoStats(selectedVideoId),
@@ -62,15 +57,6 @@ const Analysis = () => {
     ),
     enabled: !!selectedVideoId && !!videoStats,
   })
-
-  // 社長選択のトグル
-  const toggleTigerSelection = (tigerId: string) => {
-    setSelectedTigerIds(prev =>
-      prev.includes(tigerId)
-        ? prev.filter(id => id !== tigerId)
-        : [...prev, tigerId]
-    )
-  }
 
   const analyzeMutation = useMutation({
     mutationFn: analysisApi.analyze,
@@ -89,24 +75,27 @@ const Analysis = () => {
     },
   })
 
-  // 分析開始ボタン押下時：選択された社長で分析
+  // 分析開始ボタン押下時：全社長で分析
   const handleStartAnalysis = () => {
     if (!selectedVideoId) {
       toast.error('動画を選択してください')
       return
     }
 
-    if (selectedTigerIds.length === 0) {
-      toast.error('分析する社長を1人以上選択してください')
+    if (!tigers || tigers.length === 0) {
+      toast.error('社長マスタが登録されていません')
       return
     }
 
     setIsExtracting(true)
 
+    // 全社長のIDで分析
+    const allTigerIds = tigers.map(t => t.tiger_id)
+
     analyzeMutation.mutate(
       {
         video_id: selectedVideoId,
-        tiger_ids: selectedTigerIds,
+        tiger_ids: allTigerIds,
       },
       {
         onSettled: () => setIsExtracting(false),
@@ -319,73 +308,10 @@ const Analysis = () => {
             </div>
           </div>
 
-          {/* 出演社長選択 */}
-          {selectedVideoId && tigers && tigers.length > 0 && (
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white mb-4">
-                <div className="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                  <Users size={16} className="text-purple-600 dark:text-purple-400" />
-                </div>
-                <span>分析する社長を選択</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400 font-normal">
-                  ({selectedTigerIds.length}/{tigers.length}名選択中)
-                </span>
-              </label>
-
-              <div className="space-y-3">
-                {/* 全選択/全解除ボタン */}
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTigerIds(tigers.map(t => t.tiger_id))}
-                    className="px-3 py-1.5 text-xs font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
-                  >
-                    全選択
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTigerIds([])}
-                    className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    全解除
-                  </button>
-                </div>
-
-                {/* 社長リスト */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                  {tigers.map((tiger) => {
-                    const isSelected = selectedTigerIds.includes(tiger.tiger_id)
-                    return (
-                      <button
-                        key={tiger.tiger_id}
-                        type="button"
-                        onClick={() => toggleTigerSelection(tiger.tiger_id)}
-                        className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
-                          isSelected
-                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300'
-                            : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500'
-                        }`}
-                      >
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                          isSelected
-                            ? 'bg-purple-500 border-purple-500'
-                            : 'border-gray-300 dark:border-gray-500'
-                        }`}>
-                          {isSelected && <Check size={14} className="text-white" />}
-                        </div>
-                        <span className="font-medium text-sm truncate">{tiger.display_name}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* 分析ボタン */}
           <button
             onClick={handleStartAnalysis}
-            disabled={!selectedVideoId || selectedTigerIds.length === 0 || isExtracting || analyzeMutation.isPending}
+            disabled={!selectedVideoId || !tigers || tigers.length === 0 || isExtracting || analyzeMutation.isPending}
             className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-orange-600 to-orange-500 text-white text-base font-semibold rounded-xl hover:from-orange-700 hover:to-orange-600 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 transition-all hover:-translate-y-0.5 disabled:shadow-none disabled:translate-y-0"
           >
             {isExtracting || analyzeMutation.isPending ? (
@@ -393,7 +319,7 @@ const Analysis = () => {
             ) : (
               <Search size={20} />
             )}
-            <span>{isExtracting || analyzeMutation.isPending ? '分析を実行中...' : `${selectedTigerIds.length}名の社長で分析開始`}</span>
+            <span>{isExtracting || analyzeMutation.isPending ? '分析を実行中...' : '全社長で分析開始'}</span>
           </button>
         </div>
       </div>
@@ -545,7 +471,13 @@ const Analysis = () => {
                     .map((stat, index) => (
                     <div
                       key={stat.tiger_id}
-                      className={`relative flex items-center justify-between p-3 sm:p-5 rounded-xl transition-all ${
+                      onClick={() => {
+                        setCommentFilterTigerId(stat.tiger_id)
+                        setTimeout(() => {
+                          commentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        }, 100)
+                      }}
+                      className={`relative flex items-center justify-between p-3 sm:p-5 rounded-xl transition-all cursor-pointer ${
                         index === 0
                           ? 'bg-gradient-to-r from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 ring-2 ring-orange-400 shadow-lg'
                           : 'bg-gray-50 dark:bg-gray-700/50 hover:shadow-md'
@@ -561,7 +493,7 @@ const Analysis = () => {
                           {index + 1}
                         </div>
                         <div>
-                          <p className="font-bold text-gray-900 dark:text-white text-sm sm:text-base mb-0.5 sm:mb-1">{stat.display_name}</p>
+                          <p className="font-bold text-gray-900 dark:text-white text-sm sm:text-base mb-0.5 sm:mb-1 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">{stat.display_name}</p>
                           <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
                             <MessageCircle size={12} className="sm:hidden" />
                             <MessageCircle size={14} className="hidden sm:block" />
@@ -597,7 +529,7 @@ const Analysis = () => {
 
           {/* コメント一覧 */}
           {videoStats && videoStats.tiger_stats.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 p-7 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
+            <div ref={commentSectionRef} className="bg-white dark:bg-gray-800 p-7 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl">
