@@ -60,13 +60,17 @@ async def get_video_stats(video_id: str, db: Session = Depends(get_db)):
             'rank': int(rank or 0)
         })
 
-    # DBに統計がある場合
-    if tiger_stats and total_comments > 0:
+    # DBに統計がある場合（コメント数が0でも統計があれば返す）
+    if tiger_stats:
+        # total_commentsが0の場合、video.comment_countを使用
+        actual_total_comments = total_comments if total_comments > 0 else (video.comment_count if video and video.comment_count else 0)
+        # tiger_mention_commentsが0の場合、統計から推計
+        actual_tiger_mentions = tiger_mention_comments if tiger_mention_comments > 0 else sum(s['mention_count'] for s in tiger_stats)
         return VideoStats(
             video_id=video_id,
             title=video.title if video else video_id,
-            total_comments=total_comments,
-            tiger_mention_comments=tiger_mention_comments,
+            total_comments=actual_total_comments,
+            tiger_mention_comments=actual_tiger_mentions,
             tiger_stats=tiger_stats
         )
 
