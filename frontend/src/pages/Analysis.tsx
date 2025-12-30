@@ -310,13 +310,13 @@ const Analysis = () => {
 
             {/* 分析済み動画タブ */}
             {videoTab === 'analyzed' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                 {analyzedVideos && analyzedVideos.length > 0 ? (
                   analyzedVideos.map((video) => (
                     <div
                       key={video.video_id}
                       onClick={() => setSelectedVideoId(video.video_id)}
-                      className={`group flex gap-4 p-4 rounded-xl transition-all cursor-pointer ${
+                      className={`group flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition-all cursor-pointer ${
                         selectedVideoId === video.video_id
                           ? 'bg-gradient-to-br from-green-50 to-emerald-100/50 dark:from-green-900/20 dark:to-emerald-800/10 ring-2 ring-green-500 shadow-lg'
                           : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md'
@@ -326,9 +326,9 @@ const Analysis = () => {
                         <img
                           src={video.thumbnail_url}
                           alt={video.title}
-                          className="w-36 h-24 object-cover rounded-lg shadow-sm"
+                          className="w-full sm:w-36 h-32 sm:h-24 object-cover rounded-lg shadow-sm"
                         />
-                        <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                        <div className="absolute top-2 right-2 sm:top-1 sm:right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
                           分析済
                         </div>
                       </div>
@@ -342,13 +342,13 @@ const Analysis = () => {
                             {video.comment_count?.toLocaleString()}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium rounded-full">
                             <AtSign size={12} />
-                            {video.total_mentions}件の言及
+                            {video.total_mentions}件
                           </span>
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs font-medium rounded-full">
-                            {video.tiger_count}名の社長
+                            {video.tiger_count}名
                           </span>
                         </div>
                       </div>
@@ -358,7 +358,7 @@ const Analysis = () => {
                           handleDeleteVideo(video.video_id, video.title)
                         }}
                         disabled={deleteMutation.isPending}
-                        className="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                        className="absolute top-2 right-2 sm:relative sm:top-auto sm:right-auto flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors sm:opacity-0 sm:group-hover:opacity-100"
                         title="動画を削除"
                       >
                         <Trash2 size={18} />
@@ -366,7 +366,7 @@ const Analysis = () => {
                     </div>
                   ))
                 ) : (
-                  <div className="col-span-2 text-center py-12 text-gray-500 dark:text-gray-400">
+                  <div className="col-span-1 lg:col-span-2 text-center py-12 text-gray-500 dark:text-gray-400">
                     <Check size={48} className="mx-auto mb-4 opacity-30" />
                     <p>分析済みの動画がありません</p>
                     <p className="text-sm mt-1">「全動画」タブから動画を選択して分析してください</p>
@@ -377,7 +377,7 @@ const Analysis = () => {
 
             {/* 全動画タブ */}
             {videoTab === 'all' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                 {videos?.map((video) => {
                   const isAnalyzing = isExtracting || analyzeMutation.isPending
                   const isDisabled = isAnalyzing && selectedVideoId !== video.video_id
@@ -386,7 +386,7 @@ const Analysis = () => {
                   <div
                     key={video.video_id}
                     onClick={() => !isDisabled && setSelectedVideoId(video.video_id)}
-                    className={`group flex gap-4 p-4 rounded-xl transition-all ${
+                    className={`group relative flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition-all ${
                       isDisabled
                         ? 'opacity-40 cursor-not-allowed bg-gray-100 dark:bg-gray-800'
                         : selectedVideoId === video.video_id
@@ -398,10 +398,10 @@ const Analysis = () => {
                       <img
                         src={video.thumbnail_url}
                         alt={video.title}
-                        className="w-36 h-24 object-cover rounded-lg shadow-sm"
+                        className="w-full sm:w-36 h-32 sm:h-24 object-cover rounded-lg shadow-sm"
                       />
                       {isAnalyzed && (
-                        <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                        <div className="absolute top-2 right-2 sm:top-1 sm:right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
                           分析済
                         </div>
                       )}
@@ -437,7 +437,7 @@ const Analysis = () => {
                         handleDeleteVideo(video.video_id, video.title)
                       }}
                       disabled={deleteMutation.isPending}
-                      className="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                      className="absolute top-2 right-2 sm:relative sm:top-auto sm:right-auto flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors sm:opacity-0 sm:group-hover:opacity-100"
                       title="動画を削除"
                     >
                       <Trash2 size={18} />
