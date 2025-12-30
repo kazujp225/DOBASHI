@@ -20,7 +20,7 @@
     <!-- その他のメタタグ -->
     <meta name="format-detection" content="telephone=no">
     <meta name="msapplication-tap-highlight" content="no">
-    <script type="module" crossorigin src="/assets/index-DfRwvLF-.js"></script>
+    <script type="module" crossorigin src="/assets/index-i9ukEHw9.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-wSrf_FUM.css">
   </head>
   <body>
@@ -28,8 +28,8 @@
 
     <!-- Service Worker 登録 -->
     <script>
-      // Enable service worker only in production builds to avoid dev caching issues
-      if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+      // Enable service worker only in production (detect by checking if running from dist)
+      if ('serviceWorker' in navigator && !window.location.hostname.includes('localhost')) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/service-worker.js')
             .then((registration) => {

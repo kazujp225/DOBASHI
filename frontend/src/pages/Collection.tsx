@@ -63,9 +63,13 @@ const Collection = () => {
   }
 
   const pollProgress = async (videoId: string) => {
+    let retryCount = 0
+    const maxRetries = 3
+
     const interval = setInterval(async () => {
       try {
         const status = await analysisApi.getCollectionStatus(videoId)
+        retryCount = 0  // 成功したらリトライカウントをリセット
         setProgress(status)
 
         if (status.status === 'completed') {
@@ -80,10 +84,33 @@ const Collection = () => {
           }
         } else if (status.status === 'error') {
           clearInterval(interval)
+          toast.error(status.message || '収集中にエラーが発生しました')
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error polling progress:', error)
-        clearInterval(interval)
+        retryCount++
+
+        if (retryCount >= maxRetries) {
+          clearInterval(interval)
+          // 404エラーの場合は収集が完了している可能性
+          if (error.response?.status === 404) {
+            // 動画一覧を再読み込みして確認
+            queryClient.invalidateQueries({ queryKey: ['videos'] })
+            setProgress((prev: any) => prev ? {
+              ...prev,
+              status: 'completed',
+              message: '収集が完了しました（ステータス取得タイムアウト）'
+            } : null)
+            toast.success('収集が完了しました')
+          } else {
+            setProgress((prev: any) => prev ? {
+              ...prev,
+              status: 'error',
+              message: 'ステータスの取得に失敗しました。ページを更新してください。'
+            } : null)
+            toast.error('ステータスの取得に失敗しました')
+          }
+        }
       }
     }, 2000)
   }

@@ -27,8 +27,8 @@
 
     <!-- Service Worker 登録 -->
     <script>
-      // Enable service worker only in production builds to avoid dev caching issues
-      if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+      // Enable service worker only in production (detect by checking if running from dist)
+      if ('serviceWorker' in navigator && !window.location.hostname.includes('localhost')) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/service-worker.js')
             .then((registration) => {

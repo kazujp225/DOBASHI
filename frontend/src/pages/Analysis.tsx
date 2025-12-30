@@ -540,7 +540,9 @@ const Analysis = () => {
                   <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">ランキング</h3>
                 </div>
                 <div className="space-y-3">
-                  {videoStats.tiger_stats.map((stat, index) => (
+                  {videoStats.tiger_stats
+                    .filter(stat => stat.mention_count > 0)
+                    .map((stat, index) => (
                     <div
                       key={stat.tiger_id}
                       className={`relative flex items-center justify-between p-3 sm:p-5 rounded-xl transition-all ${
@@ -556,7 +558,7 @@ const Analysis = () => {
                           index === 2 ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white' :
                           'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300'
                         }`}>
-                          {stat.rank}
+                          {index + 1}
                         </div>
                         <div>
                           <p className="font-bold text-gray-900 dark:text-white text-sm sm:text-base mb-0.5 sm:mb-1">{stat.display_name}</p>

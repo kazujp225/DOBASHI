@@ -287,10 +287,33 @@ def collect_comments_task(video_id: str, tiger_ids: list = None):
 @router.get("/collect/{video_id}", response_model=CollectionProgress)
 async def get_collection_status(video_id: str):
     """コメント収集の進捗を取得"""
-    if video_id not in collection_status:
-        raise HTTPException(status_code=404, detail="Collection not found")
+    # メモリ内ステータスを確認
+    if video_id in collection_status:
+        return collection_status[video_id]
 
-    return collection_status[video_id]
+    # メモリにない場合、ファイルが存在するか確認（収集完了済みの可能性）
+    comments_file = os.path.join(
+        os.path.dirname(__file__),
+        f"../../data/comments_{video_id}.json"
+    )
+
+    if os.path.exists(comments_file):
+        # コメントファイルが存在 = 収集完了済み
+        try:
+            with open(comments_file, 'r', encoding='utf-8') as f:
+                comments = json.load(f)
+            return CollectionProgress(
+                status="completed",
+                video_id=video_id,
+                collected_comments=len(comments),
+                total_comments=len(comments),
+                message=f"{len(comments)}件のコメントを収集済みです",
+                logs=[]
+            )
+        except Exception:
+            pass
+
+    raise HTTPException(status_code=404, detail="Collection not found")
 
 
 @router.post("/analyze", response_model=AnalysisResult)
