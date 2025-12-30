@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { videosApi, tigersApi, analysisApi, statsApi } from '../services/api'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
-import { Search, Download, Video, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, Check, TrendingUp, Clock } from 'lucide-react'
+import { Search, Download, Video, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, Check, TrendingUp, Clock, ChevronDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportToCSV, formatVideoStatsForCSV } from '../utils/csv'
 
@@ -11,6 +11,7 @@ const Analysis = () => {
   const [commentFilterTigerId, setCommentFilterTigerId] = useState<string>('all')
   const [commentSortOrder, setCommentSortOrder] = useState<'likes' | 'newest'>('likes')
   const [isExtracting, setIsExtracting] = useState(false)
+  const [isTigerFilterOpen, setIsTigerFilterOpen] = useState(false)
 
   const { data: videos } = useQuery({
     queryKey: ['videos'],
@@ -402,21 +403,68 @@ const Analysis = () => {
                       <span>新着順</span>
                     </button>
                   </div>
-                  {/* フィルター */}
-                  <div className="flex items-center gap-2">
-                    <Filter size={16} className="text-gray-500 dark:text-gray-400" />
-                    <select
-                      value={commentFilterTigerId}
-                      onChange={(e) => setCommentFilterTigerId(e.target.value)}
-                      className="px-4 py-2.5 text-sm font-medium border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white dark:bg-gray-700 shadow-sm transition-all hover:shadow-md"
+                  {/* フィルター - アコーディオン */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setIsTigerFilterOpen(!isTigerFilterOpen)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 shadow-sm transition-all hover:shadow-md"
                     >
-                      <option value="all">全ての社長</option>
-                      {videoStats.tiger_stats.map((stat) => (
-                        <option key={stat.tiger_id} value={stat.tiger_id}>
-                          {stat.display_name} ({stat.mention_count}件)
-                        </option>
-                      ))}
-                    </select>
+                      <Filter size={16} className="text-gray-500 dark:text-gray-400" />
+                      <span>
+                        {commentFilterTigerId === 'all'
+                          ? '全ての社長'
+                          : videoStats.tiger_stats.find(s => s.tiger_id === commentFilterTigerId)?.display_name || '社長を選択'}
+                      </span>
+                      <span className="text-gray-400">
+                        ({commentFilterTigerId === 'all'
+                          ? sortedComments.length
+                          : videoStats.tiger_stats.find(s => s.tiger_id === commentFilterTigerId)?.mention_count || 0}件)
+                      </span>
+                      <ChevronDown
+                        size={16}
+                        className={`text-gray-500 transition-transform duration-200 ${isTigerFilterOpen ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+                    <div
+                      className={`absolute right-0 top-full mt-2 z-50 overflow-hidden transition-all duration-300 ease-in-out ${
+                        isTigerFilterOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
+                      }`}
+                    >
+                      <div className="border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 shadow-lg overflow-hidden min-w-[200px]">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCommentFilterTigerId('all');
+                            setIsTigerFilterOpen(false);
+                          }}
+                          className={`w-full px-4 py-3 text-left text-sm transition-colors ${
+                            commentFilterTigerId === 'all'
+                              ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 font-medium'
+                              : 'hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200'
+                          }`}
+                        >
+                          全ての社長 ({sortedComments.length}件)
+                        </button>
+                        {videoStats.tiger_stats.map((stat) => (
+                          <button
+                            key={stat.tiger_id}
+                            type="button"
+                            onClick={() => {
+                              setCommentFilterTigerId(stat.tiger_id);
+                              setIsTigerFilterOpen(false);
+                            }}
+                            className={`w-full px-4 py-3 text-left text-sm transition-colors ${
+                              commentFilterTigerId === stat.tiger_id
+                                ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 font-medium'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200'
+                            }`}
+                          >
+                            {stat.display_name} ({stat.mention_count}件)
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
