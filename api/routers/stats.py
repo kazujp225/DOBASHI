@@ -18,23 +18,15 @@ router = APIRouter()
 
 @router.get("/video/{video_id}", response_model=VideoStats)
 async def get_video_stats(video_id: str, db: Session = Depends(get_db)):
-    """動画の統計情報を取得（データベースベース）"""
-    # まずDBを確認し、なければJSONファイルからフォールバック
-    video = db.query(Video).filter(Video.video_id == video_id).first()
-    if not video:
-        # JSONフォールバック
-        try:
-            stats_path = os.path.join(os.path.dirname(__file__), f"../../data/video_stats_{video_id}.json")
-            with open(stats_path, 'r', encoding='utf-8') as f:
-                stats_json = json.load(f)
-            return VideoStats(**stats_json)
-        except FileNotFoundError:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Video {video_id} not found"
-            )
+    """動画の統計情報を取得（データベースベース、JSONフォールバック対応）"""
 
-    # コメント数を取得
+    # JSONファイルパス
+    stats_path = os.path.join(os.path.dirname(__file__), f"../../data/video_stats_{video_id}.json")
+
+    # まずDBを確認
+    video = db.query(Video).filter(Video.video_id == video_id).first()
+
+    # DBにコメントがあるか確認
     total_comments = db.query(Comment).filter(Comment.video_id == video_id).count()
 
     # 社長言及コメント数を取得
@@ -42,7 +34,7 @@ async def get_video_stats(video_id: str, db: Session = Depends(get_db)):
         CommentTigerRelation
     ).filter(Comment.video_id == video_id).distinct().count()
 
-    # 社長別統計を取得
+    # 社長別統計を取得（DB）
     stats_query = db.query(
         VideoTigerStats.tiger_id,
         Tiger.display_name,
@@ -68,23 +60,37 @@ async def get_video_stats(video_id: str, db: Session = Depends(get_db)):
             'rank': int(rank or 0)
         })
 
-    if tiger_stats:
+    # DBに統計がある場合
+    if tiger_stats and total_comments > 0:
         return VideoStats(
             video_id=video_id,
-            title=video.title,
+            title=video.title if video else video_id,
             total_comments=total_comments,
             tiger_mention_comments=tiger_mention_comments,
             tiger_stats=tiger_stats
         )
 
-    # DBに統計がない場合はJSONフォールバック
+    # DBに統計がない、またはコメントがない場合はJSONフォールバック
     try:
-        stats_path = os.path.join(os.path.dirname(__file__), f"../../data/video_stats_{video_id}.json")
         with open(stats_path, 'r', encoding='utf-8') as f:
             stats_json = json.load(f)
+        # JSONから取得したデータを返す（total_commentsもJSONから）
         return VideoStats(**stats_json)
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="統計データが見つかりません")
+        # JSONもない場合
+        if video:
+            # 動画はあるが統計がない
+            return VideoStats(
+                video_id=video_id,
+                title=video.title,
+                total_comments=total_comments,
+                tiger_mention_comments=tiger_mention_comments,
+                tiger_stats=[]
+            )
+        raise HTTPException(
+            status_code=404,
+            detail=f"Video {video_id} not found"
+        )
 
 
 @router.get("/ranking", response_model=RankingStats)
