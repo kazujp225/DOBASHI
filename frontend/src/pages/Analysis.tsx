@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { videosApi, analysisApi, statsApi } from '../services/api'
+import { videosApi, analysisApi, statsApi, tigersApi } from '../services/api'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
-import { Search, Download, Video, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, Check, TrendingUp, Clock, ChevronDown, Loader2 } from 'lucide-react'
+import { Search, Download, Video, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, Check, TrendingUp, Clock, ChevronDown, Loader2, Users } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { exportToCSV, formatVideoStatsForCSV } from '../utils/csv'
 
@@ -12,11 +12,23 @@ const Analysis = () => {
   const [commentSortOrder, setCommentSortOrder] = useState<'likes' | 'newest'>('likes')
   const [isExtracting, setIsExtracting] = useState(false)
   const [isTigerFilterOpen, setIsTigerFilterOpen] = useState(false)
+  const [selectedTigerIds, setSelectedTigerIds] = useState<string[]>([])
 
   const { data: videos } = useQuery({
     queryKey: ['videos'],
     queryFn: videosApi.getAll,
   })
+
+  // 全社長マスタを取得
+  const { data: tigers } = useQuery({
+    queryKey: ['tigers'],
+    queryFn: tigersApi.getAll,
+  })
+
+  // 動画が変わったら選択をリセット
+  useEffect(() => {
+    setSelectedTigerIds([])
+  }, [selectedVideoId])
 
   const { data: videoStats, refetch } = useQuery({
     queryKey: ['videoStats', selectedVideoId],
@@ -32,6 +44,15 @@ const Analysis = () => {
     ),
     enabled: !!selectedVideoId && !!videoStats,
   })
+
+  // 社長選択のトグル
+  const toggleTigerSelection = (tigerId: string) => {
+    setSelectedTigerIds(prev =>
+      prev.includes(tigerId)
+        ? prev.filter(id => id !== tigerId)
+        : [...prev, tigerId]
+    )
+  }
 
   const analyzeMutation = useMutation({
     mutationFn: analysisApi.analyze,
@@ -50,45 +71,29 @@ const Analysis = () => {
     },
   })
 
-  // 分析開始ボタン押下時：登録済み社長があればそれを使用、なければエラー
-  const handleStartAnalysis = async () => {
+  // 分析開始ボタン押下時：選択された社長で分析
+  const handleStartAnalysis = () => {
     if (!selectedVideoId) {
       toast.error('動画を選択してください')
       return
     }
 
+    if (selectedTigerIds.length === 0) {
+      toast.error('分析する社長を1人以上選択してください')
+      return
+    }
+
     setIsExtracting(true)
 
-    try {
-      // まず登録済みの出演社長を取得
-      const videoTigersResult = await analysisApi.getVideoTigers(selectedVideoId)
-
-      let tigerIdsToAnalyze: string[] = []
-
-      if (videoTigersResult.has_registered && videoTigersResult.tigers.length > 0) {
-        // 登録済み社長がある場合はそれを使用
-        tigerIdsToAnalyze = videoTigersResult.tigers.map(t => t.tiger_id)
-        toast.success(`登録済みの${tigerIdsToAnalyze.length}名の社長で分析します`)
-      } else {
-        // 登録済み社長がない場合はエラー
-        toast.error('出演社長が登録されていません。データ収集時に社長を選択してください。')
-        setIsExtracting(false)
-        return
+    analyzeMutation.mutate(
+      {
+        video_id: selectedVideoId,
+        tiger_ids: selectedTigerIds,
+      },
+      {
+        onSettled: () => setIsExtracting(false),
       }
-
-      analyzeMutation.mutate(
-        {
-          video_id: selectedVideoId,
-          tiger_ids: tigerIdsToAnalyze,
-        },
-        {
-          onSettled: () => setIsExtracting(false),
-        }
-      )
-    } catch (error) {
-      toast.error('出演社長の取得に失敗しました')
-      setIsExtracting(false)
-    }
+    )
   }
 
   const handleExportCSV = () => {
@@ -116,12 +121,17 @@ const Analysis = () => {
     return sorted
   }, [comments, commentSortOrder])
 
+  // 全社長の言及数合計（シェア計算用）
+  const totalMentionCount = useMemo(() => {
+    if (!videoStats || !videoStats.tiger_stats) return 0
+    return videoStats.tiger_stats.reduce((sum, s) => sum + s.mention_count, 0)
+  }, [videoStats])
+
   // シェア表示用データ（1%未満は「その他社長」に集約）
   const shareData = useMemo(() => {
     if (!videoStats || !videoStats.tiger_stats) return []
-    const total = videoStats.tiger_stats.reduce((sum, s) => sum + s.mention_count, 0)
-    if (total === 0) return []
-    const threshold = total * 0.01
+    if (totalMentionCount === 0) return []
+    const threshold = totalMentionCount * 0.01
     const major = videoStats.tiger_stats.filter((s) => s.mention_count >= threshold)
     const otherCount = videoStats.tiger_stats
       .filter((s) => s.mention_count < threshold)
@@ -131,13 +141,13 @@ const Analysis = () => {
         tiger_id: 'others',
         display_name: 'その他社長',
         mention_count: otherCount,
-        rate_total: otherCount / total,
-        rate_entity: otherCount / total,
+        rate_total: otherCount / totalMentionCount,
+        rate_entity: otherCount / totalMentionCount,
         rank: major.length + 1,
       })
     }
     return major
-  }, [videoStats])
+  }, [videoStats, totalMentionCount])
 
   return (
     <div className="space-y-6">
@@ -223,10 +233,73 @@ const Analysis = () => {
             </div>
           </div>
 
+          {/* 出演社長選択 */}
+          {selectedVideoId && tigers && tigers.length > 0 && (
+            <div>
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white mb-4">
+                <div className="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                  <Users size={16} className="text-purple-600 dark:text-purple-400" />
+                </div>
+                <span>分析する社長を選択</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-normal">
+                  ({selectedTigerIds.length}/{tigers.length}名選択中)
+                </span>
+              </label>
+
+              <div className="space-y-3">
+                {/* 全選択/全解除ボタン */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTigerIds(tigers.map(t => t.tiger_id))}
+                    className="px-3 py-1.5 text-xs font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
+                  >
+                    全選択
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTigerIds([])}
+                    className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    全解除
+                  </button>
+                </div>
+
+                {/* 社長リスト */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {tigers.map((tiger) => {
+                    const isSelected = selectedTigerIds.includes(tiger.tiger_id)
+                    return (
+                      <button
+                        key={tiger.tiger_id}
+                        type="button"
+                        onClick={() => toggleTigerSelection(tiger.tiger_id)}
+                        className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                          isSelected
+                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300'
+                            : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500'
+                        }`}
+                      >
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                          isSelected
+                            ? 'bg-purple-500 border-purple-500'
+                            : 'border-gray-300 dark:border-gray-500'
+                        }`}>
+                          {isSelected && <Check size={14} className="text-white" />}
+                        </div>
+                        <span className="font-medium text-sm truncate">{tiger.display_name}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 分析ボタン */}
           <button
             onClick={handleStartAnalysis}
-            disabled={!selectedVideoId || isExtracting || analyzeMutation.isPending}
+            disabled={!selectedVideoId || selectedTigerIds.length === 0 || isExtracting || analyzeMutation.isPending}
             className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-orange-600 to-orange-500 text-white text-base font-semibold rounded-xl hover:from-orange-700 hover:to-orange-600 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 transition-all hover:-translate-y-0.5 disabled:shadow-none disabled:translate-y-0"
           >
             {isExtracting || analyzeMutation.isPending ? (
@@ -234,7 +307,7 @@ const Analysis = () => {
             ) : (
               <Search size={20} />
             )}
-            <span>{isExtracting || analyzeMutation.isPending ? '分析を実行中...' : '分析を開始'}</span>
+            <span>{isExtracting || analyzeMutation.isPending ? '分析を実行中...' : `${selectedTigerIds.length}名の社長で分析開始`}</span>
           </button>
         </div>
       </div>
@@ -269,9 +342,10 @@ const Analysis = () => {
       )}
 
       {/* 分析結果 */}
-      {videoStats && (
+      {videoStats && videoStats.tiger_stats.length > 0 && (
         <div className="space-y-6">
-          {/* サマリーカード */}
+          {/* サマリーカード - コメントがある時のみ表示 */}
+          {videoStats.total_comments > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden group hover:shadow-xl transition-shadow">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 dark:bg-blue-500/10 rounded-full -mr-16 -mt-16"></div>
@@ -313,11 +387,14 @@ const Analysis = () => {
                   <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">言及率</p>
                 </div>
                 <p className="text-4xl font-bold text-gray-900 dark:text-white tracking-tight">
-                  {((videoStats.tiger_mention_comments / videoStats.total_comments) * 100).toFixed(1)}%
+                  {videoStats.total_comments > 0
+                    ? ((videoStats.tiger_mention_comments / videoStats.total_comments) * 100).toFixed(1)
+                    : '0.0'}%
                 </p>
               </div>
             </div>
           </div>
+          )}
 
           {/* グラフとテーブル */}
           {videoStats.tiger_stats.length > 0 && (
@@ -388,9 +465,11 @@ const Analysis = () => {
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                          {(stat.rate_total * 100).toFixed(1)}%
+                          {totalMentionCount > 0
+                            ? ((stat.mention_count / totalMentionCount) * 100).toFixed(1)
+                            : '0.0'}%
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Rate Total</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">シェア</p>
                       </div>
                       {index === 0 && (
                         <div className="absolute -top-2 -right-2">
