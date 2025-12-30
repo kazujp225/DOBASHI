@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { videosApi, tigersApi, analysisApi, statsApi } from '../services/api'
+import { videosApi, analysisApi, statsApi } from '../services/api'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { Search, Download, Video, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, Check, TrendingUp, Clock, ChevronDown } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -16,11 +16,6 @@ const Analysis = () => {
   const { data: videos } = useQuery({
     queryKey: ['videos'],
     queryFn: videosApi.getAll,
-  })
-
-  const { data: tigers } = useQuery({
-    queryKey: ['tigers'],
-    queryFn: tigersApi.getAll,
   })
 
   const { data: videoStats, refetch } = useQuery({
@@ -55,29 +50,45 @@ const Analysis = () => {
     },
   })
 
-  // 分析開始ボタン押下時：全社長を自動選択して即分析
-  const handleStartAnalysis = () => {
+  // 分析開始ボタン押下時：登録済み社長があればそれを使用、なければエラー
+  const handleStartAnalysis = async () => {
     if (!selectedVideoId) {
       toast.error('動画を選択してください')
       return
     }
-    if (!tigers || tigers.length === 0) {
-      toast.error('社長マスタが空です。先に社長を登録してください。')
-      return
-    }
 
-    const allTigerIds = tigers.map((t) => t.tiger_id)
     setIsExtracting(true)
 
-    analyzeMutation.mutate(
-      {
-        video_id: selectedVideoId,
-        tiger_ids: allTigerIds,
-      },
-      {
-        onSettled: () => setIsExtracting(false),
+    try {
+      // まず登録済みの出演社長を取得
+      const videoTigersResult = await analysisApi.getVideoTigers(selectedVideoId)
+
+      let tigerIdsToAnalyze: string[] = []
+
+      if (videoTigersResult.has_registered && videoTigersResult.tigers.length > 0) {
+        // 登録済み社長がある場合はそれを使用
+        tigerIdsToAnalyze = videoTigersResult.tigers.map(t => t.tiger_id)
+        toast.success(`登録済みの${tigerIdsToAnalyze.length}名の社長で分析します`)
+      } else {
+        // 登録済み社長がない場合はエラー
+        toast.error('出演社長が登録されていません。データ収集時に社長を選択してください。')
+        setIsExtracting(false)
+        return
       }
-    )
+
+      analyzeMutation.mutate(
+        {
+          video_id: selectedVideoId,
+          tiger_ids: tigerIdsToAnalyze,
+        },
+        {
+          onSettled: () => setIsExtracting(false),
+        }
+      )
+    } catch (error) {
+      toast.error('出演社長の取得に失敗しました')
+      setIsExtracting(false)
+    }
   }
 
   const handleExportCSV = () => {

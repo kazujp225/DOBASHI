@@ -124,6 +124,11 @@ export const analysisApi = {
     const { data } = await api.get(`/api/v1/analysis/comments/${videoId}`, { params });
     return data;
   },
+
+  getVideoTigers: async (videoId: string): Promise<{ video_id: string; tigers: Tiger[]; has_registered: boolean }> => {
+    const { data } = await api.get(`/api/v1/analysis/video-tigers/${videoId}`);
+    return data;
+  },
 };
 
 export const statsApi = {

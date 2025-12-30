@@ -89,6 +89,7 @@ export interface RankingItem {
 
 export interface CollectionRequest {
   video_url: string;
+  tiger_ids?: string[];
 }
 
 export interface LogEntry {

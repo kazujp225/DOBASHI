@@ -142,6 +142,7 @@ class RankingStats(BaseModel):
 class CollectionRequest(BaseModel):
     """データ収集リクエスト"""
     video_url: str = Field(..., description="YouTube動画URL")
+    tiger_ids: Optional[List[str]] = Field(None, description="出演社長IDリスト")
 
 
 class LogEntry(BaseModel):

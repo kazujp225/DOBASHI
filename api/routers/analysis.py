@@ -76,6 +76,7 @@ async def collect_comments(request: CollectionRequest, background_tasks: Backgro
     YouTube動画のコメントを収集（バックグラウンド処理）
     """
     video_id = extract_video_id(request.video_url)
+    tiger_ids = request.tiger_ids or []
 
     # 同じ動画の同時収集をチェック
     with _status_lock:
@@ -91,16 +92,19 @@ async def collect_comments(request: CollectionRequest, background_tasks: Backgro
             logs=[]
         )
 
-    # バックグラウンドタスクを追加
-    background_tasks.add_task(collect_comments_task, video_id)
+    # バックグラウンドタスクを追加（tiger_idsも渡す）
+    background_tasks.add_task(collect_comments_task, video_id, tiger_ids)
 
     return collection_status[video_id]
 
 
-def collect_comments_task(video_id: str):
+def collect_comments_task(video_id: str, tiger_ids: list = None):
     """コメント収集のバックグラウンドタスク"""
+    tiger_ids = tiger_ids or []
     try:
         add_log(video_id, "info", "🚀 コメント収集を開始しました", "🚀")
+        if tiger_ids:
+            add_log(video_id, "info", f"🎯 選択された出演社長: {len(tiger_ids)}名", "🎯")
 
         # APIキーのチェック
         if not YOUTUBE_API_KEY:
@@ -212,21 +216,46 @@ def collect_comments_task(video_id: str):
             db.commit()
             add_log(video_id, "success", "✅ データベースに保存しました", "✅")
 
-            # 社長を自動抽出・保存
-            add_log(video_id, "info", "🔍 概要欄から社長を自動検出中...", "🔍")
-            extractor = TigerExtractor(db)
-            result = extractor.extract_tigers(video_id)
+            # 手動選択された社長がある場合はそちらを使用、なければ自動検出
+            if tiger_ids:
+                add_log(video_id, "info", "🎯 選択された出演社長をデータベースに登録中...", "🎯")
+                # 既存のVideoTiger関係を削除
+                db.query(VideoTiger).filter(VideoTiger.video_id == video_id).delete()
 
-            if result.get('success') and result.get('total_tigers_found', 0) > 0:
-                tiger_names = [t['display_name'] for t in result.get('tigers', [])]
-                add_log(video_id, "success", f"✅ {len(tiger_names)}名の社長を検出・登録: {', '.join(tiger_names)}", "✅")
+                # 選択された社長を登録
+                registered_names = []
+                for order, tiger_id in enumerate(tiger_ids, start=1):
+                    tiger_exists = db.query(TigerDB).filter(TigerDB.tiger_id == tiger_id).first()
+                    if tiger_exists:
+                        video_tiger = VideoTiger(
+                            video_id=video_id,
+                            tiger_id=tiger_id,
+                            appearance_order=order
+                        )
+                        db.add(video_tiger)
+                        registered_names.append(tiger_exists.display_name)
+                    else:
+                        add_log(video_id, "warning", f"⚠️ 社長 {tiger_id} がマスタに存在しません", "⚠️")
+
+                db.commit()
+                if registered_names:
+                    add_log(video_id, "success", f"✅ {len(registered_names)}名の出演社長を登録: {', '.join(registered_names)}", "✅")
             else:
-                add_log(video_id, "info", "ℹ️ 概要欄から社長を検出できませんでした（分析時に手動選択可能）", "ℹ️")
+                # 社長を自動抽出・保存（従来の処理）
+                add_log(video_id, "info", "🔍 概要欄から社長を自動検出中...", "🔍")
+                extractor = TigerExtractor(db)
+                result = extractor.extract_tigers(video_id)
 
-            # 未登録の名前があれば警告
-            unmatched = result.get('unmatched_names', [])
-            if unmatched:
-                add_log(video_id, "warning", f"⚠️ 未登録の社長名を検出: {', '.join(unmatched)}（社長管理から登録してください）", "⚠️")
+                if result.get('success') and result.get('total_tigers_found', 0) > 0:
+                    tiger_names = [t['display_name'] for t in result.get('tigers', [])]
+                    add_log(video_id, "success", f"✅ {len(tiger_names)}名の社長を検出・登録: {', '.join(tiger_names)}", "✅")
+                else:
+                    add_log(video_id, "info", "ℹ️ 概要欄から社長を検出できませんでした（分析時に手動選択可能）", "ℹ️")
+
+                # 未登録の名前があれば警告
+                unmatched = result.get('unmatched_names', [])
+                if unmatched:
+                    add_log(video_id, "warning", f"⚠️ 未登録の社長名を検出: {', '.join(unmatched)}（社長管理から登録してください）", "⚠️")
         except Exception as e:
             add_log(video_id, "warning", f"⚠️ 社長自動検出でエラー: {str(e)}", "⚠️")
         finally:
