@@ -88,7 +88,50 @@ async def get_video(video_id: str, db: Session = Depends(get_db)):
     return video
 
 
-@router.delete("/reset-all")
+@router.delete("/{video_id}")
+async def delete_video(video_id: str, db: Session = Depends(get_db)):
+    """特定の動画とその関連データを削除"""
+    try:
+        # 動画が存在するか確認
+        video = db.query(VideoDB).filter(VideoDB.video_id == video_id).first()
+        if not video:
+            raise HTTPException(status_code=404, detail=f"Video {video_id} not found")
+
+        # 関連データを削除（コメントIDを取得してから削除）
+        comment_ids = [c.comment_id for c in db.query(Comment).filter(Comment.video_id == video_id).all()]
+
+        # CommentTigerRelationを削除
+        if comment_ids:
+            db.query(CommentTigerRelation).filter(CommentTigerRelation.comment_id.in_(comment_ids)).delete(synchronize_session=False)
+
+        # VideoTigerを削除
+        db.query(VideoTiger).filter(VideoTiger.video_id == video_id).delete()
+
+        # VideoTigerStatsを削除
+        db.query(VideoTigerStats).filter(VideoTigerStats.video_id == video_id).delete()
+
+        # コメントを削除
+        deleted_comments = db.query(Comment).filter(Comment.video_id == video_id).delete()
+
+        # 動画を削除
+        db.delete(video)
+
+        db.commit()
+
+        return {
+            "status": "success",
+            "message": f"動画 {video_id} を削除しました",
+            "video_id": video_id,
+            "deleted_comments": deleted_comments
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"削除に失敗しました: {str(e)}")
+
+
+@router.delete("/reset-all/confirm")
 async def reset_all_videos(db: Session = Depends(get_db)):
     """全動画データをリセット（DB内の動画、コメント、統計を削除）"""
     try:

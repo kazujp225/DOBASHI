@@ -115,6 +115,16 @@ export const videosApi = {
     const { data } = await api.get(`/api/v1/videos/${videoId}`);
     return data;
   },
+
+  delete: async (videoId: string): Promise<{ status: string; message: string; video_id: string; deleted_comments: number }> => {
+    const { data } = await api.delete(`/api/v1/videos/${videoId}`);
+    return data;
+  },
+
+  resetAll: async (): Promise<{ status: string; message: string }> => {
+    const { data } = await api.delete('/api/v1/videos/reset-all/confirm');
+    return data;
+  },
 };
 
 export const analysisApi = {

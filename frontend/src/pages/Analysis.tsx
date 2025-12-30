@@ -1,9 +1,9 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { videosApi, analysisApi, statsApi, tigersApi } from '../services/api'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
-import { Search, Download, Video, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, Check, TrendingUp, Clock, ChevronDown, Loader2, Image, FileText } from 'lucide-react'
+import { Search, Download, Video, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, Check, TrendingUp, Clock, ChevronDown, Loader2, Image, FileText, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import html2canvas from 'html2canvas'
 import { exportToCSV, formatVideoStatsForCSV } from '../utils/csv'
@@ -19,6 +19,7 @@ const Analysis = () => {
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false)
   const resultsRef = useRef<HTMLDivElement>(null)
   const commentSectionRef = useRef<HTMLDivElement>(null)
+  const queryClient = useQueryClient()
 
   const { data: videos } = useQuery({
     queryKey: ['videos'],
@@ -74,6 +75,24 @@ const Analysis = () => {
       }
     },
   })
+
+  const deleteMutation = useMutation({
+    mutationFn: videosApi.delete,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['videos'] })
+      setSelectedVideoId('')
+      toast.success(data.message || '動画を削除しました')
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || '削除に失敗しました')
+    },
+  })
+
+  const handleDeleteVideo = (videoId: string, videoTitle: string) => {
+    if (window.confirm(`「${videoTitle}」を削除しますか？\n\n関連するコメントと分析結果も全て削除されます。`)) {
+      deleteMutation.mutate(videoId)
+    }
+  }
 
   // 分析開始ボタン押下時：全社長で分析
   const handleStartAnalysis = () => {
@@ -302,6 +321,17 @@ const Analysis = () => {
                       </span>
                     </div>
                   </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteVideo(video.video_id, video.title)
+                    }}
+                    disabled={deleteMutation.isPending}
+                    className="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                    title="動画を削除"
+                  >
+                    <Trash2 size={18} />
+                  </button>
                 </div>
               );
               })}
