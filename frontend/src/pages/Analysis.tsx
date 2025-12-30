@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import { videosApi, analysisApi, statsApi, tigersApi } from '../services/api'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { Search, Download, Video, MessageCircle, AtSign, Percent, PieChart as PieChartIcon, Trophy, MessageSquare, Filter, ThumbsUp, Check, TrendingUp, Clock, ChevronDown, Loader2, Users } from 'lucide-react'
@@ -7,6 +8,7 @@ import toast from 'react-hot-toast'
 import { exportToCSV, formatVideoStatsForCSV } from '../utils/csv'
 
 const Analysis = () => {
+  const [searchParams] = useSearchParams()
   const [selectedVideoId, setSelectedVideoId] = useState('')
   const [commentFilterTigerId, setCommentFilterTigerId] = useState<string>('all')
   const [commentSortOrder, setCommentSortOrder] = useState<'likes' | 'newest'>('likes')
@@ -24,6 +26,18 @@ const Analysis = () => {
     queryKey: ['tigers'],
     queryFn: tigersApi.getAll,
   })
+
+  // URLパラメータから動画IDを取得して選択
+  useEffect(() => {
+    const videoIdFromUrl = searchParams.get('video')
+    if (videoIdFromUrl && videos) {
+      // 動画が存在するか確認
+      const videoExists = videos.some(v => v.video_id === videoIdFromUrl)
+      if (videoExists) {
+        setSelectedVideoId(videoIdFromUrl)
+      }
+    }
+  }, [searchParams, videos])
 
   // 動画が変わったら選択をリセット
   useEffect(() => {
