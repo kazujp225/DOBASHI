@@ -211,43 +211,49 @@ const Tigers = () => {
   return (
     <div className="space-y-8">
       {/* ヘッダー */}
-      <div className="flex justify-between items-start gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">社長マスタ</h1>
-          <p className="mt-2 text-base text-gray-600 dark:text-gray-400">登録されている社長の管理</p>
+      <div className="space-y-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">社長マスタ</h1>
+            <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600 dark:text-gray-400">登録されている社長の管理</p>
+          </div>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative">
+
+        {/* 検索とアクションボタン */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 sm:flex-none">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="名前で検索"
-              className="pl-9 pr-3 py-2.5 w-56 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm"
+              className="pl-9 pr-3 py-2.5 w-full sm:w-56 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm"
             />
           </div>
-          <button
-            onClick={handleExport}
-            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-all shadow-sm"
-          >
-            <Download size={18} />
-            <span>CSV出力</span>
-          </button>
-          <button
-            onClick={() => setIsImportModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl hover:from-blue-700 hover:to-blue-600 shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40"
-          >
-            <Upload size={18} />
-            <span>CSVインポート</span>
-          </button>
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 rounded-xl hover:from-orange-700 hover:to-orange-600 shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
-          >
-            <UserPlus size={18} />
-            <span>社長を追加</span>
-          </button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={handleExport}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-all shadow-sm"
+            >
+              <Download size={18} />
+              <span className="hidden sm:inline">CSV出力</span>
+            </button>
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl hover:from-blue-700 hover:to-blue-600 shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40"
+            >
+              <Upload size={18} />
+              <span className="hidden sm:inline">CSVインポート</span>
+            </button>
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 sm:px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 rounded-xl hover:from-orange-700 hover:to-orange-600 shadow-lg shadow-orange-500/30 transition-all hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
+            >
+              <UserPlus size={18} />
+              <span className="hidden sm:inline">社長を追加</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -270,7 +276,64 @@ const Tigers = () => {
                   <h2 className="text-lg font-bold text-gray-900 dark:text-white">{section.label}</h2>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{items.length}名</p>
                 </div>
-                <div className="overflow-x-auto">
+                {/* モバイル: カード表示 */}
+                <div className="md:hidden p-4 space-y-3">
+                  {items.map((tiger) => (
+                    <div
+                      key={tiger.tiger_id}
+                      className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 hover:shadow-md transition-all"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-md">
+                          <span className="text-xl font-bold text-white">
+                            {tiger.display_name.charAt(0)}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                            {tiger.display_name}
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {tiger.full_name || '-'}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1 font-mono">
+                            {tiger.tiger_id}
+                          </p>
+                        </div>
+                      </div>
+                      {tiger.description && (
+                        <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                          {tiger.description}
+                        </p>
+                      )}
+                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600 flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => setViewingAliasesTiger(tiger)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-sm font-medium shadow-sm transition-all"
+                        >
+                          <Tag size={14} />
+                          別名
+                        </button>
+                        <button
+                          onClick={() => setEditingTiger(tiger)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 text-sm font-medium shadow-sm transition-all"
+                        >
+                          <Edit size={14} />
+                          編集
+                        </button>
+                        <button
+                          onClick={() => setDeletingTiger(tiger)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 text-sm font-medium shadow-sm transition-all"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* デスクトップ: テーブル表示 */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600">
