@@ -17,6 +17,7 @@ const Analysis = () => {
   const [isTigerFilterOpen, setIsTigerFilterOpen] = useState(false)
   const [isExportingImage, setIsExportingImage] = useState(false)
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false)
+  const [videoTab, setVideoTab] = useState<'analyzed' | 'all'>('analyzed')
   const resultsRef = useRef<HTMLDivElement>(null)
   const commentSectionRef = useRef<HTMLDivElement>(null)
   const queryClient = useQueryClient()
@@ -24,6 +25,11 @@ const Analysis = () => {
   const { data: videos } = useQuery({
     queryKey: ['videos'],
     queryFn: videosApi.getAll,
+  })
+
+  const { data: analyzedVideos } = useQuery({
+    queryKey: ['analyzedVideos'],
+    queryFn: videosApi.getAnalyzed,
   })
 
   // 全社長マスタを取得
@@ -64,6 +70,7 @@ const Analysis = () => {
     onSuccess: () => {
       refetch()
       refetchComments()
+      queryClient.invalidateQueries({ queryKey: ['analyzedVideos'] })
       toast.success('分析が完了しました')
     },
     onError: (error: any) => {
@@ -80,6 +87,7 @@ const Analysis = () => {
     mutationFn: videosApi.delete,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['videos'] })
+      queryClient.invalidateQueries({ queryKey: ['analyzedVideos'] })
       setSelectedVideoId('')
       toast.success(data.message || '動画を削除しました')
     },
@@ -273,69 +281,172 @@ const Analysis = () => {
               </div>
               <span>動画を選択</span>
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {videos?.map((video) => {
-                const isAnalyzing = isExtracting || analyzeMutation.isPending
-                const isDisabled = isAnalyzing && selectedVideoId !== video.video_id
-                return (
-                <div
-                  key={video.video_id}
-                  onClick={() => !isDisabled && setSelectedVideoId(video.video_id)}
-                  className={`group flex gap-4 p-4 rounded-xl transition-all ${
-                    isDisabled
-                      ? 'opacity-40 cursor-not-allowed bg-gray-100 dark:bg-gray-800'
-                      : selectedVideoId === video.video_id
-                        ? 'bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 ring-2 ring-orange-500 shadow-lg cursor-pointer'
-                        : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md cursor-pointer'
-                  }`}
-                >
-                  <div className="relative flex-shrink-0">
-                    <img
-                      src={video.thumbnail_url}
-                      alt={video.title}
-                      className="w-36 h-24 object-cover rounded-lg shadow-sm"
-                    />
-                    {selectedVideoId === video.video_id && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-orange-600/20 rounded-lg">
-                        <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center shadow-lg">
-                          <Check className="w-5 h-5 text-white" />
+
+            {/* タブ切り替え */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setVideoTab('analyzed')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                  videoTab === 'analyzed'
+                    ? 'bg-orange-600 text-white shadow-md'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                <Check size={16} />
+                分析済み ({analyzedVideos?.length || 0})
+              </button>
+              <button
+                onClick={() => setVideoTab('all')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                  videoTab === 'all'
+                    ? 'bg-orange-600 text-white shadow-md'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                <Video size={16} />
+                全動画 ({videos?.length || 0})
+              </button>
+            </div>
+
+            {/* 分析済み動画タブ */}
+            {videoTab === 'analyzed' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {analyzedVideos && analyzedVideos.length > 0 ? (
+                  analyzedVideos.map((video) => (
+                    <div
+                      key={video.video_id}
+                      onClick={() => setSelectedVideoId(video.video_id)}
+                      className={`group flex gap-4 p-4 rounded-xl transition-all cursor-pointer ${
+                        selectedVideoId === video.video_id
+                          ? 'bg-gradient-to-br from-green-50 to-emerald-100/50 dark:from-green-900/20 dark:to-emerald-800/10 ring-2 ring-green-500 shadow-lg'
+                          : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="relative flex-shrink-0">
+                        <img
+                          src={video.thumbnail_url}
+                          alt={video.title}
+                          className="w-36 h-24 object-cover rounded-lg shadow-sm"
+                        />
+                        <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                          分析済
                         </div>
                       </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 mb-2 group-hover:text-orange-600 transition-colors">
-                      {video.title}
-                    </h4>
-                    <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        {video.view_count?.toLocaleString()}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MessageCircle size={14} />
-                        {video.comment_count?.toLocaleString()}
-                      </span>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 mb-2 group-hover:text-green-600 transition-colors">
+                          {video.title}
+                        </h4>
+                        <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400 mb-2">
+                          <span className="flex items-center gap-1">
+                            <MessageCircle size={14} />
+                            {video.comment_count?.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium rounded-full">
+                            <AtSign size={12} />
+                            {video.total_mentions}件の言及
+                          </span>
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs font-medium rounded-full">
+                            {video.tiger_count}名の社長
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteVideo(video.video_id, video.title)
+                        }}
+                        disabled={deleteMutation.isPending}
+                        className="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                        title="動画を削除"
+                      >
+                        <Trash2 size={18} />
+                      </button>
                     </div>
+                  ))
+                ) : (
+                  <div className="col-span-2 text-center py-12 text-gray-500 dark:text-gray-400">
+                    <Check size={48} className="mx-auto mb-4 opacity-30" />
+                    <p>分析済みの動画がありません</p>
+                    <p className="text-sm mt-1">「全動画」タブから動画を選択して分析してください</p>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDeleteVideo(video.video_id, video.title)
-                    }}
-                    disabled={deleteMutation.isPending}
-                    className="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                    title="動画を削除"
+                )}
+              </div>
+            )}
+
+            {/* 全動画タブ */}
+            {videoTab === 'all' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {videos?.map((video) => {
+                  const isAnalyzing = isExtracting || analyzeMutation.isPending
+                  const isDisabled = isAnalyzing && selectedVideoId !== video.video_id
+                  const isAnalyzed = analyzedVideos?.some(v => v.video_id === video.video_id)
+                  return (
+                  <div
+                    key={video.video_id}
+                    onClick={() => !isDisabled && setSelectedVideoId(video.video_id)}
+                    className={`group flex gap-4 p-4 rounded-xl transition-all ${
+                      isDisabled
+                        ? 'opacity-40 cursor-not-allowed bg-gray-100 dark:bg-gray-800'
+                        : selectedVideoId === video.video_id
+                          ? 'bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 ring-2 ring-orange-500 shadow-lg cursor-pointer'
+                          : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 hover:shadow-md cursor-pointer'
+                    }`}
                   >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              );
-              })}
-            </div>
+                    <div className="relative flex-shrink-0">
+                      <img
+                        src={video.thumbnail_url}
+                        alt={video.title}
+                        className="w-36 h-24 object-cover rounded-lg shadow-sm"
+                      />
+                      {isAnalyzed && (
+                        <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                          分析済
+                        </div>
+                      )}
+                      {selectedVideoId === video.video_id && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-orange-600/20 rounded-lg">
+                          <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center shadow-lg">
+                            <Check className="w-5 h-5 text-white" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 mb-2 group-hover:text-orange-600 transition-colors">
+                        {video.title}
+                      </h4>
+                      <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          {video.view_count?.toLocaleString()}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MessageCircle size={14} />
+                          {video.comment_count?.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteVideo(video.video_id, video.title)
+                      }}
+                      disabled={deleteMutation.isPending}
+                      className="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                      title="動画を削除"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                );
+                })}
+              </div>
+            )}
           </div>
 
           {/* 分析ボタン */}

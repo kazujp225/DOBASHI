@@ -105,9 +105,19 @@ export const tigersApi = {
   },
 };
 
+export interface AnalyzedVideo extends Video {
+  total_mentions: number;
+  tiger_count: number;
+}
+
 export const videosApi = {
   getAll: async (): Promise<Video[]> => {
     const { data } = await api.get('/api/v1/videos');
+    return data;
+  },
+
+  getAnalyzed: async (): Promise<AnalyzedVideo[]> => {
+    const { data } = await api.get('/api/v1/videos/analyzed');
     return data;
   },
 

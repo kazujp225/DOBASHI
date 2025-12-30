@@ -24,6 +24,44 @@ def load_videos() -> List[dict]:
         return []
 
 
+@router.get("/analyzed")
+async def get_analyzed_videos(db: Session = Depends(get_db)):
+    """分析済み動画を取得（VideoTigerStatsにデータがある動画）"""
+    from sqlalchemy import func, distinct
+
+    # VideoTigerStatsにデータがある動画IDを取得
+    analyzed_video_ids = db.query(distinct(VideoTigerStats.video_id)).all()
+    analyzed_ids = [vid[0] for vid in analyzed_video_ids]
+
+    if not analyzed_ids:
+        return []
+
+    # 動画情報を取得
+    db_videos = db.query(VideoDB).filter(VideoDB.video_id.in_(analyzed_ids)).order_by(VideoDB.published_at.desc()).all()
+
+    result = []
+    for v in db_videos:
+        # 統計サマリを取得
+        stats = db.query(VideoTigerStats).filter(VideoTigerStats.video_id == v.video_id).all()
+        total_mentions = sum(s.n_tiger or 0 for s in stats)
+        tiger_count = len([s for s in stats if (s.n_tiger or 0) > 0])
+
+        result.append({
+            "video_id": v.video_id,
+            "title": v.title,
+            "channel_id": v.channel_id or "",
+            "channel_title": v.channel_title or "",
+            "published_at": v.published_at.isoformat() if v.published_at else "",
+            "view_count": v.view_count or 0,
+            "comment_count": v.comment_count or 0,
+            "thumbnail_url": v.thumbnail_url or "",
+            "total_mentions": total_mentions,
+            "tiger_count": tiger_count
+        })
+
+    return result
+
+
 @router.get("", response_model=List[Video])
 async def get_all_videos(db: Session = Depends(get_db)):
     """全動画を取得（DB優先、JSONフォールバック）"""
