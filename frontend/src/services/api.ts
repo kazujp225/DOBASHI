@@ -15,9 +15,23 @@ import type {
 } from '../types';
 
 // Prefer explicit env; fallback to same-origin to avoid mixed-content in HTTPS
-const API_BASE_URL =
-  (import.meta as any).env?.VITE_API_URL ||
-  (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8000');
+const getApiBaseUrl = (): string => {
+  try {
+    // Vite environment variable
+    if (import.meta.env?.VITE_API_URL) {
+      return import.meta.env.VITE_API_URL;
+    }
+  } catch {
+    // import.meta not available
+  }
+  // Fallback to same-origin
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return 'http://localhost:8000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
