@@ -603,6 +603,7 @@ async def analyze_comments(request: AnalysisRequest, db: Session = Depends(get_d
 async def get_analyzed_comments(video_id: str, tiger_id: str = None):
     """
     分析済みコメントを取得（オプションで社長IDでフィルタ）
+    ファイルが存在しない場合は空配列を返す
     """
     analyzed_comments_file = os.path.join(
         os.path.dirname(__file__),
@@ -610,13 +611,27 @@ async def get_analyzed_comments(video_id: str, tiger_id: str = None):
     )
 
     if not os.path.exists(analyzed_comments_file):
-        raise HTTPException(
-            status_code=404,
-            detail=f"Analyzed comments for video {video_id} not found. Please analyze first."
-        )
+        # ファイルがない場合は空配列を返す（再分析が必要）
+        return []
 
     with open(analyzed_comments_file, 'r', encoding='utf-8') as f:
         analyzed_comments = json.load(f)
+
+    # 最新のtigers.jsonからdisplay_nameを取得
+    tigers_path = os.path.join(os.path.dirname(__file__), "../../data/tigers.json")
+    tiger_name_map = {}
+    try:
+        with open(tigers_path, 'r', encoding='utf-8') as f:
+            tigers_data = json.load(f)
+        tiger_name_map = {t['tiger_id']: t['display_name'] for t in tigers_data}
+    except FileNotFoundError:
+        pass
+
+    # tiger_mentionsのdisplay_nameを最新に更新
+    for comment in analyzed_comments:
+        for mention in comment.get('tiger_mentions', []):
+            if mention['tiger_id'] in tiger_name_map:
+                mention['display_name'] = tiger_name_map[mention['tiger_id']]
 
     # 社長IDでフィルタ
     if tiger_id:

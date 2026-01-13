@@ -78,6 +78,19 @@ async def get_video_stats(video_id: str, db: Session = Depends(get_db)):
     try:
         with open(stats_path, 'r', encoding='utf-8') as f:
             stats_json = json.load(f)
+
+        # JSONのdisplay_nameを最新のtigers.jsonから取得して更新
+        tigers_path = os.path.join(os.path.dirname(__file__), "../../data/tigers.json")
+        try:
+            with open(tigers_path, 'r', encoding='utf-8') as f:
+                tigers_data = json.load(f)
+            tiger_name_map = {t['tiger_id']: t['display_name'] for t in tigers_data}
+            for stat in stats_json.get('tiger_stats', []):
+                if stat['tiger_id'] in tiger_name_map:
+                    stat['display_name'] = tiger_name_map[stat['tiger_id']]
+        except FileNotFoundError:
+            pass
+
         # JSONから取得したデータを返す（total_commentsもJSONから）
         return VideoStats(**stats_json)
     except FileNotFoundError:
