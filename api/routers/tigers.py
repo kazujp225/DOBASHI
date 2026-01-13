@@ -14,7 +14,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from utils.image_cache import download_and_cache_image, delete_cached_image
 
 from ..schemas import Tiger, TigerCreate
-from ..dependencies import get_current_user
+from ..dependencies import get_current_user_optional
 
 router = APIRouter()
 
@@ -72,7 +72,7 @@ async def get_tiger(tiger_id: str):
 
 
 @router.post("", response_model=Tiger)
-async def create_tiger(tiger: TigerCreate, current_user=Depends(get_current_user)):
+async def create_tiger(tiger: TigerCreate, current_user=Depends(get_current_user_optional)):
     """新しい社長を追加"""
     tigers = load_tigers()
 
@@ -95,7 +95,7 @@ async def create_tiger(tiger: TigerCreate, current_user=Depends(get_current_user
 
 
 @router.put("/{tiger_id}", response_model=Tiger)
-async def update_tiger(tiger_id: str, tiger: TigerCreate, current_user=Depends(get_current_user)):
+async def update_tiger(tiger_id: str, tiger: TigerCreate, current_user=Depends(get_current_user_optional)):
     """社長情報を更新"""
     tigers = load_tigers()
 
@@ -128,7 +128,7 @@ async def update_tiger(tiger_id: str, tiger: TigerCreate, current_user=Depends(g
 
 
 @router.delete("/{tiger_id}")
-async def delete_tiger(tiger_id: str, current_user=Depends(get_current_user)):
+async def delete_tiger(tiger_id: str, current_user=Depends(get_current_user_optional)):
     """社長を削除"""
     tigers = load_tigers()
 
@@ -183,7 +183,7 @@ async def fetch_x_profile_image(username: str) -> str | None:
 
 
 @router.post("/{tiger_id}/fetch-x-image")
-async def fetch_and_cache_x_image(tiger_id: str, request: dict, current_user=Depends(get_current_user)):
+async def fetch_and_cache_x_image(tiger_id: str, request: dict, current_user=Depends(get_current_user_optional)):
     """
     Xのプロフィールページからアイコンをダウンロードしてキャッシュ
 
@@ -257,7 +257,7 @@ async def get_tiger_aliases(tiger_id: str):
 
 
 @router.post("/{tiger_id}/aliases")
-async def add_tiger_alias(tiger_id: str, request: dict, current_user=Depends(get_current_user)):
+async def add_tiger_alias(tiger_id: str, request: dict, current_user=Depends(get_current_user_optional)):
     """
     社長にエイリアスを追加
 
@@ -310,7 +310,7 @@ async def add_tiger_alias(tiger_id: str, request: dict, current_user=Depends(get
 
 
 @router.post("/import/csv")
-async def import_tigers_from_csv(request: dict, current_user=Depends(get_current_user)):
+async def import_tigers_from_csv(request: dict, current_user=Depends(get_current_user_optional)):
     """
     CSVデータから社長を一括インポート
 
@@ -432,7 +432,7 @@ async def export_tigers_to_csv():
 
 
 @router.delete("/{tiger_id}/aliases/{alias}")
-async def delete_tiger_alias(tiger_id: str, alias: str, current_user=Depends(get_current_user)):
+async def delete_tiger_alias(tiger_id: str, alias: str, current_user=Depends(get_current_user_optional)):
     """
     社長のエイリアスを削除
 

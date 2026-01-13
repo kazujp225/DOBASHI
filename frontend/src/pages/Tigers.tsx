@@ -757,9 +757,6 @@ iguchi_tomoaki,井口社長,井口智明,regular,株式会社クラウドワー�
 // 別名一覧を表示するモーダルコンポーネント
 const AliasesModal = ({ tiger, onClose }: { tiger: Tiger; onClose: () => void }) => {
   const [newAlias, setNewAlias] = useState('')
-  const [newAliasType, setNewAliasType] = useState('nickname')
-  const [newAliasPriority, setNewAliasPriority] = useState(3)
-  const [filterType, setFilterType] = useState<string>('all')
 
   const queryClient = useQueryClient()
 
@@ -774,8 +771,6 @@ const AliasesModal = ({ tiger, onClose }: { tiger: Tiger; onClose: () => void })
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['aliases', tiger.tiger_id] })
       setNewAlias('')
-      setNewAliasType('nickname')
-      setNewAliasPriority(3)
       toast.success('別名を追加しました')
     },
     onError: (error: any) => {
@@ -802,8 +797,8 @@ const AliasesModal = ({ tiger, onClose }: { tiger: Tiger; onClose: () => void })
 
     addMutation.mutate({
       alias: newAlias.trim(),
-      type: newAliasType,
-      priority: newAliasPriority,
+      type: 'nickname',
+      priority: 3,
     })
   }
 
@@ -843,35 +838,21 @@ const AliasesModal = ({ tiger, onClose }: { tiger: Tiger; onClose: () => void })
 
   const filteredCount = groupedAliases ? Object.values(groupedAliases).flat().length : 0
 
+  const aliasCount = aliasesData?.aliases?.length || 0
+
   return (
     <Modal isOpen={true} onClose={onClose} title={`${tiger.display_name} の別名管理`}>
       <div className="space-y-4">
-        {/* 追加フォーム & フィルター */}
+        {/* 追加フォーム */}
         <div className="flex gap-2">
           <input
             type="text"
             value={newAlias}
             onChange={(e) => setNewAlias(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAddAlias()}
-            placeholder="新しい別名"
+            placeholder="新しい別名を入力"
             className="flex-1 px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm"
           />
-          <select
-            value={newAliasType}
-            onChange={(e) => setNewAliasType(e.target.value)}
-            className="px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm"
-          >
-            <option value="formal">正式名称</option>
-            <option value="casual">呼びかけ</option>
-            <option value="short">短縮形</option>
-            <option value="nickname">ニックネーム</option>
-            <option value="business">事業関連</option>
-            <option value="hiragana">ひらがな</option>
-            <option value="katakana">カタカナ</option>
-            <option value="variant">別表記</option>
-            <option value="fullname">本名</option>
-            <option value="other">その他</option>
-          </select>
           <button
             onClick={handleAddAlias}
             disabled={addMutation.isPending || !newAlias.trim()}
@@ -882,23 +863,11 @@ const AliasesModal = ({ tiger, onClose }: { tiger: Tiger; onClose: () => void })
           </button>
         </div>
 
-        {/* フィルター */}
-        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-3">
+        {/* 件数表示 */}
+        <div className="border-b border-gray-200 dark:border-gray-700 pb-3">
           <span className="text-sm font-semibold text-gray-900 dark:text-white">
-            {filteredCount}件の別名
+            {aliasCount}件の別名
           </span>
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-3 py-1.5 text-xs bg-gray-100 dark:bg-gray-800 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-          >
-            <option value="all">すべて</option>
-            {Object.entries(typeCounts).map(([type, count]) => (
-              <option key={type} value={type}>
-                {getTypeInfo(type).label} ({count})
-              </option>
-            ))}
-          </select>
         </div>
 
         {/* 別名一覧 */}
@@ -908,58 +877,24 @@ const AliasesModal = ({ tiger, onClose }: { tiger: Tiger; onClose: () => void })
             <p className="mt-3 text-sm font-medium text-gray-600 dark:text-gray-400">読み込み中...</p>
           </div>
         ) : aliasesData?.aliases && aliasesData.aliases.length > 0 ? (
-          filteredCount > 0 ? (
-            <div className="space-y-4 max-h-[450px] overflow-y-auto pr-1">
-              {Object.entries(groupedAliases || {}).map(([type, aliases]) => {
-                const typeInfo = getTypeInfo(type)
-                const IconComponent = typeInfo.icon
-                return (
-                  <div key={type}>
-                    <div className="flex items-center gap-2 mb-2.5 sticky top-0 bg-white dark:bg-gray-900 py-1 z-10">
-                      <div className="p-1 rounded bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/20">
-                        <IconComponent size={13} className="text-orange-600 dark:text-orange-400" />
-                      </div>
-                      <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        {typeInfo.label}
-                      </span>
-                      <span className="text-xs font-semibold text-orange-600 dark:text-orange-400">
-                        {aliases.length}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2">
-                      {aliases.map((alias, index) => (
-                        <div
-                          key={index}
-                          className="group relative px-2.5 py-2 bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800 dark:to-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md hover:border-orange-300 dark:hover:border-orange-700 hover:-translate-y-0.5 transition-all duration-200"
-                        >
-                          <div className="flex items-center justify-between gap-1.5">
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                              {alias.alias}
-                            </span>
-                            <button
-                              onClick={() => deleteMutation.mutate(alias.alias)}
-                              disabled={deleteMutation.isPending}
-                              className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-gray-400 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-50 transition-all"
-                              title="削除"
-                            >
-                              <X size={13} />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 mb-3">
-                <Tag size={24} className="text-gray-400 dark:text-gray-500" />
-              </div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">該当する別名がありません</p>
-            </div>
-          )
+          <div className="flex flex-wrap gap-2 max-h-[400px] overflow-y-auto p-1">
+            {aliasesData.aliases.map((alias, index) => (
+              <span
+                key={index}
+                className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
+              >
+                <span>{alias.alias}</span>
+                <button
+                  onClick={() => deleteMutation.mutate(alias.alias)}
+                  disabled={deleteMutation.isPending}
+                  className="p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded transition-colors"
+                  title="削除"
+                >
+                  <X size={14} />
+                </button>
+              </span>
+            ))}
+          </div>
         ) : (
           <div className="text-center py-16">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/10 mb-4">
