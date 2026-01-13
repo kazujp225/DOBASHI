@@ -32,6 +32,21 @@ const Collection = () => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const abortRef = useRef(false)
+  const jobsRef = useRef<CollectionJob[]>([])
+
+  // jobsとjobsRefを同時に更新するヘルパー
+  const updateJobs = (updater: CollectionJob[] | ((prev: CollectionJob[]) => CollectionJob[])) => {
+    if (typeof updater === 'function') {
+      setJobs(prev => {
+        const newJobs = updater(prev)
+        jobsRef.current = newJobs
+        return newJobs
+      })
+    } else {
+      jobsRef.current = updater
+      setJobs(updater)
+    }
+  }
 
   const extractVideoId = (url: string): string | null => {
     try {
@@ -115,10 +130,10 @@ const Collection = () => {
   }
 
   const runAnalysis = async (jobIndex: number, tigerIds: string[], collectedComments: number) => {
-    const job = jobs[jobIndex]
-    if (!job.videoId) return
+    const job = jobsRef.current[jobIndex]
+    if (!job?.videoId) return
 
-    setJobs(prev => prev.map((j, idx) =>
+    updateJobs(prev => prev.map((j, idx) =>
       idx === jobIndex ? {
         ...j,
         status: 'analyzing',
@@ -132,7 +147,7 @@ const Collection = () => {
         video_id: job.videoId,
         tiger_ids: tigerIds
       })
-      setJobs(prev => prev.map((j, idx) =>
+      updateJobs(prev => prev.map((j, idx) =>
         idx === jobIndex ? {
           ...j,
           status: 'completed',
@@ -140,7 +155,7 @@ const Collection = () => {
         } : j
       ))
     } catch (analyzeError) {
-      setJobs(prev => prev.map((j, idx) =>
+      updateJobs(prev => prev.map((j, idx) =>
         idx === jobIndex ? {
           ...j,
           status: 'completed',
@@ -151,24 +166,24 @@ const Collection = () => {
   }
 
   const handleTigerSelection = async (jobIndex: number, selectedIds: string[]) => {
-    const job = jobs[jobIndex]
+    const job = jobsRef.current[jobIndex]
     setSelectingJobIndex(null)
-    await runAnalysis(jobIndex, selectedIds, job.collectedComments || 0)
+    await runAnalysis(jobIndex, selectedIds, job?.collectedComments || 0)
 
     // 次のジョブを処理
     continueProcessing(jobIndex + 1)
   }
 
   const continueProcessing = async (startIndex: number) => {
-    for (let i = startIndex; i < jobs.length; i++) {
+    for (let i = startIndex; i < jobsRef.current.length; i++) {
       if (abortRef.current) break
-      const job = jobs[i]
-      if (!job.videoId || job.status !== 'pending') continue
+      const job = jobsRef.current[i]
+      if (!job?.videoId || job.status !== 'pending') continue
 
       await processJob(i)
 
       // 選択待ちの場合は中断
-      if (jobs[i]?.status === 'selecting') {
+      if (jobsRef.current[i]?.status === 'selecting') {
         return
       }
     }
@@ -178,20 +193,20 @@ const Collection = () => {
     queryClient.invalidateQueries({ queryKey: ['videos'] })
     queryClient.invalidateQueries({ queryKey: ['analyzedVideos'] })
 
-    const completedCount = jobs.filter(j => j.status === 'completed').length
+    const completedCount = jobsRef.current.filter(j => j.status === 'completed').length
     if (completedCount > 0) {
       toast.success(`${completedCount}件の処理が完了しました`)
     }
   }
 
   const processJob = async (jobIndex: number) => {
-    const job = jobs[jobIndex]
-    if (!job.videoId) return
+    const job = jobsRef.current[jobIndex]
+    if (!job?.videoId) return
 
     setCurrentJobIndex(jobIndex)
 
     // 1. 収集フェーズ
-    setJobs(prev => prev.map((j, idx) =>
+    updateJobs(prev => prev.map((j, idx) =>
       idx === jobIndex ? { ...j, status: 'collecting', message: '収集中...' } : j
     ))
 
@@ -203,7 +218,7 @@ const Collection = () => {
 
         if (result.status === 'completed') {
           // 2. 虎自動抽出フェーズ
-          setJobs(prev => prev.map((j, idx) =>
+          updateJobs(prev => prev.map((j, idx) =>
             idx === jobIndex ? { ...j, status: 'extracting', message: '出演虎を検出中...' } : j
           ))
 
@@ -215,7 +230,7 @@ const Collection = () => {
             // 3分岐の判定
             if (extractedTigers.length === 0) {
               // 0人の場合
-              setJobs(prev => prev.map((j, idx) =>
+              updateJobs(prev => prev.map((j, idx) =>
                 idx === jobIndex ? {
                   ...j,
                   status: 'completed',
@@ -231,7 +246,7 @@ const Collection = () => {
                 ? `（${extractedTigers.length}人分しか検出できませんでした）`
                 : ''
 
-              setJobs(prev => prev.map((j, idx) =>
+              updateJobs(prev => prev.map((j, idx) =>
                 idx === jobIndex ? {
                   ...j,
                   collectedComments: result.collectedComments,
@@ -243,7 +258,7 @@ const Collection = () => {
               await runAnalysis(jobIndex, extractedTigers.map(t => t.tiger_id), result.collectedComments)
 
               if (warningMsg) {
-                setJobs(prev => prev.map((j, idx) =>
+                updateJobs(prev => prev.map((j, idx) =>
                   idx === jobIndex ? {
                     ...j,
                     message: j.message + warningMsg
@@ -252,7 +267,7 @@ const Collection = () => {
               }
             } else {
               // 5人超過 → 選択UI表示
-              setJobs(prev => prev.map((j, idx) =>
+              updateJobs(prev => prev.map((j, idx) =>
                 idx === jobIndex ? {
                   ...j,
                   status: 'selecting',
@@ -266,7 +281,7 @@ const Collection = () => {
               return // 選択待ちで一旦停止
             }
           } catch (extractError) {
-            setJobs(prev => prev.map((j, idx) =>
+            updateJobs(prev => prev.map((j, idx) =>
               idx === jobIndex ? {
                 ...j,
                 status: 'completed',
@@ -276,13 +291,13 @@ const Collection = () => {
             ))
           }
         } else {
-          setJobs(prev => prev.map((j, idx) =>
+          updateJobs(prev => prev.map((j, idx) =>
             idx === jobIndex ? { ...j, status: 'error', message: result.message } : j
           ))
         }
       }
     } catch (error) {
-      setJobs(prev => prev.map((j, idx) =>
+      updateJobs(prev => prev.map((j, idx) =>
         idx === jobIndex ? { ...j, status: 'error', message: '収集失敗' } : j
       ))
     }
@@ -331,7 +346,7 @@ const Collection = () => {
       await processJob(i)
 
       // 選択待ちの場合は中断（選択後にcontinueProcessingで再開）
-      if (jobs[i]?.status === 'selecting') {
+      if (newJobs[i]?.status === 'selecting') {
         return
       }
 
@@ -341,7 +356,7 @@ const Collection = () => {
       }
     }
 
-    if (!jobs.some(j => j.status === 'selecting')) {
+    if (!newJobs.some(j => j.status === 'selecting')) {
       setIsProcessing(false)
       setCurrentJobIndex(null)
       queryClient.invalidateQueries({ queryKey: ['videos'] })
@@ -511,7 +526,7 @@ https://www.youtube.com/watch?v=zzz`}
                     onConfirm={(selectedIds) => handleTigerSelection(index, selectedIds)}
                     onCancel={() => {
                       setSelectingJobIndex(null)
-                      setJobs(prev => prev.map((j, idx) =>
+                      updateJobs(prev => prev.map((j, idx) =>
                         idx === index ? {
                           ...j,
                           status: 'completed',
