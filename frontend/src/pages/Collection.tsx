@@ -333,7 +333,7 @@ const Collection = () => {
       })
     }
 
-    setJobs(newJobs)
+    updateJobs(newJobs)
     setIsProcessing(true)
     abortRef.current = false
 
@@ -373,7 +373,7 @@ const Collection = () => {
   }
 
   const clearJobs = () => {
-    setJobs([])
+    updateJobs([])
     setUrls('')
     setSelectingJobIndex(null)
   }
