@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query'
 import { tigersApi } from '../services/api'
 import { Users, UserPlus, Edit, Trash2, Tag, Plus, X, FileText, MessageSquare, Scissors, Hash, Briefcase, Type, Languages, Globe, User, Search, Upload, Download, AlertCircle, CheckCircle } from 'lucide-react'
 import Modal from '../components/Modal'
@@ -33,6 +33,29 @@ const Tigers = () => {
     queryKey: ['tigers'],
     queryFn: tigersApi.getAll,
   })
+
+  // 全社長の別名を取得
+  const aliasQueries = useQueries({
+    queries: (tigers || []).map((tiger) => ({
+      queryKey: ['aliases', tiger.tiger_id],
+      queryFn: () => tigersApi.getAliases(tiger.tiger_id),
+      enabled: !!tigers,
+      staleTime: 5 * 60 * 1000, // 5分間キャッシュ
+    })),
+  })
+
+  // 社長IDから別名を取得するヘルパー関数
+  const getAliasesForTiger = (tigerId: string): string[] => {
+    const index = tigers?.findIndex((t) => t.tiger_id === tigerId) ?? -1
+    if (index === -1) return []
+    const query = aliasQueries[index]
+    if (!query?.data?.aliases) return []
+    // 優先度順に上位5件の別名を返す
+    return query.data.aliases
+      .sort((a, b) => a.priority - b.priority)
+      .slice(0, 5)
+      .map((a) => a.alias)
+  }
 
   // 追加
   const addMutation = useMutation({
@@ -74,13 +97,31 @@ const Tigers = () => {
     },
   })
 
-  const handleAdd = (data: Partial<Tiger>) => {
-    addMutation.mutate(data as Omit<Tiger, 'tiger_id'>)
+  const handleAdd = async (data: Partial<Tiger> & { aliases?: Array<{ alias: string; type: string; priority: number }> }) => {
+    const { aliases, ...tigerData } = data
+    // まず社長を追加
+    addMutation.mutate(tigerData as Omit<Tiger, 'tiger_id'>, {
+      onSuccess: async () => {
+        // 別名があれば追加
+        if (aliases && aliases.length > 0 && data.tiger_id) {
+          for (const alias of aliases) {
+            try {
+              await tigersApi.addAlias(data.tiger_id, alias)
+            } catch (e) {
+              console.error('別名追加エラー:', e)
+            }
+          }
+          queryClient.invalidateQueries({ queryKey: ['aliases', data.tiger_id] })
+        }
+      }
+    })
   }
 
-  const handleUpdate = (data: Partial<Tiger>) => {
+  const handleUpdate = async (data: Partial<Tiger> & { aliases?: Array<{ alias: string; type: string; priority: number }> }) => {
     if (!editingTiger) return
-    updateMutation.mutate({ id: editingTiger.tiger_id, data })
+    const { aliases, ...tigerData } = data
+    updateMutation.mutate({ id: editingTiger.tiger_id, data: tigerData })
+    // 注: 編集時の別名更新は別名管理モーダルで行う（ここでは更新しない）
   }
 
   const handleDelete = () => {
@@ -202,11 +243,6 @@ const Tigers = () => {
       )
     }) || []
 
-  const categorySections = [
-    { key: 'regular', label: 'レギュラー虎', accent: 'from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10' },
-    { key: 'semi_regular', label: '準レギュラー虎', accent: 'from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10' },
-    { key: 'other', label: 'その他社長', accent: 'from-gray-50 to-gray-100/50 dark:from-gray-800/30 dark:to-gray-800/10' },
-  ]
 
   return (
     <div className="space-y-8">
@@ -266,147 +302,158 @@ const Tigers = () => {
           </div>
         </div>
       ) : tigers && filteredTigers.length > 0 ? (
-        <div className="space-y-8">
-          {categorySections.map((section) => {
-            const items = filteredTigers.filter((t) => (t.category || 'other') === section.key)
-            if (items.length === 0) return null
-            return (
-              <div key={section.key} className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <div className={`px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r ${section.accent}`}>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">{section.label}</h2>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{items.length}名</p>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">社長一覧</h2>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{filteredTigers.length}名</p>
+          </div>
+          {/* モバイル: カード表示 */}
+          <div className="md:hidden p-4 space-y-3">
+            {filteredTigers.map((tiger) => (
+              <div
+                key={tiger.tiger_id}
+                className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 hover:shadow-md transition-all"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-md">
+                    <span className="text-xl font-bold text-white">
+                      {tiger.display_name.charAt(0)}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                      {tiger.display_name}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {tiger.full_name || '-'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1 font-mono">
+                      {tiger.tiger_id}
+                    </p>
+                  </div>
                 </div>
-                {/* モバイル: カード表示 */}
-                <div className="md:hidden p-4 space-y-3">
-                  {items.map((tiger) => (
-                    <div
-                      key={tiger.tiger_id}
-                      className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 hover:shadow-md transition-all"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-md">
-                          <span className="text-xl font-bold text-white">
+                {/* 別名タグ */}
+                {getAliasesForTiger(tiger.tiger_id).length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {getAliasesForTiger(tiger.tiger_id).map((alias, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                      >
+                        {alias}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600 flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => setViewingAliasesTiger(tiger)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-sm font-medium shadow-sm transition-all"
+                  >
+                    <Tag size={14} />
+                    別名
+                  </button>
+                  <button
+                    onClick={() => setEditingTiger(tiger)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 text-sm font-medium shadow-sm transition-all"
+                  >
+                    <Edit size={14} />
+                    編集
+                  </button>
+                  <button
+                    onClick={() => setDeletingTiger(tiger)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 text-sm font-medium shadow-sm transition-all"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* デスクトップ: テーブル表示 */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600">
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">社長ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">表示名</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">本名</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">別名</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {filteredTigers.map((tiger) => (
+                  <tr key={tiger.tiger_id} className="group hover:bg-orange-50/50 dark:hover:bg-gray-700/50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
+                        {tiger.tiger_id}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+                          <span className="text-lg font-bold text-white">
                             {tiger.display_name.charAt(0)}
                           </span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                            {tiger.display_name}
-                          </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {tiger.full_name || '-'}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1 font-mono">
-                            {tiger.tiger_id}
-                          </p>
-                        </div>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {tiger.display_name}
+                        </span>
                       </div>
-                      {tiger.description && (
-                        <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                          {tiger.description}
-                        </p>
-                      )}
-                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600 flex items-center justify-end gap-2">
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-900 dark:text-white">
+                        {tiger.full_name}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1.5 max-w-xs">
+                        {getAliasesForTiger(tiger.tiger_id).length > 0 ? (
+                          getAliasesForTiger(tiger.tiger_id).map((alias, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                            >
+                              {alias}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-sm text-gray-400">-</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => setViewingAliasesTiger(tiger)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-sm font-medium shadow-sm transition-all"
+                          className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
+                          title="別名一覧"
                         >
-                          <Tag size={14} />
-                          別名
+                          <Tag size={16} />
                         </button>
                         <button
                           onClick={() => setEditingTiger(tiger)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 text-sm font-medium shadow-sm transition-all"
+                          className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-orange-100 dark:hover:bg-orange-900/30 text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-all"
+                          title="編集"
                         >
-                          <Edit size={14} />
-                          編集
+                          <Edit size={16} />
                         </button>
                         <button
                           onClick={() => setDeletingTiger(tiger)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 text-sm font-medium shadow-sm transition-all"
+                          className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-all"
+                          title="削除"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={16} />
                         </button>
                       </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* デスクトップ: テーブル表示 */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600">
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">社長ID</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">表示名</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">本名</th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">説明</th>
-                        <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">操作</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                      {items.map((tiger) => (
-                        <tr key={tiger.tiger_id} className="group hover:bg-orange-50/50 dark:hover:bg-gray-700/50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
-                              {tiger.tiger_id}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-3">
-                              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
-                                <span className="text-lg font-bold text-white">
-                                  {tiger.display_name.charAt(0)}
-                                </span>
-                              </div>
-                              <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                                {tiger.display_name}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-sm text-gray-900 dark:text-white">
-                              {tiger.full_name}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
-                              {tiger.description || '-'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => setViewingAliasesTiger(tiger)}
-                                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
-                                title="別名一覧"
-                              >
-                                <Tag size={16} />
-                              </button>
-                              <button
-                                onClick={() => setEditingTiger(tiger)}
-                                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-orange-100 dark:hover:bg-orange-900/30 text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-all"
-                                title="編集"
-                              >
-                                <Edit size={16} />
-                              </button>
-                              <button
-                                onClick={() => setDeletingTiger(tiger)}
-                                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-all"
-                                title="削除"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )
-          })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : tigers && tigers.length > 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-12">
@@ -476,6 +523,12 @@ const Tigers = () => {
             onSubmit={handleUpdate}
             onCancel={() => setEditingTiger(null)}
             isLoading={updateMutation.isPending}
+            existingAliases={(() => {
+              const index = tigers?.findIndex((t) => t.tiger_id === editingTiger.tiger_id) ?? -1
+              if (index === -1) return []
+              const query = aliasQueries[index]
+              return query?.data?.aliases || []
+            })()}
           />
         )}
       </Modal>

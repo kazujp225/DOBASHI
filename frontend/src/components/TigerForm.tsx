@@ -1,35 +1,66 @@
 import { useState, useEffect } from 'react'
+import { Plus, X } from 'lucide-react'
 import type { Tiger } from '../types'
 
 interface TigerFormProps {
   tiger?: Tiger
-  onSubmit: (data: Partial<Tiger>) => void
+  onSubmit: (data: Partial<Tiger> & { aliases?: Array<{ alias: string; type: string; priority: number }> }) => void
   onCancel: () => void
   isLoading?: boolean
+  existingAliases?: Array<{ alias: string; type: string; priority: number }>
 }
 
-const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => {
+interface AliasInput {
+  alias: string
+  type: string
+}
+
+const TigerForm = ({ tiger, onSubmit, onCancel, isLoading, existingAliases }: TigerFormProps) => {
+  // 本名を苗字/名前に分割して初期化
+  const parseFullName = (fullName: string | undefined) => {
+    if (!fullName) return { lastName: '', firstName: '' }
+    const parts = fullName.split(/\s+/)
+    if (parts.length >= 2) {
+      return { lastName: parts[0], firstName: parts.slice(1).join(' ') }
+    }
+    return { lastName: fullName, firstName: '' }
+  }
+
   const [formData, setFormData] = useState({
     tiger_id: tiger?.tiger_id || '',
     display_name: tiger?.display_name || '',
-    full_name: tiger?.full_name || '',
-    description: tiger?.description || '',
+    last_name_kanji: '',
+    first_name_kanji: '',
+    last_name_kana: '',
+    first_name_kana: '',
     image_url: '',
   })
+
+  const [aliases, setAliases] = useState<AliasInput[]>([])
+  const [newAlias, setNewAlias] = useState('')
 
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (tiger) {
+      const { lastName, firstName } = parseFullName(tiger.full_name)
       setFormData({
         tiger_id: tiger.tiger_id,
         display_name: tiger.display_name,
-        full_name: tiger.full_name,
-        description: tiger.description || '',
+        last_name_kanji: lastName,
+        first_name_kanji: firstName,
+        last_name_kana: '',
+        first_name_kana: '',
         image_url: '',
       })
     }
   }, [tiger])
+
+  useEffect(() => {
+    if (existingAliases) {
+      setAliases(existingAliases.map(a => ({ alias: a.alias, type: a.type })))
+    }
+  }, [existingAliases])
 
   const validate = () => {
     const newErrors: Record<string, string> = {}
@@ -44,8 +75,12 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
       newErrors.display_name = '表示名は必須です'
     }
 
-    if (!formData.full_name.trim()) {
-      newErrors.full_name = '本名は必須です'
+    if (!formData.last_name_kanji.trim()) {
+      newErrors.last_name_kanji = '苗字（漢字）は必須です'
+    }
+
+    if (!formData.first_name_kanji.trim()) {
+      newErrors.first_name_kanji = '名前（漢字）は必須です'
     }
 
     setErrors(newErrors)
@@ -57,12 +92,41 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
 
     if (!validate()) return
 
-    onSubmit(formData)
+    // 本名を結合
+    const full_name = `${formData.last_name_kanji} ${formData.first_name_kanji}`.trim()
+
+    // 別名配列を作成（priorityはtypeに応じて自動設定）
+    const aliasesWithPriority = aliases.map((a, index) => ({
+      alias: a.alias,
+      type: a.type,
+      priority: getTypePriority(a.type) + index,
+    }))
+
+    onSubmit({
+      tiger_id: formData.tiger_id,
+      display_name: formData.display_name,
+      full_name,
+      aliases: aliasesWithPriority,
+    })
+  }
+
+  const getTypePriority = (type: string): number => {
+    const priorities: Record<string, number> = {
+      fullname: 1,
+      formal: 2,
+      nickname: 3,
+      casual: 4,
+      business: 5,
+      hiragana: 6,
+      katakana: 7,
+      short: 8,
+      other: 9,
+    }
+    return priorities[type] || 9
   }
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
-    // エラーをクリア
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev }
@@ -70,6 +134,50 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
         return newErrors
       })
     }
+  }
+
+  const handleAddAlias = () => {
+    if (!newAlias.trim()) return
+    if (aliases.some(a => a.alias === newAlias.trim())) {
+      return // 重複チェック
+    }
+    setAliases([...aliases, { alias: newAlias.trim(), type: 'nickname' }])
+    setNewAlias('')
+  }
+
+  const handleRemoveAlias = (index: number) => {
+    setAliases(aliases.filter((_, i) => i !== index))
+  }
+
+  // 以下は既存の別名表示用に残す（既存データにはtypeがあるため）
+  const getTypeLabel = (type: string): string => {
+    const labels: Record<string, string> = {
+      formal: '正式名称',
+      casual: '呼びかけ',
+      short: '短縮形',
+      nickname: 'ニックネーム',
+      fullname: '本名',
+      business: '事業関連',
+      hiragana: 'ひらがな',
+      katakana: 'カタカナ',
+      other: 'その他',
+    }
+    return labels[type] || type
+  }
+
+  const getTypeColor = (type: string): string => {
+    const colors: Record<string, string> = {
+      formal: 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
+      casual: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
+      short: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800',
+      nickname: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+      fullname: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
+      business: 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800',
+      hiragana: 'bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800',
+      katakana: 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
+      other: 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600',
+    }
+    return colors[type] || colors.other
   }
 
   return (
@@ -91,7 +199,7 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
           className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-2 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed ${
             errors.tiger_id ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
           }`}
-          placeholder="hayashi"
+          placeholder="dobashi_kazuki"
         />
         {errors.tiger_id && (
           <p id="tiger_id-error" className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1" role="alert">
@@ -106,76 +214,163 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading }: TigerFormProps) => 
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 表示名 */}
-        <div className="relative">
-          <label htmlFor="display_name" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-            表示名 <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="display_name"
-            value={formData.display_name}
-            onChange={(e) => handleChange('display_name', e.target.value)}
-            disabled={isLoading}
-            autoComplete="off"
-            aria-invalid={!!errors.display_name}
-            aria-describedby={errors.display_name ? "display_name-error" : undefined}
-            className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-2 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all ${
-              errors.display_name ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-            }`}
-            placeholder="林社長"
-          />
-          {errors.display_name && (
-            <p id="display_name-error" className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1" role="alert">
-              <span className="inline-block w-1 h-1 bg-red-600 dark:bg-red-400 rounded-full"></span>
-              {errors.display_name}
-            </p>
-          )}
-        </div>
+      {/* 表示名 */}
+      <div className="relative">
+        <label htmlFor="display_name" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+          表示名 <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          id="display_name"
+          value={formData.display_name}
+          onChange={(e) => handleChange('display_name', e.target.value)}
+          disabled={isLoading}
+          autoComplete="off"
+          aria-invalid={!!errors.display_name}
+          aria-describedby={errors.display_name ? "display_name-error" : undefined}
+          className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-2 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all ${
+            errors.display_name ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+          }`}
+          placeholder="ドバシー社長"
+        />
+        {errors.display_name && (
+          <p id="display_name-error" className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1" role="alert">
+            <span className="inline-block w-1 h-1 bg-red-600 dark:bg-red-400 rounded-full"></span>
+            {errors.display_name}
+          </p>
+        )}
+      </div>
 
-        {/* 本名 */}
-        <div className="relative">
-          <label htmlFor="full_name" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-            本名 <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="full_name"
-            value={formData.full_name}
-            onChange={(e) => handleChange('full_name', e.target.value)}
-            disabled={isLoading}
-            autoComplete="name"
-            aria-invalid={!!errors.full_name}
-            aria-describedby={errors.full_name ? "full_name-error" : undefined}
-            className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-2 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all ${
-              errors.full_name ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-            }`}
-            placeholder="林修一"
-          />
-          {errors.full_name && (
-            <p id="full_name-error" className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1" role="alert">
-              <span className="inline-block w-1 h-1 bg-red-600 dark:bg-red-400 rounded-full"></span>
-              {errors.full_name}
-            </p>
-          )}
+      {/* 本名（漢字） */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+          本名（漢字） <span className="text-red-500">*</span>
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="relative">
+            <input
+              type="text"
+              value={formData.last_name_kanji}
+              onChange={(e) => handleChange('last_name_kanji', e.target.value)}
+              disabled={isLoading}
+              autoComplete="family-name"
+              aria-invalid={!!errors.last_name_kanji}
+              className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-2 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all ${
+                errors.last_name_kanji ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+              }`}
+              placeholder="苗字（例: 土橋）"
+            />
+            {errors.last_name_kanji && (
+              <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.last_name_kanji}</p>
+            )}
+          </div>
+          <div className="relative">
+            <input
+              type="text"
+              value={formData.first_name_kanji}
+              onChange={(e) => handleChange('first_name_kanji', e.target.value)}
+              disabled={isLoading}
+              autoComplete="given-name"
+              aria-invalid={!!errors.first_name_kanji}
+              className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-2 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all ${
+                errors.first_name_kanji ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+              }`}
+              placeholder="名前（例: 和貴）"
+            />
+            {errors.first_name_kanji && (
+              <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.first_name_kanji}</p>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* 説明 */}
-      <div className="relative">
-        <label htmlFor="description" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-          説明
+      {/* 本名（カタカナ） */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+          本名（カタカナ）
+          <span className="ml-2 text-xs font-normal text-gray-500">※ひらがなでも分析ヒットします</span>
         </label>
-        <textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => handleChange('description', e.target.value)}
-          disabled={isLoading}
-          rows={3}
-          className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 hover:border-gray-300 dark:hover:border-gray-500 transition-all resize-none"
-          placeholder="フランチャイズコンサルタント"
-        />
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            type="text"
+            value={formData.last_name_kana}
+            onChange={(e) => handleChange('last_name_kana', e.target.value)}
+            disabled={isLoading}
+            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 hover:border-gray-300 dark:hover:border-gray-500 transition-all"
+            placeholder="苗字（例: ドバシ）"
+          />
+          <input
+            type="text"
+            value={formData.first_name_kana}
+            onChange={(e) => handleChange('first_name_kana', e.target.value)}
+            disabled={isLoading}
+            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 hover:border-gray-300 dark:hover:border-gray-500 transition-all"
+            placeholder="名前（例: カズキ）"
+          />
+        </div>
+      </div>
+
+      {/* 別名（その他の呼び名） */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+          その他の呼び名
+          <span className="ml-2 text-xs font-normal text-gray-500">※コメント分析で使用されます</span>
+        </label>
+
+        {/* 入力フォーム */}
+        <div className="flex gap-2 mb-3">
+          <input
+            type="text"
+            value={newAlias}
+            onChange={(e) => setNewAlias(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                handleAddAlias()
+              }
+            }}
+            disabled={isLoading}
+            className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 hover:border-gray-300 dark:hover:border-gray-500 transition-all text-sm"
+            placeholder="呼び名を入力（例: ドバシー、みだしー）"
+          />
+          <button
+            type="button"
+            onClick={handleAddAlias}
+            disabled={isLoading || !newAlias.trim()}
+            className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:from-blue-700 hover:to-blue-600 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all text-sm font-medium flex items-center gap-1.5"
+          >
+            <Plus size={16} />
+            追加
+          </button>
+        </div>
+
+        {/* 登録済み別名一覧 */}
+        {aliases.length > 0 ? (
+          <div className="flex flex-wrap gap-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border-2 border-gray-100 dark:border-gray-700">
+            {aliases.map((alias, index) => (
+              <span
+                key={index}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
+              >
+                <span>{alias.alias}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveAlias(index)}
+                  disabled={isLoading}
+                  className="ml-1 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : (
+          <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              呼び名を追加すると、コメント分析で検出されます
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ボタン */}
