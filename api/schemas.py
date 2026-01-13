@@ -43,6 +43,7 @@ class VideoBase(BaseModel):
     """動画の基本情報"""
     video_id: str
     title: str
+    description: Optional[str] = None
     published_at: str
     view_count: Optional[int] = None
     like_count: Optional[int] = None

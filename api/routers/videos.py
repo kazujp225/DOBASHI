@@ -49,6 +49,7 @@ async def get_analyzed_videos(db: Session = Depends(get_db)):
         result.append({
             "video_id": v.video_id,
             "title": v.title,
+            "description": v.description or "",
             "channel_id": v.channel_id or "",
             "channel_title": v.channel_title or "",
             "published_at": v.published_at.isoformat() if v.published_at else "",
@@ -73,6 +74,7 @@ async def get_all_videos(db: Session = Depends(get_db)):
             {
                 "video_id": v.video_id,
                 "title": v.title,
+                "description": v.description or "",
                 "channel_id": v.channel_id or "",
                 "channel_title": v.channel_title or "",
                 "published_at": v.published_at.isoformat() if v.published_at else "",
@@ -97,6 +99,7 @@ async def get_video(video_id: str, db: Session = Depends(get_db)):
         video = {
             "video_id": db_video.video_id,
             "title": db_video.title,
+            "description": db_video.description or "",
             "channel_id": db_video.channel_id or "",
             "channel_title": db_video.channel_title or "",
             "published_at": db_video.published_at.isoformat() if db_video.published_at else "",

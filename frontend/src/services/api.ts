@@ -163,6 +163,19 @@ export const analysisApi = {
     const { data } = await api.get(`/api/v1/analysis/video-tigers/${videoId}`);
     return data;
   },
+
+  extractTigers: async (videoId: string): Promise<{
+    success: boolean;
+    video_id: string;
+    video_title: string;
+    total_tigers_found: number;
+    newly_added: number;
+    tigers: Array<{ tiger_id: string; display_name: string; source: string }>;
+    unmatched_names: string[];
+  }> => {
+    const { data } = await api.post(`/api/v1/tigers/extract/video/${videoId}`);
+    return data;
+  },
 };
 
 export const statsApi = {

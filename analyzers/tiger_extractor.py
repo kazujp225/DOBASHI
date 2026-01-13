@@ -201,16 +201,15 @@ class TigerExtractor:
                 if tiger_id:
                     found_tiger_ids.add(tiger_id)
 
-        # パターン3: 概要欄全体から直接マッチング（セクションに関係なく）
-        # これにより、異なるフォーマットの概要欄でも社長を検出できる
-        for tiger_id, patterns in self.tiger_patterns.items():
-            if tiger_id in found_tiger_ids:
-                continue
-            for pattern in patterns:
-                # 長めのパターン（3文字以上）のみ全文検索
-                if len(pattern) >= 3 and pattern in description:
-                    found_tiger_ids.add(tiger_id)
-                    break
+        # パターン3: ★Tiger Fundingセクションで誰も見つからなかった場合のみ全文検索
+        # セクションで見つかった場合は、そこに記載された虎のみを使用する（主宰の岩井等を除外）
+        if not found_tiger_ids:
+            for tiger_id, patterns in self.tiger_patterns.items():
+                for pattern in patterns:
+                    # 長めのパターン（3文字以上）のみ全文検索
+                    if len(pattern) >= 3 and pattern in description:
+                        found_tiger_ids.add(tiger_id)
+                        break
 
         return {'matched_ids': list(found_tiger_ids), 'unmatched_names': unmatched_names}
 
