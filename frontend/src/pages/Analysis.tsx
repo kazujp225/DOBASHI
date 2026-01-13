@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query'
 import { videosApi, analysisApi, statsApi } from '../services/api'
-import { Download, MessageCircle, Trash2, ChevronDown, ChevronUp, Users } from 'lucide-react'
+import { Download, Trash2, ChevronDown, ChevronUp, Users } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface VideoStats {

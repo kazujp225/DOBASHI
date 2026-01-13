@@ -160,8 +160,6 @@ const Collection = () => {
   }
 
   const continueProcessing = async (startIndex: number) => {
-    const validJobs = jobs.filter(job => job.videoId && job.status === 'pending')
-
     for (let i = startIndex; i < jobs.length; i++) {
       if (abortRef.current) break
       const job = jobs[i]
@@ -356,7 +354,7 @@ const Collection = () => {
 
   const handleAbort = () => {
     abortRef.current = true
-    toast.info('処理を中断しています...')
+    toast('処理を中断しています...', { icon: 'ℹ️' })
   }
 
   const clearJobs = () => {

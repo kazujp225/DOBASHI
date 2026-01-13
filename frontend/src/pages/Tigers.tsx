@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query'
 import { tigersApi } from '../services/api'
-import { Users, UserPlus, Edit, Trash2, Tag, Plus, X, FileText, MessageSquare, Scissors, Hash, Briefcase, Type, Languages, Globe, User, Search, Upload, Download, AlertCircle, CheckCircle } from 'lucide-react'
+import { Users, UserPlus, Edit, Trash2, Tag, Plus, X, FileText, Search, Upload, Download, AlertCircle, CheckCircle } from 'lucide-react'
 import Modal from '../components/Modal'
 import TigerForm from '../components/TigerForm'
 import toast from 'react-hot-toast'

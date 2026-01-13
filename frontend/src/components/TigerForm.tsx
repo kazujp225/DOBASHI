@@ -149,37 +149,6 @@ const TigerForm = ({ tiger, onSubmit, onCancel, isLoading, existingAliases }: Ti
     setAliases(aliases.filter((_, i) => i !== index))
   }
 
-  // 以下は既存の別名表示用に残す（既存データにはtypeがあるため）
-  const getTypeLabel = (type: string): string => {
-    const labels: Record<string, string> = {
-      formal: '正式名称',
-      casual: '呼びかけ',
-      short: '短縮形',
-      nickname: 'ニックネーム',
-      fullname: '本名',
-      business: '事業関連',
-      hiragana: 'ひらがな',
-      katakana: 'カタカナ',
-      other: 'その他',
-    }
-    return labels[type] || type
-  }
-
-  const getTypeColor = (type: string): string => {
-    const colors: Record<string, string> = {
-      formal: 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
-      casual: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
-      short: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800',
-      nickname: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
-      fullname: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
-      business: 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800',
-      hiragana: 'bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800',
-      katakana: 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
-      other: 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600',
-    }
-    return colors[type] || colors.other
-  }
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* 社長ID */}
