@@ -2,9 +2,8 @@ import { useState, useRef } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { analysisApi } from '../services/api'
-import { Download, CheckCircle, XCircle, Loader, Link as LinkIcon, ArrowRight, Plus, Trash2, Play, List } from 'lucide-react'
+import { Download, CheckCircle, XCircle, Loader, ArrowRight, Trash2, Play } from 'lucide-react'
 import toast from 'react-hot-toast'
-import LogViewer from '../components/LogViewer'
 
 interface CollectionJob {
   id: string
@@ -13,13 +12,10 @@ interface CollectionJob {
   status: 'pending' | 'collecting' | 'completed' | 'error'
   message: string
   collectedComments?: number
-  logs?: any[]
 }
 
 const Collection = () => {
-  const [inputMode, setInputMode] = useState<'single' | 'bulk'>('single')
-  const [videoUrl, setVideoUrl] = useState('')
-  const [bulkUrls, setBulkUrls] = useState('')
+  const [urls, setUrls] = useState('')
   const [jobs, setJobs] = useState<CollectionJob[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
   const [currentJobIndex, setCurrentJobIndex] = useState<number | null>(null)
@@ -47,7 +43,7 @@ const Collection = () => {
     },
   })
 
-  const pollProgress = (videoId: string): Promise<{ status: string; collectedComments: number; message: string; logs?: any[] }> => {
+  const pollProgress = (videoId: string): Promise<{ status: string; collectedComments: number; message: string }> => {
     return new Promise((resolve) => {
       let retryCount = 0
       const maxRetries = 3
@@ -69,16 +65,14 @@ const Collection = () => {
             resolve({
               status: 'completed',
               collectedComments: status.collected_comments || 0,
-              message: `${status.collected_comments}件のコメントを収集しました`,
-              logs: status.logs
+              message: `${status.collected_comments}件`
             })
           } else if (status.status === 'error') {
             clearInterval(interval)
             resolve({
               status: 'error',
               collectedComments: 0,
-              message: status.message || '収集中にエラーが発生しました',
-              logs: status.logs
+              message: status.message || 'エラー'
             })
           }
         } catch (error: any) {
@@ -90,13 +84,13 @@ const Collection = () => {
               resolve({
                 status: 'completed',
                 collectedComments: 0,
-                message: '収集完了（ステータス取得タイムアウト）'
+                message: '完了'
               })
             } else {
               resolve({
                 status: 'error',
                 collectedComments: 0,
-                message: 'ステータスの取得に失敗しました'
+                message: '取得失敗'
               })
             }
           }
@@ -105,63 +99,20 @@ const Collection = () => {
     })
   }
 
-  // 単一URL収集
-  const handleSingleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!videoUrl.trim()) {
-      toast.error('URLを入力してください')
-      return
-    }
-
-    const videoId = extractVideoId(videoUrl)
-    if (!videoId) {
-      toast.error('有効なYouTube URLを入力してください')
-      return
-    }
-
-    const job: CollectionJob = {
-      id: `job-${Date.now()}`,
-      url: videoUrl,
-      videoId,
-      status: 'collecting',
-      message: '収集中...'
-    }
-    setJobs([job])
-    setIsProcessing(true)
-    setCurrentJobIndex(0)
-
-    try {
-      const data = await collectMutation.mutateAsync({ video_url: videoUrl })
-      if (data.status === 'collecting') {
-        const result = await pollProgress(videoId)
-        setJobs([{ ...job, ...result }])
-        if (result.status === 'completed') {
-          toast.success('収集が完了しました！')
-        }
-      }
-    } catch (error) {
-      setJobs([{ ...job, status: 'error', message: '収集に失敗しました' }])
-    } finally {
-      setIsProcessing(false)
-      setCurrentJobIndex(null)
-    }
-  }
-
-  // 一括URL収集
-  const handleBulkSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const urls = bulkUrls
+    const urlList = urls
       .split('\n')
       .map(url => url.trim())
       .filter(url => url.length > 0)
 
-    if (urls.length === 0) {
+    if (urlList.length === 0) {
       toast.error('URLを入力してください')
       return
     }
 
     // ジョブリストを作成
-    const newJobs: CollectionJob[] = urls.map((url, index) => ({
+    const newJobs: CollectionJob[] = urlList.map((url, index) => ({
       id: `job-${Date.now()}-${index}`,
       url,
       videoId: extractVideoId(url),
@@ -206,7 +157,7 @@ const Collection = () => {
         }
       } catch (error) {
         setJobs(prev => prev.map((j, idx) =>
-          idx === jobIndex ? { ...j, status: 'error', message: '収集に失敗しました' } : j
+          idx === jobIndex ? { ...j, status: 'error', message: '失敗' } : j
         ))
       }
 
@@ -221,7 +172,7 @@ const Collection = () => {
     queryClient.invalidateQueries({ queryKey: ['videos'] })
 
     const completedCount = newJobs.filter(j => j.status === 'completed').length
-    toast.success(`${completedCount}/${urls.length}件の収集が完了しました`)
+    toast.success(`${completedCount}/${urlList.length}件の収集が完了しました`)
   }
 
   const handleAbort = () => {
@@ -231,12 +182,12 @@ const Collection = () => {
 
   const clearJobs = () => {
     setJobs([])
-    setVideoUrl('')
-    setBulkUrls('')
+    setUrls('')
   }
 
   const completedJobs = jobs.filter(j => j.status === 'completed')
   const errorJobs = jobs.filter(j => j.status === 'error')
+  const urlCount = urls.split('\n').filter(url => url.trim()).length
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -247,112 +198,53 @@ const Collection = () => {
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">動画URL入力</h2>
-            <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
-              <button
-                onClick={() => setInputMode('single')}
-                className={`px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors ${
-                  inputMode === 'single'
-                    ? 'bg-orange-600 text-white'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                <LinkIcon size={16} />
-                単一
-              </button>
-              <button
-                onClick={() => setInputMode('bulk')}
-                className={`px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors ${
-                  inputMode === 'bulk'
-                    ? 'bg-orange-600 text-white'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                <List size={16} />
-                一括
-              </button>
-            </div>
-          </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">動画URL入力</h2>
         </div>
 
         <div className="p-6">
-          {inputMode === 'single' ? (
-            <form onSubmit={handleSingleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="videoUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  YouTube動画URL
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <LinkIcon className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    id="videoUrl"
-                    value={videoUrl}
-                    onChange={(e) => setVideoUrl(e.target.value)}
-                    placeholder="https://www.youtube.com/watch?v=..."
-                    className="pl-10 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white disabled:bg-gray-100"
-                    disabled={isProcessing}
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={!videoUrl.trim() || isProcessing}
-                className="flex items-center space-x-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-md"
-              >
-                <Download size={20} />
-                <span>{isProcessing ? '収集中...' : 'コメントを収集'}</span>
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleBulkSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="bulkUrls" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  YouTube動画URL（1行に1つ）
-                </label>
-                <textarea
-                  id="bulkUrls"
-                  value={bulkUrls}
-                  onChange={(e) => setBulkUrls(e.target.value)}
-                  placeholder={`https://www.youtube.com/watch?v=xxx
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="urls" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                YouTube動画URL（1行に1つ）
+              </label>
+              <textarea
+                id="urls"
+                value={urls}
+                onChange={(e) => setUrls(e.target.value)}
+                placeholder={`https://www.youtube.com/watch?v=xxx
 https://www.youtube.com/watch?v=yyy
 https://www.youtube.com/watch?v=zzz`}
-                  rows={8}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white disabled:bg-gray-100 font-mono text-sm"
-                  disabled={isProcessing}
-                />
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                  {bulkUrls.split('\n').filter(url => url.trim()).length}件のURLが入力されています
-                </p>
-              </div>
+                rows={6}
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white disabled:bg-gray-100 font-mono text-sm"
+                disabled={isProcessing}
+              />
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                {urlCount}件のURLが入力されています
+              </p>
+            </div>
 
-              <div className="flex gap-3">
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={!urls.trim() || isProcessing}
+                className="flex items-center space-x-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-md"
+              >
+                {isProcessing ? <Loader size={20} className="animate-spin" /> : <Play size={20} />}
+                <span>{isProcessing ? '収集中...' : 'コメントを収集'}</span>
+              </button>
+
+              {isProcessing && (
                 <button
-                  type="submit"
-                  disabled={!bulkUrls.trim() || isProcessing}
-                  className="flex items-center space-x-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-md"
+                  type="button"
+                  onClick={handleAbort}
+                  className="flex items-center space-x-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all shadow-md"
                 >
-                  <Play size={20} />
-                  <span>{isProcessing ? '処理中...' : '一括収集を開始'}</span>
+                  <XCircle size={20} />
+                  <span>中断</span>
                 </button>
-
-                {isProcessing && (
-                  <button
-                    type="button"
-                    onClick={handleAbort}
-                    className="flex items-center space-x-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all shadow-md"
-                  >
-                    <XCircle size={20} />
-                    <span>中断</span>
-                  </button>
-                )}
-              </div>
-            </form>
-          )}
+              )}
+            </div>
+          </form>
         </div>
       </div>
 
@@ -381,22 +273,22 @@ https://www.youtube.com/watch?v=zzz`}
             {jobs.map((job, index) => (
               <div
                 key={job.id}
-                className={`px-6 py-4 flex items-center gap-4 ${
+                className={`px-6 py-3 flex items-center gap-4 ${
                   currentJobIndex === index ? 'bg-orange-50 dark:bg-orange-900/20' : ''
                 }`}
               >
                 <div className="flex-shrink-0">
                   {job.status === 'pending' && (
-                    <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700" />
+                    <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700" />
                   )}
                   {job.status === 'collecting' && (
-                    <Loader className="w-6 h-6 text-blue-500 animate-spin" />
+                    <Loader className="w-5 h-5 text-blue-500 animate-spin" />
                   )}
                   {job.status === 'completed' && (
-                    <CheckCircle className="w-6 h-6 text-green-500" />
+                    <CheckCircle className="w-5 h-5 text-green-500" />
                   )}
                   {job.status === 'error' && (
-                    <XCircle className="w-6 h-6 text-red-500" />
+                    <XCircle className="w-5 h-5 text-red-500" />
                   )}
                 </div>
 
@@ -404,25 +296,17 @@ https://www.youtube.com/watch?v=zzz`}
                   <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                     {job.videoId || '無効なURL'}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {job.url}
-                  </p>
                 </div>
 
-                <div className="flex-shrink-0 text-right">
-                  <p className={`text-sm font-medium ${
+                <div className="flex-shrink-0">
+                  <span className={`text-sm font-medium ${
                     job.status === 'completed' ? 'text-green-600 dark:text-green-400' :
                     job.status === 'error' ? 'text-red-600 dark:text-red-400' :
                     job.status === 'collecting' ? 'text-blue-600 dark:text-blue-400' :
                     'text-gray-500 dark:text-gray-400'
                   }`}>
                     {job.message}
-                  </p>
-                  {job.collectedComments !== undefined && job.collectedComments > 0 && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {job.collectedComments}件
-                    </p>
-                  )}
+                  </span>
                 </div>
               </div>
             ))}
@@ -446,9 +330,8 @@ https://www.youtube.com/watch?v=zzz`}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
         <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">使い方</h3>
         <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800 dark:text-blue-200">
-          <li>「単一」モードでは1つのURL、「一括」モードでは複数のURLを入力できます</li>
-          <li>一括モードでは、1行に1つのURLを入力してください</li>
-          <li>「コメントを収集」または「一括収集を開始」をクリックすると、収集が開始されます</li>
+          <li>YouTube動画のURLを入力してください（1行に1つ、複数可）</li>
+          <li>「コメントを収集」をクリックすると、順番に収集が開始されます</li>
           <li>収集完了後、「動画分析」ページで社長別の言及分析ができます</li>
           <li>YouTube APIの制限により、1日あたりの収集数には上限があります</li>
         </ol>
