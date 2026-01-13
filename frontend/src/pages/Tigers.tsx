@@ -802,42 +802,6 @@ const AliasesModal = ({ tiger, onClose }: { tiger: Tiger; onClose: () => void })
     })
   }
 
-  const getTypeInfo = (type: string): { label: string; icon: React.ComponentType<{ size?: number; className?: string }> } => {
-    const types: Record<string, { label: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = {
-      formal: { label: '正式名称', icon: FileText },
-      casual: { label: '呼びかけ', icon: MessageSquare },
-      short: { label: '短縮形', icon: Scissors },
-      nickname: { label: 'ニックネーム', icon: Hash },
-      fullname: { label: '本名', icon: User },
-      business: { label: '事業関連', icon: Briefcase },
-      hiragana: { label: 'ひらがな', icon: Type },
-      katakana: { label: 'カタカナ', icon: Languages },
-      variant: { label: '別表記', icon: Globe },
-      description: { label: '説明的', icon: FileText },
-      other: { label: 'その他', icon: Tag },
-    }
-    return types[type] || types.other
-  }
-
-  // タイプごとにグループ化し、フィルタリング
-  const groupedAliases = aliasesData?.aliases
-    .filter(alias => filterType === 'all' || alias.type === filterType)
-    .reduce((acc, alias) => {
-      if (!acc[alias.type]) {
-        acc[alias.type] = []
-      }
-      acc[alias.type].push(alias)
-      return acc
-    }, {} as Record<string, typeof aliasesData.aliases>)
-
-  // タイプごとの件数を計算
-  const typeCounts = aliasesData?.aliases.reduce((acc, alias) => {
-    acc[alias.type] = (acc[alias.type] || 0) + 1
-    return acc
-  }, {} as Record<string, number>) || {}
-
-  const filteredCount = groupedAliases ? Object.values(groupedAliases).flat().length : 0
-
   const aliasCount = aliasesData?.aliases?.length || 0
 
   return (
