@@ -82,6 +82,10 @@ const Analysis = () => {
     }
   }
 
+  // 統計データのロード状態を確認
+  const isStatsLoading = videoStatsQueries.some(q => q.isLoading) || videoTigersQueries.some(q => q.isLoading)
+  const hasStatsData = videoStatsQueries.some(q => q.data) && videoTigersQueries.some(q => q.data)
+
   // CSVエクスポート（縦持ち形式）
   const handleExportCSV = () => {
     if (!analyzedVideos || analyzedVideos.length === 0) {
@@ -89,7 +93,12 @@ const Analysis = () => {
       return
     }
 
-    const headers = ['video_id', 'video_title', 'total_comments', 'tiger_id', 'tiger_name', 'mention_count', 'rate_total']
+    if (isStatsLoading) {
+      toast.error('データを読み込み中です。しばらくお待ちください')
+      return
+    }
+
+    const headers = ['動画ID', '動画タイトル', '総コメント数', '社長ID', '社長名', '言及コメント数', '言及率(%)']
     const rows: string[][] = []
 
     analyzedVideos.forEach((video, index) => {
@@ -124,6 +133,58 @@ const Analysis = () => {
     const link = document.createElement('a')
     link.href = url
     link.download = `raw_data_${new Date().toISOString().split('T')[0]}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+
+    toast.success('CSVをエクスポートしました')
+  }
+
+  // 動画毎のCSVエクスポート
+  const handleExportVideoCSV = (videoIndex: number) => {
+    if (!analyzedVideos) return
+
+    const video = analyzedVideos[videoIndex]
+    const statsData = videoStatsQueries[videoIndex]?.data as VideoStats | undefined
+    const tigersData = videoTigersQueries[videoIndex]?.data
+
+    if (!statsData || !tigersData) {
+      toast.error('データを読み込み中です')
+      return
+    }
+
+    const headers = ['動画ID', '動画タイトル', '総コメント数', '社長ID', '社長名', '言及コメント数', '言及率(%)']
+    const rows: string[][] = []
+
+    // 出演虎のIDリスト
+    const registeredTigerIds = tigersData.tigers.map(t => t.tiger_id)
+
+    // 出演虎のみフィルタして出力
+    statsData.tiger_stats
+      .filter(stat => registeredTigerIds.includes(stat.tiger_id))
+      .forEach(stat => {
+        rows.push([
+          video.video_id,
+          `"${video.title.replace(/"/g, '""')}"`,
+          String(statsData.total_comments),
+          stat.tiger_id,
+          stat.display_name,
+          String(stat.mention_count),
+          (stat.rate_total * 100).toFixed(2)
+        ])
+      })
+
+    if (rows.length === 0) {
+      toast.error('出力するデータがありません')
+      return
+    }
+
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const bom = '\uFEFF'
+    const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${video.video_id}_${new Date().toISOString().split('T')[0]}.csv`
     link.click()
     URL.revokeObjectURL(url)
 
@@ -174,10 +235,15 @@ const Analysis = () => {
         {analyzedVideos && analyzedVideos.length > 0 && (
           <button
             onClick={handleExportCSV}
-            className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 rounded-xl hover:from-orange-700 hover:to-orange-600 shadow-lg transition-all w-full sm:w-auto"
+            disabled={isStatsLoading || !hasStatsData}
+            className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-xl shadow-lg transition-all w-full sm:w-auto ${
+              isStatsLoading || !hasStatsData
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600'
+            }`}
           >
             <Download size={18} />
-            <span>CSVエクスポート</span>
+            <span>{isStatsLoading ? '読み込み中...' : 'CSVエクスポート'}</span>
           </button>
         )}
       </div>
@@ -276,21 +342,32 @@ const Analysis = () => {
                     )}
                   </div>
 
-                  {/* 詳細・削除ボタン */}
+                  {/* 詳細・CSV・削除ボタン */}
                   <div className="border-t border-gray-200 dark:border-gray-700 px-3 py-2 flex justify-between">
-                    <button
-                      onClick={() => openVideoDetail(video)}
-                      className="flex items-center gap-1 px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                    >
-                      <MessageSquare size={14} />
-                      コメント詳細
-                    </button>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => openVideoDetail(video)}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                      >
+                        <MessageSquare size={14} />
+                        詳細
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleExportVideoCSV(index)
+                        }}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                      >
+                        <Download size={14} />
+                        CSV
+                      </button>
+                    </div>
                     <button
                       onClick={() => handleDeleteVideo(video.video_id, video.title)}
                       className="flex items-center gap-1 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                     >
                       <Trash2 size={14} />
-                      削除
                     </button>
                   </div>
                 </div>
@@ -426,6 +503,13 @@ const Analysis = () => {
                             title="詳細"
                           >
                             <MessageSquare size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleExportVideoCSV(index)}
+                            className="p-2 text-gray-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                            title="CSVエクスポート"
+                          >
+                            <Download size={16} />
                           </button>
                           <button
                             onClick={() => handleDeleteVideo(video.video_id, video.title)}

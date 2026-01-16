@@ -1,295 +1,357 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { api } from '../services/api';
+import React, { useState } from 'react';
+import { useQuery, useQueries } from '@tanstack/react-query';
+import { Download, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { videosApi, analysisApi, statsApi } from '../services/api';
+import toast from 'react-hot-toast';
 
-interface ReportConfig {
+interface VideoStats {
+  video_id: string;
   title: string;
-  period: 'all' | 'daily' | 'weekly' | 'monthly' | 'quarterly';
-  includeCharts: boolean;
+  total_comments: number;
+  tiger_mention_comments: number;
+  tiger_stats: {
+    tiger_id: string;
+    display_name: string;
+    mention_count: number;
+    rate_total: number;
+    rate_entity: number;
+    rank: number;
+  }[];
 }
 
 const ReportGenerator: React.FC = () => {
-  const [config, setConfig] = useState<ReportConfig>({
-    title: '令和の虎 コメント分析レポート',
-    period: 'all',
-    includeCharts: true
+  const [expandedVideoId, setExpandedVideoId] = useState<string | null>(null);
+
+  // 分析済み動画一覧を取得
+  const { data: analyzedVideos, isLoading: isLoadingVideos } = useQuery({
+    queryKey: ['analyzedVideos'],
+    queryFn: videosApi.getAnalyzed,
   });
-  const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [reportUrl, setReportUrl] = useState<string | null>(null);
-  const [statsPreview, setStatsPreview] = useState<any>(null);
-  const [isPeriodOpen, setIsPeriodOpen] = useState(false);
 
-  useEffect(() => {
-    fetchStatsPreview();
-  }, [config.period]);
+  // 各動画の出演虎情報を取得
+  const videoTigersQueries = useQueries({
+    queries: (analyzedVideos || []).map((video) => ({
+      queryKey: ['video-tigers', video.video_id],
+      queryFn: () => analysisApi.getVideoTigers(video.video_id),
+      enabled: !!analyzedVideos,
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
 
-  const fetchStatsPreview = async () => {
-    try {
-      const response = await api.get('/api/v1/stats/overview');
-      setStatsPreview(response.data);
-    } catch (err) {
-      console.error('Failed to fetch stats preview:', err);
+  // 各動画の統計情報を取得
+  const videoStatsQueries = useQueries({
+    queries: (analyzedVideos || []).map((video) => ({
+      queryKey: ['videoStats', video.video_id],
+      queryFn: () => statsApi.getVideoStats(video.video_id),
+      enabled: !!analyzedVideos,
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  // 統計データのロード状態を確認
+  const isStatsLoading = videoStatsQueries.some(q => q.isLoading) || videoTigersQueries.some(q => q.isLoading);
+  const hasStatsData = videoStatsQueries.some(q => q.data) && videoTigersQueries.some(q => q.data);
+
+  // 全体CSVエクスポート
+  const handleExportAllCSV = () => {
+    if (!analyzedVideos || analyzedVideos.length === 0) {
+      toast.error('エクスポートするデータがありません');
+      return;
     }
-  };
 
-  const generateReport = async (format: 'html' | 'markdown') => {
-    setGenerating(true);
-    setError(null);
-    setSuccess(false);
-    setReportUrl(null);
+    if (isStatsLoading) {
+      toast.error('データを読み込み中です。しばらくお待ちください');
+      return;
+    }
 
-    try {
-      const statsResponse = await api.get('/api/v1/stats/overview');
-      const rankingResponse = await api.get(`/api/v1/stats/ranking?period=${config.period}`);
+    const headers = ['動画ID', '動画タイトル', '総コメント数', '社長ID', '社長名', '言及コメント数', '言及率(%)'];
+    const rows: string[][] = [];
 
-      const tigerRankings = rankingResponse.data.tiger_rankings || rankingResponse.data || [];
-      const reportData = {
-        config: {
-          title: config.title,
-          period: config.period,
-          includeCharts: config.includeCharts,
-          includeDetails: true,
-          includeSentiment: false,
-          includeWordcloud: false,
-          maxTigers: 9999,
-          maxVideos: 9999
-        },
-        stats_data: {
-          ...statsResponse.data,
-          tiger_rankings: tigerRankings,
-          period: config.period,
-          mention_rate: (statsResponse.data.tiger_mentions / statsResponse.data.total_comments * 100) || 0,
-          positive_rate: 0
-        },
-        format: format
-      };
+    analyzedVideos.forEach((video, index) => {
+      const statsData = videoStatsQueries[index]?.data as VideoStats | undefined;
+      const tigersData = videoTigersQueries[index]?.data;
 
-      const response = await api.post('/api/v1/reports/generate', reportData);
+      if (!statsData || !tigersData) return;
 
-      if (response.data.report_url) {
-        setReportUrl(response.data.report_url);
-        setSuccess(true);
-      } else {
-        const blob = new Blob([response.data], {
-          type: format === 'html' ? 'text/html' : 'text/markdown'
+      const registeredTigerIds = tigersData.tigers.map(t => t.tiger_id);
+
+      statsData.tiger_stats
+        .filter(stat => registeredTigerIds.includes(stat.tiger_id))
+        .forEach(stat => {
+          rows.push([
+            video.video_id,
+            `"${video.title.replace(/"/g, '""')}"`,
+            String(statsData.total_comments),
+            stat.tiger_id,
+            stat.display_name,
+            String(stat.mention_count),
+            (stat.rate_total * 100).toFixed(2)
+          ]);
         });
-        const url = URL.createObjectURL(blob);
-        setReportUrl(url);
-        setSuccess(true);
-      }
-    } catch (err: any) {
-      setError(err.message || 'レポート生成に失敗しました');
-    } finally {
-      setGenerating(false);
+    });
+
+    if (rows.length === 0) {
+      toast.error('出力するデータがありません');
+      return;
     }
-  };
 
-  const downloadReport = (format: 'html' | 'md') => {
-    if (!reportUrl) return;
-
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = reportUrl;
-    link.download = `report_${new Date().toISOString().split('T')[0]}.${format}`;
+    link.href = url;
+    link.download = `全動画分析_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
+    URL.revokeObjectURL(url);
+
+    toast.success('CSVをエクスポートしました');
   };
 
-  const periodLabel = (p: string) => {
-    switch (p) {
-      case 'all': return '全期間';
-      case 'daily': return '日次';
-      case 'weekly': return '週次';
-      case 'monthly': return '月次';
-      case 'quarterly': return '四半期';
-      default: return p;
+  // 動画毎のCSVエクスポート
+  const handleExportVideoCSV = (videoIndex: number) => {
+    if (!analyzedVideos) return;
+
+    const video = analyzedVideos[videoIndex];
+    const statsData = videoStatsQueries[videoIndex]?.data as VideoStats | undefined;
+    const tigersData = videoTigersQueries[videoIndex]?.data;
+
+    if (!statsData || !tigersData) {
+      toast.error('データを読み込み中です');
+      return;
     }
+
+    const headers = ['動画ID', '動画タイトル', '総コメント数', '社長ID', '社長名', '言及コメント数', '言及率(%)'];
+    const rows: string[][] = [];
+
+    const registeredTigerIds = tigersData.tigers.map(t => t.tiger_id);
+
+    statsData.tiger_stats
+      .filter(stat => registeredTigerIds.includes(stat.tiger_id))
+      .forEach(stat => {
+        rows.push([
+          video.video_id,
+          `"${video.title.replace(/"/g, '""')}"`,
+          String(statsData.total_comments),
+          stat.tiger_id,
+          stat.display_name,
+          String(stat.mention_count),
+          (stat.rate_total * 100).toFixed(2)
+        ]);
+      });
+
+    if (rows.length === 0) {
+      toast.error('出力するデータがありません');
+      return;
+    }
+
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${video.video_id}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    toast.success('CSVをエクスポートしました');
   };
+
+  // 集計サマリー計算
+  const totalComments = videoStatsQueries.reduce((sum, q) => {
+    const data = q.data as VideoStats | undefined;
+    return sum + (data?.total_comments || 0);
+  }, 0);
+
+  const totalMentions = videoStatsQueries.reduce((sum, q) => {
+    const data = q.data as VideoStats | undefined;
+    if (!data?.tiger_stats) return sum;
+    return sum + data.tiger_stats.reduce((s, stat) => s + stat.mention_count, 0);
+  }, 0);
+
+  if (isLoadingVideos) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">
-        レポート生成
-      </h2>
+    <div className="space-y-6">
+      {/* ヘッダー */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+        <div>
+          <p className="text-gray-600 dark:text-gray-400">
+            分析データをCSV形式でエクスポートできます
+          </p>
+        </div>
+        {analyzedVideos && analyzedVideos.length > 0 && (
+          <button
+            onClick={handleExportAllCSV}
+            disabled={isStatsLoading || !hasStatsData}
+            className={`flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white rounded-xl shadow-lg transition-all ${
+              isStatsLoading || !hasStatsData
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600'
+            }`}
+          >
+            <Download size={18} />
+            <span>{isStatsLoading ? '読み込み中...' : '全動画CSVエクスポート'}</span>
+          </button>
+        )}
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 設定パネル */}
-        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-          <h3 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">
-            レポート設定
-          </h3>
+      {/* 集計サマリー */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow border border-gray-200 dark:border-gray-700">
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{analyzedVideos?.length || 0}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">分析動画数</p>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow border border-gray-200 dark:border-gray-700">
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalComments.toLocaleString()}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">総コメント数</p>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow border border-gray-200 dark:border-gray-700">
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalMentions.toLocaleString()}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">社長言及数</p>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow border border-gray-200 dark:border-gray-700">
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+            {totalComments > 0 ? ((totalMentions / totalComments) * 100).toFixed(1) : 0}%
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">言及率</p>
+        </div>
+      </div>
 
-          <div className="space-y-4">
-            {/* タイトル */}
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-300">
-                レポートタイトル
-              </label>
-              <input
-                type="text"
-                value={config.title}
-                onChange={(e) => setConfig({...config, title: e.target.value})}
-                className="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100"
-              />
-            </div>
+      {/* 動画一覧 */}
+      {analyzedVideos && analyzedVideos.length > 0 ? (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <FileText size={20} />
+              動画別データ
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              個別の動画データをCSVでエクスポートできます
+            </p>
+          </div>
 
-            {/* 期間 - アコーディオン */}
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-300">
-                集計期間
-              </label>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsPeriodOpen(!isPeriodOpen)}
-                  className="w-full p-3 border rounded-lg dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100 flex items-center justify-between bg-white hover:bg-gray-50 dark:hover:bg-gray-550 transition-colors"
-                >
-                  <span>{periodLabel(config.period)}</span>
-                  <ChevronDown
-                    size={20}
-                    className={`text-gray-500 transition-transform duration-200 ${isPeriodOpen ? 'rotate-180' : ''}`}
-                  />
-                </button>
-                <div
-                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                    isPeriodOpen ? 'max-h-60 opacity-100 mt-2' : 'max-h-0 opacity-0'
-                  }`}
-                >
-                  <div className="border rounded-lg dark:border-gray-500 bg-white dark:bg-gray-600 overflow-hidden">
-                    {[
-                      { value: 'all', label: '全期間' },
-                      { value: 'daily', label: '日次' },
-                      { value: 'weekly', label: '週次' },
-                      { value: 'monthly', label: '月次' },
-                      { value: 'quarterly', label: '四半期' },
-                    ].map((option) => (
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            {analyzedVideos.map((video, index) => {
+              const statsData = videoStatsQueries[index]?.data as VideoStats | undefined;
+              const tigersData = videoTigersQueries[index]?.data;
+              const isExpanded = expandedVideoId === video.video_id;
+              const isLoading = videoStatsQueries[index]?.isLoading || videoTigersQueries[index]?.isLoading;
+
+              const registeredTigerIds = tigersData?.tigers.map(t => t.tiger_id) || [];
+              const filteredStats = statsData?.tiger_stats
+                .filter(stat => registeredTigerIds.includes(stat.tiger_id))
+                .sort((a, b) => b.rate_total - a.rate_total) || [];
+
+              return (
+                <div key={video.video_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                  <div className="px-6 py-4">
+                    <div className="flex items-center gap-4">
+                      {/* サムネイル */}
+                      <img
+                        src={video.thumbnail_url}
+                        alt={video.title}
+                        className="w-24 h-14 object-cover rounded-lg flex-shrink-0"
+                      />
+
+                      {/* 動画情報 */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">
+                          {video.title}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {statsData?.total_comments?.toLocaleString() || '-'}件のコメント
+                          {filteredStats.length > 0 && ` • ${filteredStats.length}名の出演虎`}
+                        </p>
+
+                        {/* 出演虎タグ（縮小表示） */}
+                        {filteredStats.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {(isExpanded ? filteredStats : filteredStats.slice(0, 3)).map((stat, i) => (
+                              <span
+                                key={stat.tiger_id}
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                                  i === 0
+                                    ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
+                                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                                }`}
+                              >
+                                {stat.display_name}
+                                <span className="font-bold">{(stat.rate_total * 100).toFixed(1)}%</span>
+                              </span>
+                            ))}
+                            {!isExpanded && filteredStats.length > 3 && (
+                              <button
+                                onClick={() => setExpandedVideoId(video.video_id)}
+                                className="text-xs text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-0.5"
+                              >
+                                <ChevronDown size={14} />
+                                他{filteredStats.length - 3}名
+                              </button>
+                            )}
+                            {isExpanded && filteredStats.length > 3 && (
+                              <button
+                                onClick={() => setExpandedVideoId(null)}
+                                className="text-xs text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-0.5"
+                              >
+                                <ChevronUp size={14} />
+                                閉じる
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* CSVボタン */}
                       <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => {
-                          setConfig({...config, period: option.value as any});
-                          setIsPeriodOpen(false);
-                        }}
-                        className={`w-full px-4 py-3 text-left transition-colors ${
-                          config.period === option.value
-                            ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 font-medium'
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
+                        onClick={() => handleExportVideoCSV(index)}
+                        disabled={isLoading || !statsData}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all flex-shrink-0 ${
+                          isLoading || !statsData
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
                         }`}
                       >
-                        {option.label}
+                        <Download size={16} />
+                        CSV
                       </button>
-                    ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* グラフ */}
-            <div>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={config.includeCharts}
-                  onChange={(e) => setConfig({...config, includeCharts: e.target.checked})}
-                  className="mr-2"
-                />
-                <span className="text-sm text-gray-600 dark:text-gray-300">グラフを含める</span>
-              </label>
-            </div>
+              );
+            })}
           </div>
         </div>
-
-        {/* プレビューパネル */}
-        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-          <h3 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">
-            データプレビュー
+      ) : (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
+            <FileText size={32} className="text-gray-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            分析データがありません
           </h3>
-
-          {statsPreview ? (
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">総動画数</span>
-                <span className="font-semibold dark:text-gray-100">{statsPreview.total_videos}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">総コメント数</span>
-                <span className="font-semibold dark:text-gray-100">{statsPreview.total_comments?.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">社長言及数</span>
-                <span className="font-semibold dark:text-gray-100">{statsPreview.tiger_mentions?.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-300">登録社長数</span>
-                <span className="font-semibold dark:text-gray-100">{statsPreview.total_tigers}</span>
-              </div>
-              <div className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-600">
-                <p className="text-gray-600 dark:text-gray-300">
-                  期間: <span className="font-semibold">{periodLabel(config.period)}</span>
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center text-gray-500 dark:text-gray-400">
-              データを読み込み中...
-            </div>
-          )}
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            「データ収集」ページから動画を収集・分析してください
+          </p>
         </div>
+      )}
+
+      {/* 説明 */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+        <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">CSVエクスポートについて</h3>
+        <ul className="list-disc list-inside space-y-1 text-sm text-blue-800 dark:text-blue-200">
+          <li>「全動画CSVエクスポート」で全ての分析データを一括ダウンロード</li>
+          <li>各動画の「CSV」ボタンで個別にダウンロード可能</li>
+          <li>出力形式: 動画ID、動画タイトル、総コメント数、社長ID、社長名、言及コメント数、言及率(%)</li>
+        </ul>
       </div>
-
-      {/* エラー表示 */}
-      {error && (
-        <div className="mt-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
-
-      {/* 成功メッセージ */}
-      {success && (
-        <div className="mt-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded flex items-center justify-between">
-          <span>レポートが正常に生成されました！</span>
-          {reportUrl && (
-            <button
-              onClick={() => downloadReport(config.includeCharts ? 'html' : 'md')}
-              className="px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-            >
-              ダウンロード
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* 生成ボタン */}
-      <div className="mt-6 flex gap-4">
-        <button
-          onClick={() => generateReport('html')}
-          disabled={generating}
-          className="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >
-          {generating ? '生成中...' : 'HTMLレポート生成'}
-        </button>
-        <button
-          onClick={() => generateReport('markdown')}
-          disabled={generating}
-          className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >
-          {generating ? '生成中...' : 'Markdownレポート生成'}
-        </button>
-      </div>
-
-      {/* レポートプレビュー */}
-      {reportUrl && (
-        <div className="mt-6">
-          <h3 className="text-lg font-semibold mb-2 text-gray-700 dark:text-gray-200">
-            プレビュー
-          </h3>
-          <iframe
-            src={reportUrl}
-            className="w-full h-[600px] border rounded bg-white"
-            title="Report Preview"
-          />
-        </div>
-      )}
     </div>
   );
 };
