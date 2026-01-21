@@ -2,7 +2,19 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { tigersApi, statsApi } from '../services/api'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { TrendingUp, Video, MessageSquare, Download } from 'lucide-react'
+import { TrendingUp, Video, MessageSquare, Download, Trophy } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -19,247 +31,181 @@ const Dashboard = () => {
 
   const isLoading = tigersLoading || rankingLoading
 
-  // グラフ用のカラーパレット
-  const colors = ['#f97316', '#fb923c', '#fdba74', '#fed7aa', '#ffedd5']
+  // グラフ用のカラーパレット（落ち着いた色調）
+  const colors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))']
 
-  // CSVエクスポートは動画分析ページへ誘導
   const handleExportCSV = () => {
     navigate('/analysis')
   }
 
+  const getRankBadge = (rank: number) => {
+    if (rank === 1) return <Badge className="bg-amber-500 hover:bg-amber-500 text-white">1位</Badge>
+    if (rank === 2) return <Badge className="bg-slate-400 hover:bg-slate-400 text-white">2位</Badge>
+    if (rank === 3) return <Badge className="bg-orange-600 hover:bg-orange-600 text-white">3位</Badge>
+    return <Badge variant="secondary">{rank}位</Badge>
+  }
+
+  const stats = [
+    {
+      title: '登録社長数',
+      value: `${tigers?.length || 0}名`,
+      icon: Video,
+    },
+    {
+      title: '分析動画数',
+      value: `${ranking?.total_videos || 0}件`,
+      icon: TrendingUp,
+    },
+    {
+      title: '総コメント数',
+      value: ranking?.tiger_rankings
+        ?.reduce((sum, t) => sum + t.total_mentions, 0)
+        .toLocaleString() || '0',
+      icon: MessageSquare,
+    },
+  ]
+
   return (
-    <div className="space-y-4 sm:space-y-6 animate-fadeIn w-full">
-      {/* ヘッダー */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">ダッシュボード</h1>
-          <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600 dark:text-gray-400">分析結果の概要</p>
+          <h1 className="text-2xl font-bold tracking-tight">ダッシュボード</h1>
+          <p className="text-muted-foreground">分析結果の概要</p>
         </div>
         {ranking && ranking.tiger_rankings.length > 0 && (
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center justify-center space-x-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-all transform hover:scale-105 shadow-md text-sm sm:text-base w-full sm:w-auto"
-          >
-            <Download size={18} />
-            <span>CSVエクスポート（動画分析へ）</span>
-          </button>
+          <Button onClick={handleExportCSV} variant="outline">
+            <Download className="mr-2 h-4 w-4" />
+            CSVエクスポート
+          </Button>
         )}
       </div>
 
-      {/* クイックスタッツ */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 w-full">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 transform transition-all hover:shadow-lg hover:-translate-y-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">登録社長数</p>
-              <p className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                {tigers?.length || 0}名
-              </p>
-            </div>
-            <div className="bg-orange-100 p-2 sm:p-3 rounded-full">
-              <Video className="text-orange-600" size={20} />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 transform transition-all hover:shadow-lg hover:-translate-y-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">分析動画数</p>
-              <p className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                {ranking?.total_videos || 0}件
-              </p>
-            </div>
-            <div className="bg-blue-100 p-2 sm:p-3 rounded-full">
-              <TrendingUp className="text-blue-600" size={20} />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 transform transition-all hover:shadow-lg hover:-translate-y-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">総コメント数</p>
-              <p className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                {ranking?.tiger_rankings
-                  ?.reduce((sum, t) => sum + t.total_mentions, 0)
-                  .toLocaleString() || 0}
-              </p>
-            </div>
-            <div className="bg-green-100 p-2 sm:p-3 rounded-full">
-              <MessageSquare className="text-green-600" size={20} />
-            </div>
-          </div>
-        </div>
+      {/* Stats Cards */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        {stats.map((stat) => (
+          <Card key={stat.title}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {stat.title}
+              </CardTitle>
+              <stat.icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* ランキング */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+      {/* Ranking */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="h-5 w-5" />
             社長別ランキング（全期間）
-          </h2>
-        </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-[250px] w-full" />
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            </div>
+          ) : ranking && ranking.tiger_rankings.length > 0 ? (
+            <div className="space-y-6">
+              {/* Chart */}
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={ranking.tiger_rankings.slice(0, 5)} margin={{ left: -20, right: 10 }}>
+                  <XAxis dataKey="display_name" tick={{ fontSize: 12 }} interval={0} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--popover))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                    }}
+                  />
+                  <Bar dataKey="total_mentions" radius={[4, 4, 0, 0]}>
+                    {ranking.tiger_rankings.slice(0, 5).map((_entry, index) => (
+                      <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
 
-        {isLoading ? (
-          <div className="p-8 sm:p-12 text-center">
-            <div className="inline-block animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-orange-500"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400 text-sm sm:text-base">読み込み中...</p>
-          </div>
-        ) : ranking && ranking.tiger_rankings.length > 0 ? (
-          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-            {/* グラフ */}
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={ranking.tiger_rankings.slice(0, 5)} margin={{ left: -20, right: 10 }}>
-                <XAxis
-                  dataKey="display_name"
-                  tick={{ fontSize: 11 }}
-                  interval={0}
-                />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Bar dataKey="total_mentions" fill="#f97316">
-                  {ranking.tiger_rankings.slice(0, 5).map((_entry, index) => (
-                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-
-            {/* モバイル: カード表示 */}
-            <div className="sm:hidden space-y-3">
-              {ranking.tiger_rankings.map((item, index) => {
-                const cardStyle =
-                  index === 0
-                    ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700'
-                    : index === 1
-                      ? 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'
-                      : index === 2
-                        ? 'bg-orange-50 dark:bg-orange-900/15 border-orange-200 dark:border-orange-700'
-                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-
-                const rankStyle =
-                  index === 0
-                    ? 'bg-amber-500 text-white'
-                    : index === 1
-                      ? 'bg-gray-400 text-white'
-                      : index === 2
-                        ? 'bg-orange-500 text-white'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-
-                return (
+              {/* Mobile Cards */}
+              <div className="space-y-2 sm:hidden">
+                {ranking.tiger_rankings.map((item) => (
                   <div
                     key={item.tiger_id}
-                    className={`${cardStyle} border rounded-lg p-3`}
+                    className="flex items-center justify-between rounded-lg border p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${rankStyle}`}>
-                        {item.rank}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 dark:text-white truncate">
-                          {item.display_name}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {getRankBadge(item.rank)}
+                      <div>
+                        <p className="font-medium">{item.display_name}</p>
+                        <p className="text-xs text-muted-foreground">
                           {item.total_videos}動画出演
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-gray-900 dark:text-white">
-                          {item.total_mentions.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {(item.avg_rate_total * 100).toFixed(1)}%
-                        </p>
-                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">{item.total_mentions.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(item.avg_rate_total * 100).toFixed(1)}%
+                      </p>
                     </div>
                   </div>
-                )
-              })}
-            </div>
+                ))}
+              </div>
 
-            {/* デスクトップ: テーブル表示 */}
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-900/50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      順位
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      社長名
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      言及回数
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      出演動画数
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      平均Rate
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {ranking.tiger_rankings.map((item, index) => {
-                    const rowStyle =
-                      index === 0
-                        ? 'bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30'
-                        : index === 1
-                          ? 'bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/60'
-                          : index === 2
-                            ? 'bg-orange-50 dark:bg-orange-900/15 hover:bg-orange-100 dark:hover:bg-orange-900/25'
-                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/40'
-
-                    const rankStyle =
-                      index === 0
-                        ? 'bg-amber-500 text-white'
-                        : index === 1
-                          ? 'bg-gray-400 text-white'
-                          : index === 2
-                            ? 'bg-orange-500 text-white'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-
-                    return (
-                      <tr
-                        key={item.tiger_id}
-                        className={`${rowStyle} transition-colors`}
-                      >
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${rankStyle}`}>
-                            {item.rank}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {item.display_name}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">
+              {/* Desktop Table */}
+              <div className="hidden sm:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-20">順位</TableHead>
+                      <TableHead>社長名</TableHead>
+                      <TableHead className="text-right">言及回数</TableHead>
+                      <TableHead className="text-right">出演動画数</TableHead>
+                      <TableHead className="text-right">平均Rate</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ranking.tiger_rankings.map((item) => (
+                      <TableRow key={item.tiger_id}>
+                        <TableCell>{getRankBadge(item.rank)}</TableCell>
+                        <TableCell className="font-medium">{item.display_name}</TableCell>
+                        <TableCell className="text-right">
                           {item.total_mentions.toLocaleString()}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
                           {item.total_videos}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
                           {(item.avg_rate_total * 100).toFixed(1)}%
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="p-8 sm:p-12 text-center">
-            <p className="text-gray-500 dark:text-gray-400">データがありません</p>
-            <p className="mt-2 text-sm text-gray-400">
-              データ収集ページから動画を収集してください
-            </p>
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="py-12 text-center">
+              <p className="text-muted-foreground">データがありません</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                データ収集ページから動画を収集してください
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

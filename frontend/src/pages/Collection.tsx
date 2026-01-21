@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { analysisApi } from '../services/api'
 import { CheckCircle, XCircle, Loader, ArrowRight, Trash2, Play, Users, AlertTriangle, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
 interface ExtractedTiger {
   tiger_id: string
@@ -34,7 +36,6 @@ const Collection = () => {
   const abortRef = useRef(false)
   const jobsRef = useRef<CollectionJob[]>([])
 
-  // jobsとjobsRefを同時に更新するヘルパー
   const updateJobs = (updater: CollectionJob[] | ((prev: CollectionJob[]) => CollectionJob[])) => {
     if (typeof updater === 'function') {
       setJobs(prev => {
@@ -169,8 +170,6 @@ const Collection = () => {
     const job = jobsRef.current[jobIndex]
     setSelectingJobIndex(null)
     await runAnalysis(jobIndex, selectedIds, job?.collectedComments || 0)
-
-    // 次のジョブを処理
     continueProcessing(jobIndex + 1)
   }
 
@@ -182,7 +181,6 @@ const Collection = () => {
 
       await processJob(i)
 
-      // 選択待ちの場合は中断
       if (jobsRef.current[i]?.status === 'selecting') {
         return
       }
@@ -205,7 +203,6 @@ const Collection = () => {
 
     setCurrentJobIndex(jobIndex)
 
-    // 1. 収集フェーズ
     updateJobs(prev => prev.map((j, idx) =>
       idx === jobIndex ? { ...j, status: 'collecting', message: '収集中...' } : j
     ))
@@ -217,7 +214,6 @@ const Collection = () => {
         const result = await pollProgress(job.videoId)
 
         if (result.status === 'completed') {
-          // 2. 虎自動抽出フェーズ
           updateJobs(prev => prev.map((j, idx) =>
             idx === jobIndex ? { ...j, status: 'extracting', message: '出演虎を検出中...' } : j
           ))
@@ -227,9 +223,7 @@ const Collection = () => {
             const extractedTigers = extractResult.tigers || []
             const unmatchedNames = extractResult.unmatched_names || []
 
-            // 3分岐の判定
             if (extractedTigers.length === 0) {
-              // 0人の場合
               updateJobs(prev => prev.map((j, idx) =>
                 idx === jobIndex ? {
                   ...j,
@@ -241,7 +235,6 @@ const Collection = () => {
                 } : j
               ))
             } else if (extractedTigers.length <= 5) {
-              // 5人以下 → そのまま分析（5人未満の場合は警告付き）
               const warningMsg = extractedTigers.length < 5
                 ? `（${extractedTigers.length}人分しか検出できませんでした）`
                 : ''
@@ -266,7 +259,6 @@ const Collection = () => {
                 ))
               }
             } else {
-              // 5人超過 → 選択UI表示
               updateJobs(prev => prev.map((j, idx) =>
                 idx === jobIndex ? {
                   ...j,
@@ -278,7 +270,7 @@ const Collection = () => {
                 } : j
               ))
               setSelectingJobIndex(jobIndex)
-              return // 選択待ちで一旦停止
+              return
             }
           } catch (extractError) {
             updateJobs(prev => prev.map((j, idx) =>
@@ -315,7 +307,6 @@ const Collection = () => {
       return
     }
 
-    // ジョブリストを作成
     const newJobs: CollectionJob[] = urlList.map((url, index) => ({
       id: `job-${Date.now()}-${index}`,
       url,
@@ -324,7 +315,6 @@ const Collection = () => {
       message: '待機中'
     }))
 
-    // 無効なURLをチェック
     const invalidJobs = newJobs.filter(job => !job.videoId)
     if (invalidJobs.length > 0) {
       invalidJobs.forEach(job => {
@@ -337,7 +327,6 @@ const Collection = () => {
     setIsProcessing(true)
     abortRef.current = false
 
-    // 最初のジョブから処理開始
     for (let i = 0; i < newJobs.length; i++) {
       if (abortRef.current) break
       const job = newJobs[i]
@@ -345,12 +334,10 @@ const Collection = () => {
 
       await processJob(i)
 
-      // 選択待ちの場合は中断（選択後にcontinueProcessingで再開）
       if (newJobs[i]?.status === 'selecting') {
         return
       }
 
-      // 次のジョブまで少し待機
       if (i < newJobs.length - 1 && !abortRef.current) {
         await new Promise(resolve => setTimeout(resolve, 500))
       }
@@ -369,7 +356,7 @@ const Collection = () => {
 
   const handleAbort = () => {
     abortRef.current = true
-    toast('処理を中断しています...', { icon: 'ℹ️' })
+    toast('処理を中断しています...')
   }
 
   const clearJobs = () => {
@@ -383,21 +370,20 @@ const Collection = () => {
   const urlCount = urls.split('\n').filter(url => url.trim()).length
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">データ収集</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">YouTube動画のコメントを収集し、出演虎を自動検出して分析します</p>
+        <h1 className="text-2xl font-bold tracking-tight">データ収集</h1>
+        <p className="text-muted-foreground">YouTube動画のコメントを収集し、出演虎を自動検出して分析します</p>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">動画URL入力</h2>
-        </div>
-
-        <div className="p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>動画URL入力</CardTitle>
+        </CardHeader>
+        <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="urls" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="urls" className="block text-sm font-medium mb-2">
                 YouTube動画URL（1行に1つ）
               </label>
               <textarea
@@ -408,189 +394,161 @@ const Collection = () => {
 https://www.youtube.com/watch?v=yyy
 https://www.youtube.com/watch?v=zzz`}
                 rows={5}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white disabled:bg-gray-100 font-mono text-sm"
+                className="w-full px-3 py-2 border rounded-md bg-background text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
                 disabled={isProcessing}
               />
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              <p className="mt-2 text-sm text-muted-foreground">
                 {urlCount}件のURL入力中
               </p>
             </div>
 
             <div className="flex gap-3">
-              <button
-                type="submit"
-                disabled={!urls.trim() || isProcessing}
-                className="flex items-center space-x-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-md"
-              >
-                {isProcessing ? <Loader size={20} className="animate-spin" /> : <Play size={20} />}
-                <span>{isProcessing ? '処理中...' : '収集 & 自動分析'}</span>
-              </button>
+              <Button type="submit" disabled={!urls.trim() || isProcessing}>
+                {isProcessing ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+                {isProcessing ? '処理中...' : '収集 & 自動分析'}
+              </Button>
 
               {isProcessing && (
-                <button
-                  type="button"
-                  onClick={handleAbort}
-                  className="flex items-center space-x-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all shadow-md"
-                >
-                  <XCircle size={20} />
-                  <span>中断</span>
-                </button>
+                <Button type="button" variant="destructive" onClick={handleAbort}>
+                  <XCircle className="mr-2 h-4 w-4" />
+                  中断
+                </Button>
               )}
             </div>
           </form>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* 収集状況 */}
       {jobs.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">処理状況</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <CardTitle>処理状況</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
                 完了: {completedJobs.length} / エラー: {errorJobs.length} / 合計: {jobs.length}
               </p>
             </div>
             {!isProcessing && !selectingJobIndex && (
-              <button
-                onClick={clearJobs}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-              >
-                <Trash2 size={16} />
+              <Button variant="ghost" size="sm" onClick={clearJobs}>
+                <Trash2 className="mr-2 h-4 w-4" />
                 クリア
-              </button>
+              </Button>
             )}
-          </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y max-h-[500px] overflow-y-auto">
+              {jobs.map((job, index) => (
+                <div key={job.id}>
+                  <div className={`px-6 py-3 flex items-center gap-4 ${
+                    currentJobIndex === index ? 'bg-muted/50' : ''
+                  } ${selectingJobIndex === index ? 'bg-primary/5' : ''}`}>
+                    <div className="flex-shrink-0">
+                      {job.status === 'pending' && <div className="w-5 h-5 rounded-full bg-muted" />}
+                      {(job.status === 'collecting' || job.status === 'extracting' || job.status === 'analyzing') && (
+                        <Loader className="w-5 h-5 text-primary animate-spin" />
+                      )}
+                      {job.status === 'selecting' && <Users className="w-5 h-5 text-amber-500" />}
+                      {job.status === 'completed' && <CheckCircle className="w-5 h-5 text-green-500" />}
+                      {job.status === 'error' && <XCircle className="w-5 h-5 text-destructive" />}
+                    </div>
 
-          <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-[500px] overflow-y-auto">
-            {jobs.map((job, index) => (
-              <div key={job.id}>
-                <div
-                  className={`px-6 py-3 flex items-center gap-4 ${
-                    currentJobIndex === index ? 'bg-orange-50 dark:bg-orange-900/20' : ''
-                  } ${selectingJobIndex === index ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
-                >
-                  <div className="flex-shrink-0">
-                    {job.status === 'pending' && (
-                      <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700" />
-                    )}
-                    {(job.status === 'collecting' || job.status === 'extracting' || job.status === 'analyzing') && (
-                      <Loader className="w-5 h-5 text-blue-500 animate-spin" />
-                    )}
-                    {job.status === 'selecting' && (
-                      <Users className="w-5 h-5 text-amber-500" />
-                    )}
-                    {job.status === 'completed' && (
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                    )}
-                    {job.status === 'error' && (
-                      <XCircle className="w-5 h-5 text-red-500" />
-                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{job.videoId || '無効なURL'}</p>
+                      {job.extractedTigers && job.extractedTigers.length > 0 && job.status === 'completed' && (
+                        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {job.selectedTigerIds?.length || job.extractedTigers.length}名の出演虎で分析
+                        </p>
+                      )}
+                      {job.unmatchedNames && job.unmatchedNames.length > 0 && (
+                        <p className="text-xs text-amber-600 mt-0.5 flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          未登録: {job.unmatchedNames.join(', ')}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex-shrink-0">
+                      <span className={`text-sm font-medium ${
+                        job.status === 'completed' ? 'text-green-600' :
+                        job.status === 'error' ? 'text-destructive' :
+                        job.status === 'selecting' ? 'text-amber-600' :
+                        (job.status === 'collecting' || job.status === 'extracting' || job.status === 'analyzing') ? 'text-primary' :
+                        'text-muted-foreground'
+                      }`}>
+                        {job.message}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      {job.videoId || '無効なURL'}
-                    </p>
-                    {job.extractedTigers && job.extractedTigers.length > 0 && job.status === 'completed' && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1">
-                        <Users size={12} />
-                        {job.selectedTigerIds?.length || job.extractedTigers.length}名の出演虎で分析
-                      </p>
-                    )}
-                    {job.unmatchedNames && job.unmatchedNames.length > 0 && (
-                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5 flex items-center gap-1">
-                        <AlertTriangle size={12} />
-                        未登録: {job.unmatchedNames.join(', ')}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex-shrink-0">
-                    <span className={`text-sm font-medium ${
-                      job.status === 'completed' ? 'text-green-600 dark:text-green-400' :
-                      job.status === 'error' ? 'text-red-600 dark:text-red-400' :
-                      job.status === 'selecting' ? 'text-amber-600 dark:text-amber-400' :
-                      (job.status === 'collecting' || job.status === 'extracting' || job.status === 'analyzing') ? 'text-blue-600 dark:text-blue-400' :
-                      'text-gray-500 dark:text-gray-400'
-                    }`}>
-                      {job.message}
-                    </span>
-                  </div>
+                  {selectingJobIndex === index && job.extractedTigers && (
+                    <TigerSelector
+                      tigers={job.extractedTigers}
+                      onConfirm={(selectedIds) => handleTigerSelection(index, selectedIds)}
+                      onCancel={() => {
+                        setSelectingJobIndex(null)
+                        updateJobs(prev => prev.map((j, idx) =>
+                          idx === index ? {
+                            ...j,
+                            status: 'completed',
+                            message: `${job.collectedComments}件（虎選択をスキップ）`
+                          } : j
+                        ))
+                        continueProcessing(index + 1)
+                      }}
+                    />
+                  )}
                 </div>
-
-                {/* 虎選択UI */}
-                {selectingJobIndex === index && job.extractedTigers && (
-                  <TigerSelector
-                    tigers={job.extractedTigers}
-                    onConfirm={(selectedIds) => handleTigerSelection(index, selectedIds)}
-                    onCancel={() => {
-                      setSelectingJobIndex(null)
-                      updateJobs(prev => prev.map((j, idx) =>
-                        idx === index ? {
-                          ...j,
-                          status: 'completed',
-                          message: `${job.collectedComments}件（虎選択をスキップ）`
-                        } : j
-                      ))
-                      continueProcessing(index + 1)
-                    }}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* 完了後のアクション */}
-          {!isProcessing && !selectingJobIndex && completedJobs.length > 0 && (
-            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 space-y-3">
-              {/* 未登録の社長がいる場合の警告 */}
-              {jobs.some(j => j.unmatchedNames && j.unmatchedNames.length > 0) && (
-                <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                      登録されていない社長が検出されました
-                    </p>
-                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                      社長マスタに登録してから再分析してください
-                    </p>
-                  </div>
-                </div>
-              )}
-              <button
-                onClick={() => navigate('/analysis')}
-                className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-all transform hover:scale-105 shadow-md"
-              >
-                <span>動画分析ページへ移動</span>
-                <ArrowRight size={20} />
-              </button>
+              ))}
             </div>
-          )}
-        </div>
+
+            {!isProcessing && !selectingJobIndex && completedJobs.length > 0 && (
+              <div className="p-6 border-t bg-muted/30 space-y-3">
+                {jobs.some(j => j.unmatchedNames && j.unmatchedNames.length > 0) && (
+                  <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                        登録されていない社長が検出されました
+                      </p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                        社長マスタに登録してから再分析してください
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <Button className="w-full" onClick={() => navigate('/analysis')}>
+                  動画分析ページへ移動
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-        <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">使い方</h3>
-        <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800 dark:text-blue-200">
-          <li>YouTube動画のURLを入力してください（1行に1つ、複数可）</li>
-          <li>「収集 & 自動分析」をクリックすると、以下が自動で実行されます：</li>
-        </ol>
-        <ul className="list-disc list-inside ml-4 mt-2 space-y-1 text-sm text-blue-800 dark:text-blue-200">
-          <li>コメントの収集</li>
-          <li>動画の概要欄から出演虎を自動検出（5名を想定）</li>
-          <li>5名を超える虎が検出された場合は選択画面が表示されます</li>
-          <li>検出された虎で言及分析を実行</li>
-        </ul>
-        <p className="mt-3 text-sm text-blue-800 dark:text-blue-200">
-          完了後、「動画分析」ページで結果を確認できます
-        </p>
-      </div>
+      <Card className="bg-muted/50">
+        <CardContent className="pt-6">
+          <h3 className="font-medium mb-2">使い方</h3>
+          <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+            <li>YouTube動画のURLを入力してください（1行に1つ、複数可）</li>
+            <li>「収集 & 自動分析」をクリックすると、以下が自動で実行されます：</li>
+          </ol>
+          <ul className="list-disc list-inside ml-4 mt-2 space-y-1 text-sm text-muted-foreground">
+            <li>コメントの収集</li>
+            <li>動画の概要欄から出演虎を自動検出（5名を想定）</li>
+            <li>5名を超える虎が検出された場合は選択画面が表示されます</li>
+            <li>検出された虎で言及分析を実行</li>
+          </ul>
+          <p className="mt-3 text-sm text-muted-foreground">
+            完了後、「動画分析」ページで結果を確認できます
+          </p>
+        </CardContent>
+      </Card>
     </div>
   )
 }
 
-// 虎選択コンポーネント
 const TigerSelector = ({
   tigers,
   onConfirm,
@@ -613,40 +571,30 @@ const TigerSelector = ({
   }
 
   return (
-    <div className="px-6 py-4 bg-blue-50 dark:bg-blue-900/30 border-t border-blue-200 dark:border-blue-800">
-      <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-3">
+    <div className="px-6 py-4 bg-primary/5 border-t">
+      <p className="text-sm font-medium mb-3">
         出演した虎を選択してください（{selected.size}名選択中）
       </p>
       <div className="flex flex-wrap gap-2 mb-4">
         {tigers.map(tiger => (
-          <button
+          <Button
             key={tiger.tiger_id}
+            variant={selected.has(tiger.tiger_id) ? 'default' : 'outline'}
+            size="sm"
             onClick={() => toggle(tiger.tiger_id)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
-              selected.has(tiger.tiger_id)
-                ? 'bg-orange-600 text-white border-orange-600'
-                : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-orange-400'
-            }`}
           >
-            {selected.has(tiger.tiger_id) && <Check size={14} />}
+            {selected.has(tiger.tiger_id) && <Check className="mr-1 h-3 w-3" />}
             {tiger.display_name}
-          </button>
+          </Button>
         ))}
       </div>
       <div className="flex gap-2">
-        <button
-          onClick={() => onConfirm(Array.from(selected))}
-          disabled={selected.size === 0}
-          className="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all"
-        >
+        <Button onClick={() => onConfirm(Array.from(selected))} disabled={selected.size === 0}>
           {selected.size}名で分析開始
-        </button>
-        <button
-          onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-all"
-        >
+        </Button>
+        <Button variant="outline" onClick={onCancel}>
           スキップ
-        </button>
+        </Button>
       </div>
     </div>
   )
